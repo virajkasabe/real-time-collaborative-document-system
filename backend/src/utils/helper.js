@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import User from "../module/auth/auth.model.js";
 import Doc from "../module/document/document.model.js";
 import { getDocument, getUser, setDocument, setUser } from "../redis/client.js";
@@ -81,3 +82,11 @@ export const textToHtmlConvertor = (textString) => {
   
   return content;
 };
+=======
+
+/*
+
+      some function which was repeated this will write here and export and use it
+
+*/
+>>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)

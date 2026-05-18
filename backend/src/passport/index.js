@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../module/auth/auth.model.js";
@@ -74,3 +75,8 @@ passport.use(
 );
 
 export default passport;
+=======
+/*
+   GOOGLE AUTHENTICATION USING PASSPORT
+*/
+>>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)

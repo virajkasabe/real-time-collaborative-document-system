@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
@@ -112,3 +113,30 @@ userSchema.methods.generateTemporaryToken = function () {
 
 const User = mongoose.model("User", userSchema);
 export default User;
+=======
+/*
+
+     === auth model ===
+    === fields ===
+
+      name,
+      email,
+      password -> before user save hash the password,
+      refreshToken,
+      isEmailVerified,
+      avatar,
+      loginType, in import from constant file
+      verifyEmailToken,
+      verifyEmailTokenExpiry,
+
+
+     === methods ===
+
+      password hashes,
+      accessToken generate,
+      refreshToken generate,
+      generateTmporaryToken
+
+
+*/
+>>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)

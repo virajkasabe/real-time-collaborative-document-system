@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import jwt from "jsonwebtoken";
 import { ENV } from "../config/ENV.js";
 import User from "../module/auth/auth.model.js";
@@ -43,3 +44,17 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, error.message || "Authentication failed");
   }
 });
+=======
+/*
+        auth middleware
+
+        methods like
+
+        verifyJWT
+        verifyDocumentId -> document exists or not
+        verifyDocumentMember -> for view the document
+        verifyDocumentAdmin -> for document owner share for collabration
+        verifyDocumentEditor -> for editing the document
+
+*/
+>>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)

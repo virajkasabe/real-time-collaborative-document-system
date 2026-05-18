@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Router } from "express";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
 import passport  from 'passport';
@@ -66,3 +67,23 @@ router.route("/reset-password/:unHashedToken").post(resetPassword);
 router.route("/delete").delete(deleteUser);
 
 export default router;
+=======
+/*
+
+
+routes like
+
+  POST -> register
+  POST -> login
+  GET -> logout
+  GET -> getUser
+  GET -> verifyUserEmail --> for viaLogin EMAIL,PASSWORD
+  POST -> forgetPasswordRequest
+  POST -> Change password
+
+  !! --- DENGER ZONE
+  DELETE -> userDelete
+
+
+*/
+>>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)

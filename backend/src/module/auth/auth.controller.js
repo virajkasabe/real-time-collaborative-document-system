@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { uploadCloudinary } from "../../config/cloudinary.js";
@@ -522,3 +523,22 @@ export const deleteUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "User DELETE Successfully"));
 });
+=======
+/*
+       === auth controller ===
+       controllers
+
+      register,
+      login,
+      logout,
+      fetch,
+      verifyEmail, -- for viaLogin EMAIL,PASSWORD
+      forgetPasswordRequest,
+      changePassword
+
+      !!---
+      user delete
+
+
+*/
+>>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)
