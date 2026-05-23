@@ -10,6 +10,11 @@ export const docsUserType = Object.freeze({
   OWNER : "Owner"
 })
 
+export const redisEvent = Object.freeze({
+    ERROR : "error",
+    CONNECT : "connect"
+})
+
 
 export const loginTypeEnum = Object.values(loginType)
 export const docsUserTypeEnum = Object.values(docsUserType)
