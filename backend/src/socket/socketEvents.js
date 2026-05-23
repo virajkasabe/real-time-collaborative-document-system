@@ -98,7 +98,7 @@ export const TYPEING_EVENT = Object.freeze({
   STOP_TYPING: "Stop_Typing",
 });
 
-export export const ROLE_CHANGE = Object.freeze({
+export const ROLE_CHANGE = Object.freeze({
   ROLE_UPDATE: "Role_Update",
 >>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 });

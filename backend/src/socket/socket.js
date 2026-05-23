@@ -41,14 +41,17 @@ const mountJoinDocumentEvent = (socket) => {
     console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", docId);
     socket.join(docId);
   });
+
+  //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
+  // ** : WRITE HERE THIS LOGIC
 };
 
 export const initializeSocketIO = (io) => {
   return io.on(CONNECT_DISCONNET_EVENT.CONNECTION, async (socket) => {
     try {
-      const cookies = cookie.parse(socket.handshake.header?.cookie || "");
+      const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
 
-      const token = cookies?.accessToken;
+      let token = cookies?.accessToken;
 
       if (!token) {
         token = token.handshake.auth?.token;
@@ -73,16 +76,19 @@ export const initializeSocketIO = (io) => {
       let user = await secureUser(decodedToken._id);
 =======
 
-      // user search in redis or mongo
-
+      // TODO : USER SEARCH ON REDIS OR MONGO
       let user;
 
-      //  ?? user find in redis
+      //  ?? user serach in redis
       user = await redisClient.getUser(decodedToken._id);
 
-      // ?? when not find in redis then find on mongo
+      // ?? when not find in redis then search on mongo
       if (!user) {
         user = await User.findById(decodedToken._id);
+        //  ** user find in mongo then add on redis
+        if (user) {
+          user = await redisClient.getUser(decodedToken._id);
+        }
       }
 >>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 
@@ -121,8 +127,11 @@ export const initializeSocketIO = (io) => {
         socket.leave(socket.user._id.toString());
 =======
       socket.join(user._id.toString());
-      socket.emit(DOCUMENT_EVENT.JOIN_DOCUMENT);
+      socket.emit(CONNECT_DISCONNET_EVENT.CONNECT);
       console.log("🤝🌐🔗 USER CONNECTED USER ID : ", user._id.toString());
+
+      // common event mounted here
+      mountJoinDocumentEvent(socket);
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
         console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER ID : ", user._id.toString());

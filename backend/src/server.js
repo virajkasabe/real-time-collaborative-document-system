@@ -42,6 +42,7 @@ import { Server } from "socket.io";
 import { ENV } from "./config/ENV.js";
 import { connectDB } from "./db/index.js";
 import { initializeSocketIO } from "./socket/socket.js";
+import { RedisConnect } from "./redis/client.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -67,6 +68,8 @@ app.use(express.static("/public"));
 app.use(cookieParser());
 app.use(helmet());
 
+// TODO : FIRST CHECK THE HEALTH ROUTE
+
 // ?? ADD ALL ROUTES HERE
 
 // TODO : USE ALL ROUTES HERE
@@ -75,17 +78,20 @@ initializeSocketIO(io);
 
 const startServer = () => {
   httpServer.listen(ENV.PORT, () => {
-    console.log("SERVER CONNECTED SUCESSFULLY : 🗄️ 🔌");
+    console.log("SERVER CONNECTED SUCESSFULLY : 📡🛰️");
   });
 };
 
 try {
-  // mongo
+  // ** mongo
   await connectDB();
+  console.log("MONGODB CONNECTED SUCCESSFULLY :🌿");
 
-  // redis
+  // **  redis
+  await RedisConnect();
+  console.log("REDIS CONNECTED SUCCESSFULLY : 🚀⚡📡");
 
-  // server
+  // ** server
   startServer();
 } catch (error) {
   console.error("MONGODB CONNECTION ERROR", error.message);

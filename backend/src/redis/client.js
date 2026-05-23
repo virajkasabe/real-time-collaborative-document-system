@@ -3,13 +3,18 @@ import { ENV } from "../config/ENV.js";
 import { redisEvent } from "../utils/constant.js";
 
 const client = new Redis(ENV.REDIS_URI, { lazyConnect: true });
+<<<<<<< HEAD
 const Subscriber = new Redis(ENV.REDIS_URI, { lazyConnect: true });
+=======
+const Subscriber = new Redis(ENV.REDIS_URI,{ lazyConnect: true });
+>>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
 const Publisher = new Redis(ENV.REDIS_URI, { lazyConnect: true });
 let isConnected = false;
 
 export const RedisConnect = async () => {
   try {
     client.on(redisEvent.ERROR, (error) => {
+<<<<<<< HEAD
       console.error(`REDIS CLIENT ERROR 🚫🌐⚡ : ${error.message}`);
     });
 
@@ -19,6 +24,17 @@ export const RedisConnect = async () => {
 
     Publisher.on(redisEvent.ERROR, (error) => {
       console.error(`REDIS PUB CLIENT ERROR 📵⚡: ${error.message}`);
+=======
+      console.error(`REDIS CLIENT ERROR 📢 : ${error.message}`);
+    });
+
+    Subscriber.on(redisEvent.ERROR, (error) => {
+      console.error(`REDIS SUB CLIENT ERROR 📢 : ${error.message}`);
+    });
+
+    Publisher.on(redisEvent.ERROR, (error) => {
+      console.error(`REDIS PUB CLIENT ERROR 📢 : ${error.message}`);
+>>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
     });
 
     await Promise.all([
@@ -27,12 +43,21 @@ export const RedisConnect = async () => {
       Subscriber.connect(),
     ]);
 
+<<<<<<< HEAD
     isConnected = true;
 
     return {
       client,
       isConnected,
     };
+=======
+     isConnected = true;
+
+    return {
+        client,
+        isConnected
+    }
+>>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
   } catch (error) {
     console.error(error.message || "redies connection Error");
     isConnected = false;
@@ -41,6 +66,7 @@ export const RedisConnect = async () => {
 
 // ?? ===== USER =====
 // ***** SET *****
+<<<<<<< HEAD
 export const setUser = async (userId, payload, expiry = 3600) => {
   if (!client || !isConnected) return null;
   const key = `user:${userId}`;
@@ -223,5 +249,36 @@ export const getChats = async(docId) => {
     return list ? list.map((item)=> JSON.parse(item)) : []
 
 }
+=======
+export const setUser = (userId, payload, expiry=3600) => {
+  if (!client) return null;
+  const key = `user:${userId}`
+  return await client.setex(key,expiry, JSON.stringify(payload))
+};
+
+// ***** GET *****
+export const getUser = (userId) =>{
+    const key = `user:${userId}`
+    const payload = await client.get(key)
+    return payload ? JSON.parse(payload) : null
+}
+
+// ! ***** DET *****
+export const deleteuser = (userId) => {
+  const key = `user:${userId}`
+  return await client.del(key)
+}
+
+
+// ?? ===== DOCUMENT =====
+
+
+
+
+
+
+
+
+>>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
 
 export { Publisher, Subscriber };

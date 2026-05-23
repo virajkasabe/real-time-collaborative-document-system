@@ -1,4 +1,0 @@
-import Redis from 'ioredis'
-
-
-
