@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import mongoose from 'mongoose'
 import {ENV} from '../config/ENV.js'
 
@@ -18,3 +19,17 @@ export  const connectDB = async() => {
 
 */
 >>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)
+=======
+import mongoose from 'mongoose'
+import {ENV} from '../config/ENV.js'
+
+export  const connectDB = async() => {
+  try {
+        const promise = await mongoose.connect(ENV.MONGODB_URI)
+        return promise;
+  } catch (error) {
+      console.error("MONGOOSE CONNECTION ERROR", error.message)
+        process.exit(1)
+  }
+}
+>>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)

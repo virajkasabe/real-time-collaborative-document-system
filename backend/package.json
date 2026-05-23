@@ -6,6 +6,7 @@
   "scripts": {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "test": "jest",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
@@ -17,6 +18,10 @@
   "start": "node server.js",
   "dev": "node --watch src/server.js"
 >>>>>>> 9066b06 (chore(backend): update dev script and dotenv config)
+=======
+    "start": "node server.js",
+    "dev": "node --watch src/server.js"
+>>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
   },
   "keywords": [],
   "author": "",
@@ -52,9 +57,13 @@
     "supertest": "^7.2.2"
 =======
     "bcrypt": "^6.0.0",
+    "cookie": "^1.1.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "helmet": "^8.2.0",
+    "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
     "socket.io": "^4.8.3"

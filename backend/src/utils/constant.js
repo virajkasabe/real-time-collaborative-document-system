@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 export const loginType = Object.freeze({
   EMAIL_PASSWORD: "Email Password",
@@ -21,22 +22,19 @@ export const redisEvent = Object.freeze({
 export const loginTypeEnum = Object.values(loginType);
 =======
 /*
+=======
+>>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 
-    write here contanst variable
-
-*/
-
-
-export const loginType = {
+export const loginType = Object.freeze({
       EMAIL_PASSWORD : "EMAIL_PASSWORD",
       GOOGLE : "GOOGLE"
-}
+})
 
-export const docsUserType = {
+export const docsUserType = Object.freeze({
   VIEWR : "Viwer",
   EDITOR : "Editor",
   OWNER : "Owner"
-}
+})
 
 
 export const loginTypeEnum = Object.values(loginType)

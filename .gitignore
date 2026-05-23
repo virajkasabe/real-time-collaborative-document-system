@@ -145,10 +145,14 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 
 
 #  etc file
 emoji_pack_.js
+<<<<<<< HEAD
 test.html
 
 
@@ -156,3 +160,5 @@ test.html
 info.html
 =======
 >>>>>>> 5535fda (Initial commit)
+=======
+>>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
