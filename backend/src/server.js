@@ -41,8 +41,8 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { ENV } from "./config/ENV.js";
 import { connectDB } from "./db/index.js";
-import { initializeSocketIO } from "./socket/socket.js";
 import { RedisConnect } from "./redis/client.js";
+import { initializeSocketIO } from "./socket/socket.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -71,8 +71,10 @@ app.use(helmet());
 // TODO : FIRST CHECK THE HEALTH ROUTE
 
 // ?? ADD ALL ROUTES HERE
+import AuthRouter from "./module/auth/auth.route.js";
 
 // TODO : USE ALL ROUTES HERE
+app.use("/api/v1/rtcds/auth", AuthRouter);
 
 initializeSocketIO(io);
 

@@ -4,16 +4,21 @@ import { redisEvent } from "../utils/constant.js";
 
 const client = new Redis(ENV.REDIS_URI, { lazyConnect: true });
 <<<<<<< HEAD
+<<<<<<< HEAD
 const Subscriber = new Redis(ENV.REDIS_URI, { lazyConnect: true });
 =======
 const Subscriber = new Redis(ENV.REDIS_URI,{ lazyConnect: true });
 >>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
+=======
+const Subscriber = new Redis(ENV.REDIS_URI, { lazyConnect: true });
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 const Publisher = new Redis(ENV.REDIS_URI, { lazyConnect: true });
 let isConnected = false;
 
 export const RedisConnect = async () => {
   try {
     client.on(redisEvent.ERROR, (error) => {
+<<<<<<< HEAD
 <<<<<<< HEAD
       console.error(`REDIS CLIENT ERROR 🚫🌐⚡ : ${error.message}`);
     });
@@ -26,15 +31,22 @@ export const RedisConnect = async () => {
       console.error(`REDIS PUB CLIENT ERROR 📵⚡: ${error.message}`);
 =======
       console.error(`REDIS CLIENT ERROR 📢 : ${error.message}`);
+=======
+      console.error(`REDIS CLIENT ERROR 🚫🌐⚡ : ${error.message}`);
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
     });
 
     Subscriber.on(redisEvent.ERROR, (error) => {
-      console.error(`REDIS SUB CLIENT ERROR 📢 : ${error.message}`);
+      console.error(`REDIS SUB CLIENT ERROR‼️ : ${error.message}`);
     });
 
     Publisher.on(redisEvent.ERROR, (error) => {
+<<<<<<< HEAD
       console.error(`REDIS PUB CLIENT ERROR 📢 : ${error.message}`);
 >>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
+=======
+      console.error(`REDIS PUB CLIENT ERROR 📵⚡: ${error.message}`);
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
     });
 
     await Promise.all([
@@ -43,6 +55,7 @@ export const RedisConnect = async () => {
       Subscriber.connect(),
     ]);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     isConnected = true;
 
@@ -58,6 +71,14 @@ export const RedisConnect = async () => {
         isConnected
     }
 >>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
+=======
+    isConnected = true;
+
+    return {
+      client,
+      isConnected,
+    };
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
   } catch (error) {
     console.error(error.message || "redies connection Error");
     isConnected = false;
@@ -67,10 +88,14 @@ export const RedisConnect = async () => {
 // ?? ===== USER =====
 // ***** SET *****
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 export const setUser = async (userId, payload, expiry = 3600) => {
   if (!client || !isConnected) return null;
   const key = `user:${userId}`;
   return await client.setex(key, expiry, JSON.stringify(payload));
+<<<<<<< HEAD
 };
 
 // ***** GET *****
@@ -254,31 +279,76 @@ export const setUser = (userId, payload, expiry=3600) => {
   if (!client) return null;
   const key = `user:${userId}`
   return await client.setex(key,expiry, JSON.stringify(payload))
+=======
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 };
 
 // ***** GET *****
-export const getUser = (userId) =>{
-    const key = `user:${userId}`
-    const payload = await client.get(key)
-    return payload ? JSON.parse(payload) : null
-}
+export const getUser = async (userId) => {
+  if (!client || !isConnected) return null;
+  const key = `user:${userId}`;
+  const payload = await client.get(key);
+  return payload ? JSON.parse(payload) : null;
+};
 
 // ! ***** DET *****
-export const deleteuser = (userId) => {
-  const key = `user:${userId}`
-  return await client.del(key)
-}
-
+export const deleteuser = async (userId) => {
+  if (!client || !isConnected) return null;
+  const key = `user:${userId}`;
+  return await client.del(key);
+};
 
 // ?? ===== DOCUMENT =====
+// ***** SET *****
+export const setDocument = async (docId, payload, expiry = 60) => {
+  if (!client || !isConnected) return null;
+  const key = `doc:${docId}`;
+  return await client.setex(key, expiry, JSON.stringify(payload));
+};
 
+// ***** GET *****
+export const getDocument = async (docId) => {
+  if (!client || !isConnected) return null;
+  const key = `doc:${docId}`;
+  const payload = await client.get(docId);
+  return payload ? JSON.parse(payload) : null;
+};
 
+// ! ***** DET *****
+export const deleteDocumet = async (docId) => {
+  if (!client || !isConnected) return null;
+  const key = `doc:${docId}`;
+  return await client.del(key);
+};
 
+// ?? ===== COLLABORATION =====
+// ***** send collab *****
+export const sendCollaboration = async (collabID, payload, expiry = 20) => {
+  if (!client || !isConnected) return null;
+  const key = `collab:${collabID}`;
+  await client.setex(key, expiry, JSON.stringify(payload));
+};
 
+// ***** accept collab *****
+export const acceptCollaboration = async (collabID) => {
+  if (!client || !isConnected) return null;
+  const key = `collab:${collabID}`;
+  const payload = await client.get(key);
+  return payload ? JSON.parse(payload) : null;
+};
 
+<<<<<<< HEAD
 
 
 
 >>>>>>> 4e9ac5c (feat(auth): implement user model with password hashing, token generation, and email verification features)
+=======
+//!! ***** delete collab *****
+export const deleteCollaboration = async (collabID) => {
+  if (!client || !isConnected) return null;
+  const key = `collab:${collabID}`;
+  await client.del(key);
+};
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 
 export { Publisher, Subscriber };

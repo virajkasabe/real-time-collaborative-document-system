@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
+<<<<<<< HEAD
 import { deleteuser, getOTP, getUser, setOTP, setUser } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -527,18 +531,353 @@ export const deleteUser = asyncHandler(async (req, res) => {
 /*
        === auth controller ===
        controllers
+=======
+import { deleteuser, setUser } from "../../redis/client.js";
+import ApiError from "../../utils/ApiError.js";
+import asyncHandler from "../../utils/asyncHandler.js";
+import ApiResponse from "../../utils/ApiResponse.js";
+import { secureUser } from "../../utils/helper.js";
+import User from "./auth.model.js";
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 
-      register,
-      login,
-      logout,
-      fetch,
-      verifyEmail, -- for viaLogin EMAIL,PASSWORD
-      forgetPasswordRequest,
-      changePassword
+const option = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+};
 
-      !!---
-      user delete
+export const generateAccessRefreshToken = async (userId) => {
+  const user = await User.findById(userId);
 
+  const accessToken = await user.generateAccessToken();
+  const refreshToken = await user.generateRefreshToken();
 
+<<<<<<< HEAD
 */
 >>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)
+=======
+  user.refreshToken = refreshToken;
+
+  await user.save({ validateBeforeSave: false });
+
+  return {
+    refreshToken,
+    accessToken,
+  };
+};
+
+export const registerUser = asyncHandler(async (req, res) => {
+  const { fullName, email, password } = req.body;
+  console.log(req.body);
+
+  // requiredField([fullName,email,password])
+
+  const avatar = req.files?.avatar?.[0]?.path;
+
+  let avatarURI;
+
+  if (avatar) {
+    avatarURI = await uploadCloudinary(avatar);
+  }
+
+  const alreadyExist = await User.findOne({ email });
+
+  if (alreadyExist) {
+    throw new ApiError(400, `${alreadyExist.role} already exist`);
+  }
+
+  const user = await User.create({
+    fullName,
+    password,
+    email,
+  });
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken();
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await User.findById(user._id).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
+  await user.save({ validateBeforeSave: false });
+
+  console.log(`${ENV.BACKEND_URI}/auth/verify-email/${unHashedToken}`);
+
+  //  await sendEmailVerifyUser(user.email, user.fullName, unHashedToken)
+
+  // await removeRefreshTokenAndPassword(user._id)
+  const { refreshToken, accessToken } = await generateAccessRefreshToken(
+    user._id
+  );
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, option)
+    .cookie("refreshToken", refreshToken, option)
+    .json(new ApiResponse(200, {}, `user created  successfully`));
+});
+
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  console.log(req.body);
+
+  // requiredField([email,password])
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(401, "User doesn't exist with this email");
+  }
+
+  if (!user.isEmailVerified) {
+    throw new ApiError(
+      401,
+      "User can't login because user didn't verify email"
+    );
+  }
+
+  const passwordValid = await user.isPasswordCorrect(password);
+
+  if (!passwordValid) {
+    throw new ApiError(403, "Please check credentials");
+  }
+
+  const { refreshToken, accessToken } = await generateAccessRefreshToken(
+    user._id
+  );
+
+  const secureUSER = await secureUser(user._id);
+
+  await setUser(secureUSER._id, secureUSER);
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, option)
+    .cookie("refreshToken", refreshToken, option)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: secureUSER,
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        },
+        `user logged in successfully`
+      )
+    );
+});
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  await deleteuser(req.user._id);
+
+  await User.findByIdAndUpdate(
+    user._id,
+    {
+      $set: {
+        refreshToken: "",
+      },
+    },
+    { new: true }
+  );
+
+  return res
+    .status(200)
+    .cookie("accessToken", "", option)
+    .cookie("refreshToken", "", option)
+    .json(new ApiResponse(200, {}, "user logged out successfully"));
+});
+
+export const refreshTokenHandler = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is required");
+  }
+
+  try {
+    const decodedToken = jwt.verify(refreshToken, ENV.REFRESH_TOKEN_SECRET);
+    const user = await User.findById(decodedToken?._id);
+
+    if (!user || user.refreshToken !== refreshToken) {
+      throw new ApiError(401, "Invalid or expired refresh token");
+    }
+
+    const { refreshToken: newRefreshToken, accessToken } =
+      await generateAccessRefreshToken(user._id);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          accessToken,
+          refreshToken: newRefreshToken,
+        },
+        "Token refreshed successfully"
+      )
+    );
+  } catch (err) {
+    throw new ApiError(401, "Invalid refresh token");
+  }
+});
+
+export const currentUser = asyncHandler(async (req, res) => {
+  // const user = await User.findById(req.user?._id).populate()
+
+  //  await removeRefreshTokenAndPassword(user._id)
+
+  const user = req.user;
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "user fetch Successfully"));
+});
+
+export const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, phoneNumber } = req.body;
+
+  if (!fullName && !phoneNumber) {
+    throw new ApiError(400, "FullName or PhoneNumber is required");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        ...(fullName && { fullName }),
+        ...(phoneNumber && { phoneNumber }),
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+
+export const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is missing");
+  }
+
+  const avatar = await uploadCloudinary(avatarLocalPath);
+
+  if (!avatar.url) {
+    throw new ApiError(400, "Error while uploading avatar");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar updated successfully"));
+});
+
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  // requiredField([oldPassword, newPassword])
+
+  const user = await User.findById(req.user._id);
+
+  const isValidaPassword = await user.isPasswordCorrect(oldPassword);
+
+  if (!isValidaPassword) {
+    throw new ApiError(404, "Credentials failed");
+  }
+
+  user.password = newPassword;
+
+  user.save({ validateBeforeSave: false });
+
+  //  await removeRefreshTokenAndPassword(user._id)
+
+  return res
+    .status(204)
+    .json(new ApiResponse(204, {}, `user password changed successfully`));
+});
+
+export const verifyEmailRequest = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "user not found");
+  }
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken(user._id);
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(204)
+    .json(
+      new ApiResponse(204, { token: unHashedToken }, `user verify emailId`)
+    );
+});
+
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { unHashedToken } = req.params;
+
+  if (!unHashedToken) {
+    throw new ApiError(400, "Email verification token missing");
+  }
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(unHashedToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpiry: { $gt: Date.now() },
+  }).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired verification token");
+  }
+
+  await setUser(user._id, user);
+  user.isEmailVerified = true;
+
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Email verified successfully"));
+});
+
+export const deleteUser = asyncHandler(async (req, res) => {
+  const { email } = req.params;
+
+  await User.findOneAndDelete({ email });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User DELETE Successfully"));
+});
+>>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
