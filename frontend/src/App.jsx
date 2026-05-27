@@ -6,6 +6,7 @@ import TeamActivityTable from './components/TeamActivityTable';
 import RecentDocumentsTable from './components/RecentDocumentsTable';
 import Modals from './components/Modals';
 import CollabActivityFeed from './components/CollabActivityFeed';
+import EditingPage from './pages/EditingPage';
 import { 
   ArrowRight,
   ClipboardList,
@@ -103,6 +104,7 @@ export default function App() {
     return saved === 'light' ? 'light' : 'dark';
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentDocument, setCurrentDocument] = useState(null);
   
   // Synchronize theme classes on mount & state change
   useEffect(() => {
@@ -234,6 +236,7 @@ export default function App() {
       setDocuments([newDoc, ...documents]);
       setStats(prev => ({ ...prev, totalDocuments: prev.totalDocuments + 1 }));
       showToast(`Created document "${payload.title}"`, 'success');
+      setCurrentDocument(newDoc); // Auto-open inside editor!
       
       setActivityLogs([
         { id: `act-${activityLogs.length + 1}`, text: `Eleanor created document "${payload.title}"`, time: 'Just now', type: 'create' },
@@ -389,6 +392,31 @@ export default function App() {
     return () => clearInterval(liveInterval);
   }, [teamMembers.length]);
 
+  if (currentDocument) {
+    return (
+      <EditingPage
+        document={currentDocument}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onBack={() => setCurrentDocument(null)}
+        onSave={(newTitle, newContent, wordCount) => {
+          setDocuments(prev => prev.map(d => {
+            if (d.id === currentDocument.id) {
+              return {
+                ...d,
+                name: newTitle,
+                content: newContent,
+                wordCount: wordCount,
+                updatedAt: 'Just now'
+              };
+            }
+            return d;
+          }));
+        }}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen flex ${theme === 'dark' ? 'dark' : ''} transition-colors duration-300 bg-[#F7FAFF] dark:bg-[#070B14] text-[#081B3A] dark:text-[#E5E7EB]`}>
       
@@ -483,6 +511,7 @@ export default function App() {
                     onRestore={(doc) => { setModalType('restore'); setSelectedDoc(doc); }}
                     onDelete={handleDeleteDoc}
                     searchQuery={searchQuery}
+                    onEdit={setCurrentDocument}
                   />
                 </div>
 
