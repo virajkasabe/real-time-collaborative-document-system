@@ -5,7 +5,7 @@ export { default } from "./dashboard/RecentDocuments";
 import React from 'react';
 import { FileText, ArrowRight } from 'lucide-react';
 
-export default function RecentDocumentsTable({ documents, searchQuery }) {
+export default function RecentDocumentsTable({ documents, searchQuery, onEdit }) {
   const filteredDocs = documents.filter(doc => 
     doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doc.owner.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -25,7 +25,7 @@ export default function RecentDocumentsTable({ documents, searchQuery }) {
         return (
           <div
             key={doc.id}
-            onClick={() => alert(`Launching document workspace for "${doc.name}"...`)}
+            onClick={() => onEdit ? onEdit(doc) : alert(`Launching document workspace for "${doc.name}"...`)}
             className="flex items-center justify-between py-2.5 px-3.5 bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/10 hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A] hover:border-[#E5E7EB] dark:hover:border-white/20 rounded-lg transition-all duration-300 cursor-pointer group"
           >
             {/* Left: Document Icon + Title & Metadata */}
