@@ -11,6 +11,7 @@
   },
   "dependencies": {
 <<<<<<< HEAD
+<<<<<<< HEAD
     "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.17.0",
     "lucide-react": "^1.17.0",
@@ -32,8 +33,13 @@
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
 =======
+=======
+    "@tailwindcss/vite": "^4.3.0",
+    "lucide-react": "^1.16.0",
+>>>>>>> 02b645e (Improve dashboard UI and fix theme system)
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

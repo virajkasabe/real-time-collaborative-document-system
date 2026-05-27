@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 @import "tailwindcss";
 
 ::placeholder {
@@ -17,103 +18,199 @@
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+=======
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+>>>>>>> 02b645e (Improve dashboard UI and fix theme system)
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@custom-variant dark (&:where(.dark, .dark *));
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', sans-serif;
+  
+  /* SaaS Theme Variables */
+  --color-brand-blue: #0D6EFD;      /* Accent Blue */
+  --color-brand-accent: #0D6EFD;    /* Accent Blue */
+  --color-brand-sky: rgba(13, 110, 253, 0.1); /* Low opacity active accent */
+  --color-brand-bg: #F7FAFF;       /* Light Background */
+  --color-brand-white: #FFFFFF;    /* Light Cards BG */
+  --color-brand-dark: #081B3A;     /* Light Text */
+  --color-brand-gray: #6B7280;     /* Light Muted Text */
+  --color-[#070B14]: #070B14;
+  --color-[#0B1220]: #0B1220;
+  --color-[#0F172A]: #0F172A;
+  --color-[#E5E7EB]: #E5E7EB;
+  --color-[#94A3B8]: #94A3B8;
+  --color-[#081B3A]: #081B3A;
+  --color-[#6B7280]: #6B7280;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+:root {
+  font-family: var(--font-sans);
+  color-scheme: light dark;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background-color: #F7FAFF;
+  color: #081B3A;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+body.dark {
+  background-color: #070B14;
+  color: #E5E7EB;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+
+/* Custom Minimal SaaS Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
 
+<<<<<<< HEAD
 code {
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
 >>>>>>> 5b0a76b (Completed frontend and backend base setup)
+=======
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* SaaS Flat Card (8px rounded, extremely subtle borders, no shadow/glassmorphism) */
+.glass-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .glass-card {
+  background-color: #0F172A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Sidebar panel boundaries */
+.glass-panel {
+  background-color: #FFFFFF;
+  border-right: 1px solid #E5E7EB;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .glass-panel {
+  background-color: #0B1220;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Primary linear gradient button style */
+.btn-gradient {
+  background: linear-gradient(135deg, #0D6EFD, #3FA3FF);
+  color: #FFFFFF;
+}
+
+.btn-gradient:hover {
+  filter: brightness(1.05);
+}
+
+/* Ribbon tab underline */
+.ribbon-tab-active {
+  position: relative;
+}
+
+.ribbon-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background-color: #0D6EFD;
+}
+
+/* Text weight hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  color: #081B3A;
+  font-weight: 600;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #f1f5f9;
+}
+
+/* Google Doc Typing Indicator Keyframes */
+@keyframes typing {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.typing-dot {
+  animation: typing 1.4s infinite;
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: currentColor;
+  margin: 0 1px;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Blinking collaborative colored cursor markers */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.collab-cursor-active {
+  display: inline-block;
+  width: 2px;
+  height: 1.15em;
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+}
+
+.cursor-sarah {
+  background-color: #7c3aed; /* Purple */
+}
+
+.cursor-dave {
+  background-color: #10b981; /* Green */
+}
+
+.cursor-julian {
+  background-color: #f59e0b; /* Amber */
+>>>>>>> 02b645e (Improve dashboard UI and fix theme system)
 }
