@@ -2,6 +2,7 @@
 <<<<<<< HEAD
 import User from "../module/auth/auth.model.js";
 import Doc from "../module/document/document.model.js";
+<<<<<<< HEAD
 import { getDocument, getUser, setDocument, setUser } from "../redis/client.js";
 import ApiError from "./ApiError.js";
 
@@ -87,11 +88,15 @@ export const textToHtmlConvertor = (textString) => {
 =======
 import User from "../module/auth/auth.model.js";
 >>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
+=======
+import { getDocument, setDocument } from "../redis/client.js";
+>>>>>>> 228be66 (feat(document): implement document creation and fetching with Redis caching)
 
 export const secureUser =  async(userId) => {
-  return await User.findById(userId).select("-password -refreshToken -emailVerificationToken -emailVerificationExpiry")
+  await User.findById(userId).select("-password -refreshToken -emailVerificationToken -emailVerificationExpiry")
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
       some function which was repeated this will write here and export and use it
 
@@ -99,3 +104,16 @@ export const secureUser =  async(userId) => {
 >>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)
 =======
 >>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
+=======
+export const fetchDoc = async(docId) => {
+    let document = null;
+    document = await getDocument(docId)
+    if(!document) {
+          document = await Doc.findById(docId)
+            if(document) {
+                  await setDocument(docId, document)
+            }
+    }
+    return document
+}
+>>>>>>> 228be66 (feat(document): implement document creation and fetching with Redis caching)
