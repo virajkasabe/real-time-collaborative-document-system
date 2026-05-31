@@ -62,6 +62,21 @@ export const deleteuser = async (userId) => {
   return await client.del(key);
 };
 
+// ***** SET_OTP *****
+export const setOTP = async (userId, payload, expiry = 600) => {
+  if (!client || !isConnected) return null;
+  const key = `user:${userId}:otp`;
+  return await client.setex(key, expiry, JSON.stringify(payload));
+};
+
+// ***** GET_OTP *****
+export const getOTP = async (userId) => {
+  if (!client || !isConnected) return null;
+  const key = `user:${userId}:otp`;
+  const payload = await client.get(key);
+  return payload ? JSON.parse(payload) : null;
+};
+
 // ?? ===== DOCUMENT =====
 // ***** SET *****
 export const setDocument = async (docId, payload, expiry = 60) => {
@@ -87,25 +102,43 @@ export const deleteDocumet = async (docId) => {
 
 // ?? ===== COLLABORATION =====
 // ***** send collab *****
-export const sendCollaboration = async (collabID, payload, expiry = 20) => {
+export const sendCollaboration = async (collabId, payload, expiry = 20) => {
   if (!client || !isConnected) return null;
-  const key = `collab:${collabID}`;
+  const key = `collab:${collabId}`;
   await client.setex(key, expiry, JSON.stringify(payload));
 };
 
 // ***** accept collab *****
-export const acceptCollaboration = async (collabID) => {
+export const acceptCollaboration = async (collabId) => {
   if (!client || !isConnected) return null;
-  const key = `collab:${collabID}`;
+  const key = `collab:${collabId}`;
   const payload = await client.get(key);
   return payload ? JSON.parse(payload) : null;
 };
 
 //!! ***** delete collab *****
-export const deleteCollaboration = async (collabID) => {
+export const deleteCollaboration = async (collabId) => {
   if (!client || !isConnected) return null;
-  const key = `collab:${collabID}`;
+  const key = `collab:${collabId}`;
   await client.del(key);
+};
+
+// ?? ===== DOCUMENT CHANGE OPERATION =====
+export const setUpdateDocumentOperation = async (
+  docId,
+  payload,
+  expiry = 20
+) => {
+  if (!client || !isConnected) return null;
+  const key = `doc:${docId}:op`;
+  return await client.setex(key, expiry, JSON.stringify(payload));
+};
+
+export const getUpdateDocumentOperation = async (docId) => {
+  if (!client || !isConnected) return null;
+  const key = `doc:${docId}:op`;
+  const payload = await client.get(key);
+  return payload ? JSON.parse(payload) : null;
 };
 
 export { Publisher, Subscriber };

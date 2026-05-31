@@ -4,11 +4,14 @@ export const loginType = Object.freeze({
       GOOGLE : "GOOGLE"
 })
 
-export const docsUserType = Object.freeze({
+export const DOCUMENT_ROLES = Object.freeze({
   VIEWR : "Viwer",
   EDITOR : "Editor",
   OWNER : "Owner"
 })
+
+export const DOCUMENT_ROLES_ENUM = Object.values(DOCUMENT_ROLES)
+
 
 export const redisEvent = Object.freeze({
     ERROR : "error",
@@ -17,7 +20,6 @@ export const redisEvent = Object.freeze({
 
 
 export const loginTypeEnum = Object.values(loginType)
-export const docsUserTypeEnum = Object.values(docsUserType)
 
 
 

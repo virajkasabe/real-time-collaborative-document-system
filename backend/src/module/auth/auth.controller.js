@@ -2,11 +2,11 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
-import { deleteuser, setUser } from "../../redis/client.js";
+import { deleteuser, getOTP, setOTP, setUser } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
-import asyncHandler from "../../utils/asyncHandler.js";
 import ApiResponse from "../../utils/ApiResponse.js";
-import { secureUser } from "../../utils/helper.js";
+import asyncHandler from "../../utils/asyncHandler.js";
+import { otpGenerator, requiredField, secureUser } from "../../utils/helper.js";
 import User from "./auth.model.js";
 
 const option = {
@@ -35,7 +35,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   const { fullName, email, password } = req.body;
   console.log(req.body);
 
-  // requiredField([fullName,email,password])
+  requiredField([fullName, email, password]);
 
   const avatar = req.files?.avatar?.[0]?.path;
 
@@ -48,7 +48,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   const alreadyExist = await User.findOne({ email });
 
   if (alreadyExist) {
-    throw new ApiError(400, `${alreadyExist.role} already exist`);
+    throw new ApiError(400, `${alreadyExist.email} already exist`);
   }
 
   const user = await User.create({
@@ -63,6 +63,12 @@ export const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
 
+  const otp = otpGenerator();
+  await setOTP(user._id, { otp: otp });
+  console.log({
+    otp,
+  });
+
   await User.findById(user._id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
@@ -73,7 +79,6 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   //  await sendEmailVerifyUser(user.email, user.fullName, unHashedToken)
 
-  // await removeRefreshTokenAndPassword(user._id)
   const { refreshToken, accessToken } = await generateAccessRefreshToken(
     user._id
   );
@@ -82,7 +87,9 @@ export const registerUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
-    .json(new ApiResponse(200, {}, `user created  successfully`));
+    .json(
+      new ApiResponse(200, { token: hashedToken }, `user created  successfully`)
+    );
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
@@ -90,7 +97,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   console.log(req.body);
 
-  // requiredField([email,password])
+  requiredField([email, password]);
 
   const user = await User.findOne({ email });
 
@@ -204,10 +211,10 @@ export const currentUser = asyncHandler(async (req, res) => {
 });
 
 export const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, phoneNumber } = req.body;
+  const { fullName } = req.body;
 
-  if (!fullName && !phoneNumber) {
-    throw new ApiError(400, "FullName or PhoneNumber is required");
+  if (!fullName) {
+    throw new ApiError(400, "FullName is required");
   }
 
   const user = await User.findByIdAndUpdate(
@@ -215,7 +222,6 @@ export const updateAccountDetails = asyncHandler(async (req, res) => {
     {
       $set: {
         ...(fullName && { fullName }),
-        ...(phoneNumber && { phoneNumber }),
       },
     },
     { new: true }
@@ -254,6 +260,73 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
 
+export const forgetPasswordRequest = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "user not found");
+  }
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user.generateTemporaryToken(user._id);
+
+  user.forgetPasswordRequest = hashedToken;
+  user.forgotPasswordExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+
+  console.log(`${ENV.RESET_PASSWORD_URL}/${unHashedToken}`);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { token: unHashedToken },
+        "forget password url send to your email"
+      )
+    );
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { unHashedToken } = req.params;
+
+  const { oldPassword, newPassword } = req.body;
+
+  if (oldPassword === newPassword) {
+    throw new ApiError(400, "oldPassword and new password can't be same");
+  }
+
+  if (!unHashedToken) {
+    throw new ApiError(400, "Email verification token missing");
+  }
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(unHashedToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    forgotPasswordToken: hashedToken,
+    forgotPasswordExpiry: { $gt: Date.now() },
+  }).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
+  user.password = newPassword;
+
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordExpiry = undefined;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Your password was changed successfully"));
+});
+
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
@@ -279,7 +352,9 @@ export const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 export const verifyEmailRequest = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(404, "user not found");
@@ -288,20 +363,29 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
   const { unHashedToken, hashedToken, tokenExpiry } =
     user.generateTemporaryToken(user._id);
 
+  const otp = otpGenerator();
+
+  await setOTP(user._id, { otp: otp });
+
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
 
   await user.save({ validateBeforeSave: false });
 
+  console.log("OTP", otp);
+
+  console.log(`${ENV.BACKEND_URI}/auth/verify-email/${unHashedToken}`);
+
   return res
-    .status(204)
+    .status(200)
     .json(
-      new ApiResponse(204, { token: unHashedToken }, `user verify emailId`)
+      new ApiResponse(200, { token: unHashedToken }, `user verify emailId`)
     );
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { unHashedToken } = req.params;
+  const { otp } = req.body;
 
   if (!unHashedToken) {
     throw new ApiError(400, "Email verification token missing");
@@ -323,6 +407,12 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid or expired verification token");
   }
 
+  const verifyOTP = await getOTP(user._id);
+
+  if (verifyOTP.otp !== otp) {
+    throw new ApiError(401, "OTP INVALID");
+  }
+
   await setUser(user._id, user);
   user.isEmailVerified = true;
 
@@ -336,10 +426,35 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Email verified successfully"));
 });
 
-export const deleteUser = asyncHandler(async (req, res) => {
-  const { email } = req.params;
+const googleLoginCallback = asyncHandler(async (req, res) => {
+  const user = req.user;
 
-  await User.findOneAndDelete({ email });
+  if (!user) {
+    throw new ApiError(401, "Google authentication failed");
+  }
+
+  const { refreshToken, accessToken } = await generateAccessRefreshToken(
+    user._id
+  );
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const redirectUrl = "http://localhost:5173/dashboard";
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, option)
+    .cookie("refreshToken", refreshToken, option)
+    .redirect(
+      `${process.env.CLIENT_URL || "http://localhost:5173"}${redirectUrl}`
+    );
+});
+
+// !! ==== DANGER ZONE ====
+export const deleteUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndDelete(req.user._id);
 
   return res
     .status(200)

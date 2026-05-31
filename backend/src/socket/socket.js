@@ -3,12 +3,17 @@ import jwt from "jsonwebtoken";
 import { ENV } from "../config/ENV.js";
 import { getUser, setUser } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
+import {
+  mountDocumetGetChangeEvent,
+  mountDocumetSetChangeEvent,
+} from "./document.socket.js";
 import { CONNECT_DISCONNET_EVENT, DOCUMENT_EVENT } from "./socketEvents.js";
 
 const mountJoinDocumentEvent = (socket) => {
-  socket.on(DOCUMENT_EVENT.JOIN_DOCUMENT, (docId) => {
-    console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", docId);
-    socket.join(docId);
+  socket.on(DOCUMENT_EVENT.JOIN_DOCUMENT, (message) => {
+    console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", message.docId);
+    socket.join(message.docId);
+    socket.roomId = message.docId
   });
 
   //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
@@ -21,6 +26,8 @@ export const initializeSocketIO = (io) => {
       const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
 
       let token = cookies?.accessToken;
+
+      console.log("Token", token)
 
       if (!token) {
         token = token.handshake.auth?.token;
@@ -35,6 +42,9 @@ export const initializeSocketIO = (io) => {
       }
 
       const decodedToken = jwt.verify(token, ENV.ACCESS_TOKEN_SECRET);
+      if(!decodedToken) {
+         throw new ApiError(401, "Token Expired or Invalid 🤳")
+      }
 
       // TODO : USER SEARCH ON REDIS OR MONGO
       let user;
@@ -51,6 +61,7 @@ export const initializeSocketIO = (io) => {
         }
       }
 
+
       // ?? when didn't didn't find anywhere then token invalid or un-authorized
       if (!user) {
         throw new ApiError(401, "UN-AUTHORIZED TOKEN , TOKEN IS INVALID ⛔");
@@ -64,6 +75,9 @@ export const initializeSocketIO = (io) => {
 
       // common event mounted here
       mountJoinDocumentEvent(socket);
+      mountDocumetSetChangeEvent(socket);
+
+      mountDocumetGetChangeEvent(socket);
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
         console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER ID : ", user._id.toString());
@@ -78,8 +92,4 @@ export const initializeSocketIO = (io) => {
       );
     }
   });
-};
-
-export const emitSocketEvent = (req, roomId, event, payload) => {
-  req.app.get("io").in(roomId).emit(event, payload);
 };

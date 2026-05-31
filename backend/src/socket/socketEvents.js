@@ -2,18 +2,18 @@
 // *** SOCKET EVENT
 
 export const DOCUMENT_EVENT = Object.freeze({
-  JOIN_DOCUMENT: "Join_Document",
+  JOIN_DOCUMENT: "joinDocument",
   LEAVE_DOCUMENT: "Leave_Document",
   LEFT_DOCUMENT: "Left_Document",
-  EDIT_DOCUMENT: "Edit_Document",
+  CHANGE_DOCUMENT: "Change_Document",
   VIEW_DOCUMENT: "View_Document",
 });
 
 export const CONNECT_DISCONNET_EVENT = Object.freeze({
-  CONNECTION: "Connection",
+  CONNECTION: "connection",
   DISCONNECT: "Disconnect",
   CONNECT: "Connect",
-  SOCKET_ERROR: "Sokcet_Error",
+  SOCKET_ERROR: "Socket_Error",
 });
 
 export const CURSOR_EVENT = Object.freeze({

@@ -14,6 +14,7 @@ export const ENV = {
   CORS_ORIGIN: process.env.CORS_ORIGIN,
   CLIENT_URL: process.env.CLIENT_URL,
   BACKEND_URI: process.env.BACKEND_URI,
+  RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL,
 
   // TOKEN SECRET AND EXPIRY,
 

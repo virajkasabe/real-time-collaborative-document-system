@@ -4,12 +4,15 @@ import {
   changeCurrentPassword,
   currentUser,
   deleteUser,
+  forgetPasswordRequest,
   loginUser,
   logoutUser,
   refreshTokenHandler,
   registerUser,
+  resetPassword,
   updateAccountDetails,
   verifyEmail,
+  verifyEmailRequest,
 } from "./auth.controller.js";
 
 const router = Router();
@@ -28,9 +31,16 @@ router.route("/profile").put(verifyJWT, updateAccountDetails);
 
 router.route("/password").put(verifyJWT, changeCurrentPassword);
 
-router.route("/verify-email/:unHashedToken").get(verifyEmail);
+router.route("/verify-email/:unHashedToken").post(verifyEmail);
+
+router.route("/verify-email-request").post(verifyEmailRequest);
+
+router.route("/forgot-password-request").post(forgetPasswordRequest)
+
+router.route("/reset-password/:unHashedToken").post(resetPassword)
+
 
 //!! =====  DANGER ZONE =====
-router.route("/delete/:email").delete(deleteUser);
+router.route("/delete").delete(deleteUser);
 
 export default router;
