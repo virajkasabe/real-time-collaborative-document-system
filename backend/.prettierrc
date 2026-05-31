@@ -3,20 +3,10 @@
   "bracketSpacing": true,
   "tabWidth": 2,
   "trailingComma": "es5",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
   "semi": true,
   "printWidth": 80,
   "arrowParens": "always",
   "endOfLine": "lf",
   "jsxBracketSameLine": false,
   "proseWrap": "preserve"
-<<<<<<< HEAD
-=======
-  "semi": true
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
-=======
->>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
 }

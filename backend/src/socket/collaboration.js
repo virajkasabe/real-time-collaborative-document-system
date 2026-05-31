@@ -32,9 +32,9 @@ export const acceptCollab = async(io,socket,data) => {
       });
     }
 
-    const { docId, role ,senderId} = collabData
+    const { docId, role ,senderId } = collabData
 
-    const sender = await secureUser(senderId)
+    const sender = await secureUser(senderId )
 
     const doc = await fetchDoc(docId);
 
