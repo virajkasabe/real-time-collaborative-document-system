@@ -1,6 +1,5 @@
 # real-time-collaborative-document-system
 A secure real-time collaborative document editor inspired by Google Docs and Microsoft Word using React, Node.js, Socket.IO, MongoDB, and Redis.
-<<<<<<< HEAD
 
 ## REDIS
 
@@ -127,5 +126,3 @@ on - reciver
 export PORT=5000 && node backend/src/server.js
 
 ```
-=======
->>>>>>> 5535fda (Initial commit)

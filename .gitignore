@@ -67,11 +67,8 @@ web_modules/
 
 # dotenv environment variable files
 .env
-<<<<<<< HEAD
-=======
 .env.*
 !.env.example
->>>>>>> 5535fda (Initial commit)
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -88,9 +85,6 @@ dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and not Next.js
-# https://nextjs.org/blog/next-9-1#public-directory-support
-# public
 
 # vuepress build output
 .vuepress/dist
@@ -144,21 +138,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 
-
-#  etc file
+# etc file
 emoji_pack_.js
-<<<<<<< HEAD
 test.html
-
-
-## info file
 info.html
-=======
->>>>>>> 5535fda (Initial commit)
-=======
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
+*.md
