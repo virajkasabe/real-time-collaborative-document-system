@@ -34,18 +34,15 @@ export const fetchDoc = async (docId) => {
       await setDocument(docId, doc);
     // }
   }
-
   return document;
 };
 
 export const otpGenerator = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let otp = "";
-
   for (let i = 0; i < 6; i++) {
     otp += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
   return otp;
 };
 

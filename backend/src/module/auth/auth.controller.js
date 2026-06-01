@@ -32,8 +32,8 @@ export const generateAccessRefreshToken = async (userId) => {
 };
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, email, password } = req.body;
   console.log(req.body);
+  const { fullName, email, password } = req.body;
 
   requiredField([fullName, email, password]);
 
@@ -88,7 +88,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
     .json(
-      new ApiResponse(200, { token: hashedToken }, `user created  successfully`)
+      new ApiResponse(200, { token: unHashedToken}, `user created  successfully`)
     );
 });
 
@@ -105,7 +105,9 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "User doesn't exist with this email");
   }
 
-  if (!user.isEmailVerified) {
+  console.log(user)
+
+  if (user.isEmailVerified === false) {
     throw new ApiError(
       401,
       "User can't login because user didn't verify email"
@@ -387,6 +389,9 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const { unHashedToken } = req.params;
   const { otp } = req.body;
 
+  console.log("unHashedToken",unHashedToken)
+  console.log("otp",otp)
+
   if (!unHashedToken) {
     throw new ApiError(400, "Email verification token missing");
   }
@@ -402,6 +407,8 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   }).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
+
+
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired verification token");
@@ -420,6 +427,8 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = undefined;
 
   await user.save({ validateBeforeSave: false });
+
+    console.log("user", user)
 
   return res
     .status(200)

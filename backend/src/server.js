@@ -7,9 +7,11 @@ import { ENV } from "./config/ENV.js";
 import { connectDB } from "./db/index.js";
 import { RedisConnect } from "./redis/client.js";
 import { initializeSocketIO } from "./socket/socket.js";
+import cors from 'cors'
 
 const app = express();
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
   pingTimeout: 60000,
   cors: {
@@ -18,6 +20,8 @@ const io = new Server(httpServer, {
   },
 });
 
+
+
 app.set("io", io);
 
 app.use(express.json({ extended: true, limit: "40kb" }));
@@ -25,6 +29,10 @@ app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 app.use(express.static("/public"));
 app.use(cookieParser());
 app.use(helmet());
+app.use(cors({
+    origin : ENV.CORS_ORIGIN,
+    credentials : true
+}))
 
 // TODO : FIRST CHECK THE HEALTH ROUTE
 

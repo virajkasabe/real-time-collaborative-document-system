@@ -3,10 +3,10 @@
 
 export const DOCUMENT_EVENT = Object.freeze({
   JOIN_DOCUMENT: "joinDocument",
-  LEAVE_DOCUMENT: "Leave_Document",
-  LEFT_DOCUMENT: "Left_Document",
-  CHANGE_DOCUMENT: "Change_Document",
-  VIEW_DOCUMENT: "View_Document",
+  LEAVE_DOCUMENT: "leaveDocument",
+  LEFT_DOCUMENT: "leftDocument",
+  CHANGE_DOCUMENT: "changeDocument",
+  VIEW_DOCUMENT: "viewDocument",
 });
 
 export const CONNECT_DISCONNET_EVENT = Object.freeze({

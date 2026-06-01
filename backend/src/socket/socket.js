@@ -27,11 +27,9 @@ export const initializeSocketIO = (io) => {
 
       let token = cookies?.accessToken;
 
-      console.log("Token", token)
 
       if (!token) {
         token = token.handshake.auth?.token;
-        console.log("TOKEN FOUND IN HANDSHAKE AUTH 🛜", token);
       }
 
       if (!token) {
