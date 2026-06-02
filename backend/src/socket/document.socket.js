@@ -3,6 +3,7 @@ import {
   setUpdateDocumentOperation,
 } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import { fetchDoc } from "../utils/helper.js";
 import { DOCUMENT_EVENT } from "./socketEvents.js";
 
@@ -16,6 +17,8 @@ export const mountDocumentSendOperation = (socket) => {
   */
 
     // INTEGRETE OT HERE ( operational transformation )
+    // USING TIMESTAMP
+
 
     console.log(data);
     const { docId, delta } = data.data;
@@ -46,3 +49,15 @@ export const mountDocumentReciveOperation = (socket) => {
     return doc;
   });
 };
+
+
+const flushOnMongo = asyncHandler(async(payload)=> {
+
+   // TODO : WHEN USER ON ONGOING WORK THEN EVERY 10SEC TRIGER THIS FUNCTION
+  const { data , docId } = payload;
+
+  // ?? GET ALL DATA FROM REDIS COLLAB
+  // ?? ARRANGE FULL OF DATA
+  // ?? AND FINALLY UPDATE FULL OF DATA
+
+})

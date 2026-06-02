@@ -36,14 +36,18 @@ app.use(cors({
 
 // TODO : FIRST CHECK THE HEALTH ROUTE
 
+
+
 // ?? ADD ALL ROUTES HERE
 import AuthRouter from "./module/auth/auth.route.js";
 import DocRouter from "./module/document/document.route.js";
+import CollabRouter from "./module/collaboration/collab.route.js";
 
 
 // TODO : USE ALL ROUTES HERE
 app.use("/api/v1/rtcds/auth", AuthRouter);
 app.use("/api/v1/rtcds/doc", DocRouter);
+app.use("/api/v1/rtcds/collab", CollabRouter);
 
 initializeSocketIO(io);
 

@@ -102,14 +102,14 @@ export const deleteDocumet = async (docId) => {
 
 // ?? ===== COLLABORATION =====
 // ***** send collab *****
-export const sendCollaboration = async (collabId, payload, expiry = 20) => {
+export const setCollaboration = async (collabId, payload, expiry = 15) => {
   if (!client || !isConnected) return null;
   const key = `collab:${collabId}`;
   await client.setex(key, expiry, JSON.stringify(payload));
 };
 
 // ***** accept collab *****
-export const acceptCollaboration = async (collabId) => {
+export const getCollaboration = async (collabId) => {
   if (!client || !isConnected) return null;
   const key = `collab:${collabId}`;
   const payload = await client.get(key);

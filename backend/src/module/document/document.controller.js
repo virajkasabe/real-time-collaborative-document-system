@@ -1,9 +1,10 @@
-import { getDocument, setDocument } from "../../redis/client.js";
+import { setCollaboration, setDocument } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { fetchDoc } from "../../utils/helper.js";
 import Doc from "./document.model.js";
+
 
 export const createDocument = asyncHandler(async (req, res) => {
   const { title } = req.body;
@@ -33,10 +34,10 @@ export const createDocument = asyncHandler(async (req, res) => {
 export const fetchDocument = asyncHandler(async (req, res) => {
   const { docId } = req.params;
 
-  if(!docId) {
-    throw new ApiError(400, "Doc Id is required")
+  if (!docId) {
+    throw new ApiError(400, "Doc Id is required");
   }
-  const document = await fetchDoc(docId)
+  const document = await fetchDoc(docId);
 
   return res
     .status(200)

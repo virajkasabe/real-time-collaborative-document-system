@@ -35,6 +35,10 @@ const documentSchema = new mongoose.Schema(
         type : Boolean,
         default : false
       },
+      isTrash : {
+        type : Boolean,
+        default : false
+      }
 
   }, { timestamps : true }
 )
