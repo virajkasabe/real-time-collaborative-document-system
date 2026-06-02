@@ -6,18 +6,21 @@ import ApiError from "../utils/ApiError.js";
 import { secureUser } from "../utils/helper.js";
 import { mountCursorChangeOperation } from "./cursor.socket.js";
 import {
-  mountDocumentRecivedOperation,
-  mountJoinDocumentEvent,
-  startDocumentFlushScheduler,
+  mountDocumetGetChangeEvent,
+  mountDocumetSetChangeEvent,
 } from "./document.socket.js";
-import {
-  mountPendingNotification,
-  mountRecivedRealTimeNotification,
-} from "./notification.socket.js";
-import {
-  CONNECT_DISCONNET_EVENT,
-  DOCUMENT_EVENT,
-} from "./socketEvents.js";
+import { CONNECT_DISCONNET_EVENT, DOCUMENT_EVENT } from "./socketEvents.js";
+
+const mountJoinDocumentEvent = (socket) => {
+  socket.on(DOCUMENT_EVENT.JOIN_DOCUMENT, (message) => {
+    console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", message.docId);
+    socket.join(message.docId);
+    socket.roomId = message.docId
+  });
+
+  //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
+  // ** : WRITE HERE THIS LOGIC
+};
 
 export const initializeSocketIO = (io) => {
   startDocumentFlushScheduler()
@@ -58,17 +61,11 @@ export const initializeSocketIO = (io) => {
       socket.emit(CONNECT_DISCONNET_EVENT.CONNECTED);
       console.log(`🤝 USER CONNECTED | USER : ${socket.user.fullName}`);
 
-      // event mounted here
-      mountPendingNotification(socket, io);
-      mountJoinDocumentEvent(socket, io);
-      mountDocumentRecivedOperation(socket, io);
-      mountRecivedRealTimeNotification(socket, io);
-      mountCursorChangeOperation(socket)
+      // common event mounted here
+      mountJoinDocumentEvent(socket);
+      mountDocumetSetChangeEvent(socket);
 
-      // mountDocumentSendOperation(socket);
-      // mountNotificationEvent(socket);
-      // mountJoinDocumentNewUser(socket)
-      // mountNotificationEvent()
+      mountDocumetGetChangeEvent(socket);
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
         console.log("🚨 USER DISS-CONNECTED USER : ", user.fullName);

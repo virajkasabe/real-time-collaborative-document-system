@@ -1,83 +1,50 @@
-import User from "../module/auth/auth.model.js";
-import Doc from "../module/document/document.model.js";
-import { getDocument, getUser, setDocument, setUser } from "../redis/client.js";
-import ApiError from "./ApiError.js";
+// Core Helper utilities for CollabDocs
 
-export const secureUser = async (userId) => {
-  let user = null;
-  user = await getUser(userId.toString())
-  if(!user) {
-       user = await User.findById(userId).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
-      );
-      if(user) {
-            await setUser(userId, user)
-      }
-  }
-  return user;
+// Formats bytes into human readable storage sizes
+export const formatBytes = (bytes, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-export const fetchDoc = async (docId) => {
-  const DOCID = docId.toString()
-  let document = null;
-  document = await getDocument(DOCID);
-  if (!document) {
-    document = await Doc.findById(DOCID);
-      await setDocument(DOCID, document);
-  }
-  if(!document) {
-    throw new ApiError(400, "Document not exists")
-  }
-  return document;
+// Generates a mock UUID-like key
+export const generateId = () => {
+  return 'doc-' + Math.random().toString(36).substr(2, 9);
 };
 
-export const otpGenerator = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let otp = "";
-  for (let i = 0; i < 6; i++) {
-    otp += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return otp;
+// Validates standard emails
+export const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(String(email).toLowerCase());
 };
 
-export const requiredField = (required = []) => {
-  if (required.some((field) => field.trim() === "" || field === undefined)) {
-    throw new ApiError(400, "all field are required");
-  }
+// Returns date time relative descriptions
+export const formatRelativeTime = (timeString) => {
+  if (!timeString) return 'recently';
+  return timeString; // Return standard format for simulated database dates
 };
 
-export const htmlToTextConvertor = (htmlString) => {
-  return htmlString.replace(/<[^>]+>/g, "")
-}
-
-export const textToHtmlConvertor = (textString) => {
-  let content = textString.text || "";
-  const attr = textString.attributes || {};
-
-  if (attr.bold) content = `<strong>${content}</strong>`;
-  if (attr.italic) content = `<em>${content}</em>`;
-  if (attr.underline) content = `<u>${content}</u>`;
-
-  switch (attr.size) {
-    case "huge":
-      content = `<h1>${content}</h1>`;
-      break;
-
-    case "large":
-      content = `<h2>${content}</h2>`;
-      break;
-
-    case "normal":
-      content = `<p>${content}</p>`;
-      break;
-
-    case "small":
-      content = `<small>${content}</small>`;
-      break;
-
-    default:
-      content = `<p>${content}</p>`;
-  }
+export const getRandomColor = () => {
+  const COLORS = [
+    '#4ECDC4', 
+    '#FF6B6B', 
+    '#45B7D1', 
+    '#96CEB4', 
+    '#FFEAA7', 
+    '#DDA0DD', 
+    '#FF8A5C', 
+    '#A29BFE', 
+    '#74B9FF', 
+    '#FD79A8', 
+    '#00B894', 
+    '#E17055',
+  ];
   
-  return content;
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
 };
