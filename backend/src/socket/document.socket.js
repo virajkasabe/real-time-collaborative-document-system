@@ -6,8 +6,8 @@ import ApiError from "../utils/ApiError.js";
 import { fetchDoc } from "../utils/helper.js";
 import { DOCUMENT_EVENT } from "./socketEvents.js";
 
-export const mountDocumetSetChangeEvent = (socket) => {
-  socket.on(DOCUMENT_EVENT.CHANGE_DOCUMENT, async (data) => {
+export const mountDocumentSendOperation = (socket) => {
+  socket.on(DOCUMENT_EVENT.SEND_OPERATION, async (data) => {
     // const { docId, delta } = message;
     //  TODO : FOR TESTING USE MESSAGE BUT WHEN ENTER ON PRODUCTION THE USE DATA OR PAYLOAD
     /*
@@ -18,9 +18,9 @@ export const mountDocumetSetChangeEvent = (socket) => {
     // INTEGRETE OT HERE ( operational transformation )
 
     console.log(data);
-          const { docId, delta } = data.data
-          console.log("delta",delta)
-          console.log("docId",docId)
+    const { docId, delta } = data.data;
+    console.log("delta", delta);
+    console.log("docId", docId);
 
     if (!docId) {
       throw new ApiError(400, "Doc Id is required");
@@ -31,12 +31,11 @@ export const mountDocumetSetChangeEvent = (socket) => {
   });
 };
 
-export const mountDocumetGetChangeEvent = (socket) => {
-  socket.on(DOCUMENT_EVENT.VIEW_DOCUMENT, async (data) => {
+export const mountDocumentReciveOperation = (socket) => {
+  socket.on(DOCUMENT_EVENT.RECEIVE_OPERATION, async (data) => {
+    console.log("data", data);
 
-    console.log("data", data)
-
-    const { docId } = data
+    const { docId } = data;
 
     if (!docId) {
       throw new ApiError(400, "Doc Id is required");

@@ -1,15 +1,3 @@
-/*
-        auth middleware
-
-        methods like
-
-        verifyJWT
-        verifyDocumentId -> document exists or not
-        verifyDocumentMember -> for view the document
-        verifyDocumentAdmin -> for document owner share for collabration
-        verifyDocumentEditor -> for editing the document
-
-*/
 import jwt from "jsonwebtoken";
 import { ENV } from "../config/ENV.js";
 import User from "../module/auth/auth.model.js";
@@ -35,13 +23,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     }
 
     let user;
-    user = await getUser(decodedToken._id);
-    if (!user) {
-      user = await secureUser(decodedToken._id);
-      if (user) {
-        await setUser(decodedToken._id, user);
-      }
-    }
+    user = await secureUser(decodedToken._id);
 
     if (!user) {
       throw new ApiError(401, "User not found");
@@ -49,6 +31,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
     req.user = user;
     req.userId = user._id;
+
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {

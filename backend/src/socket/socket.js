@@ -4,16 +4,16 @@ import { ENV } from "../config/ENV.js";
 import { getUser, setUser } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
 import {
-  mountDocumetGetChangeEvent,
-  mountDocumetSetChangeEvent,
+  mountDocumentReciveOperation,
+  mountDocumentSendOperation,
 } from "./document.socket.js";
 import { CONNECT_DISCONNET_EVENT, DOCUMENT_EVENT } from "./socketEvents.js";
 
 const mountJoinDocumentEvent = (socket) => {
-  socket.on(DOCUMENT_EVENT.JOIN_DOCUMENT, (message) => {
-    console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", message.docId);
-    socket.join(message.docId);
-    socket.roomId = message.docId
+  socket.on(DOCUMENT_EVENT.USER_JOIN, (data) => {
+    console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", data.docId);
+    socket.join(data.docId);
+    socket.roomId = data.docId
   });
 
   //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
@@ -73,9 +73,8 @@ export const initializeSocketIO = (io) => {
 
       // common event mounted here
       mountJoinDocumentEvent(socket);
-      mountDocumetSetChangeEvent(socket);
-
-      mountDocumetGetChangeEvent(socket);
+      mountDocumentReciveOperation(socket);
+      mountDocumentSendOperation(socket);
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
         console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER ID : ", user._id.toString());
