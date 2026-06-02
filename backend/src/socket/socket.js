@@ -18,6 +18,31 @@ const mountJoinDocumentEvent = (socket) => {
     socket.roomId = message.docId
   });
 
+/*
+  document {
+  _id: new ObjectId('6a1ea3843eb0e4ad6667e2dd'),
+  title: 'new doc',
+  ownerId: new ObjectId('6a1e98445da01085b3e65c50'),
+  isPublic: false,
+  isTrash: false,
+  users: [],
+  createdAt: 2026-06-02T09:33:56.906Z,
+  updatedAt: 2026-06-02T09:33:56.906Z,
+  __v: 0
+}
+
+user {
+  _id: '6a1e97ff5da01085b3e65c4f',
+  fullName: 'Laxman Shinde',
+  email: 'shindelaxman@gmail.com',
+  avatar: '',
+  isEmailVerified: false,
+  createdAt: '2026-06-02T08:44:47.782Z',
+  updatedAt: '2026-06-02T08:44:47.973Z',
+  __v: 0
+}
+*/
+
   //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
   // ** : WRITE HERE THIS LOGIC
 };
