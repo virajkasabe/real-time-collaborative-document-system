@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { ENV } from "../../config/ENV.js";
 import {
+  deleteCollaboration,
   getCollaboration,
   setCollaboration,
   setDocument,
@@ -12,6 +13,13 @@ import { fetchDoc, requiredField, secureUser } from "../../utils/helper.js";
 import { generateAccessRefreshToken } from "../auth/auth.controller.js";
 import User from "../auth/auth.model.js";
 import Doc from "../document/document.model.js";
+import jwt from "jsonwebtoken";
+
+const option = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "Lax",
+};
 
 const addCollaboration = async (collabToken, userId) => {
   const hashedTokenID = crypto
@@ -24,29 +32,45 @@ const addCollaboration = async (collabToken, userId) => {
     throw new ApiError(400, "Token Expired or Invalid");
   }
 
+  const doc = await fetchDoc(collabData.docId)
+
+  if(doc.ownerId.toString()  ===  userId.toString()) {
+      throw new ApiError(400 , "Owner can't add on Users")
+  }
+
+  const userAlreadyExits = doc.users.some((user)=>{
+    let users = user.userId.toString() === userId.toString()
+    return users
+  })
+
+  if(userAlreadyExits) {
+    await deleteCollaboration(hashedTokenID)
+     throw new ApiError(401, "User Already exist")
+  }
+
+
+
   const updateDocument = await Doc.findByIdAndUpdate(
     collabData.docId,
     {
       $push: {
-        users: [
+        users:
           {
             userId: userId,
             role: collabData.role,
           },
-        ],
       },
     },
     { new: true }
   );
 
+  await deleteCollaboration(hashedTokenID)
   await setDocument(updateDocument._id, updateDocument);
 };
 
 export const sendCollaboration = asyncHandler(async (req, res) => {
   const { email, role } = req.body;
   const { docId } = req.params;
-
-  const documet = await fetchDoc(docId);
 
   const collabData = {};
 
@@ -77,30 +101,28 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 });
 
 export const acceptCollaboration = asyncHandler(async (req, res) => {
-  const { upcommingEmail: email, join } = req.params;
+  const { email: upcommingEmail, join } = req.params;
   const emailAccept = upcommingEmail.replace("email=", "");
   const collabToken = join.replace("join=", "");
   let user = null;
+   const token = req?.cookies?.accessToken ||req.header("Authorization")?.replace("Bearer ", "");
 
-  try {
-    user = req.user
-    addCollaboration(collabToken, req.user._id)
-    return res.status(200).json(new ApiResponse(200, {}, "user add on collaboration successfully"))
-  } catch (error) {
-      ApiError(400, error.message)
-  }
+    try {
+      const decodedToken = jwt.verify(token, ENV.ACCESS_TOKEN_SECRET);
+      user = await secureUser(decodedToken._id);
+      console.log("user", user)
+          addCollaboration(collabToken, user._id);
+            return res
+              .status(200)
+              .json(new ApiResponse(200, {}, "user add on collaboration successfully"));
+    } catch (error) {
+        user = null
+    }
 
 
-  // TODO : WHEN USER FIND IN req.user
-  // TODO : USER ARE LOGIN THEN JOIN ON COLLABORATION
-
-  if (!req.user) {
-    // TODO : WHEN USER NOT FIND IN req.user
-    // TODO : THEN USER CHECK IN DATABASE AND LOGIN
-
+  if (!user) {
     const { email, password } = req.body;
     requiredField([email, password]);
-
 
     if (email !== emailAccept) {
       throw new ApiError(401, "Please insert valid email");
@@ -108,16 +130,17 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
 
     user = await User.findOne({ email });
 
-    const passwordValid = await user.isPasswordCorrect(password);
-    if (!passwordValid) {
-      throw new ApiError(403, "Please check credentials");
-    }
+    if (user) {
+      const passwordValid = await user.isPasswordCorrect(password);
+      if (!passwordValid) {
+        throw new ApiError(401, "Credentials failed");
+      }
 
       const { refreshToken, accessToken } = await generateAccessRefreshToken(
         user._id
       );
-       await secureUser(user._id)
-      addCollaboration(collabToken, user._id)
+      user : await secureUser(user._id);
+      addCollaboration(collabToken, user._id);
 
       return res
         .cookie("accessToken", accessToken, option)
@@ -127,19 +150,16 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
           new ApiResponse(
             200,
             {
-              user: secureUser,
+              user,
               accessToken: accessToken,
               refreshToken: refreshToken,
             },
             "user login and add on document successfully"
           )
         );
+    }
 
     if (!user) {
-      // TODO : WHEN USER NOT FIND IN DATABASE
-      // TODO : REGISTER USER VIA EMAIL,PASSWORD
-      // TODO : SEND ACCESSTOKEN,REFRESHTOKEN VIA COOKIES
-
       user = await User.create({
         email,
         password,
@@ -166,11 +186,9 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
               accessToken: accessToken,
               refreshToken: refreshToken,
             },
-            "user registe and add on document successfully"
+            "user register and add on document successfully"
           )
         );
-
     }
   }
-
 });

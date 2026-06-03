@@ -7,9 +7,7 @@ import { verifyDocumentOwner } from "../../middleware/document.middleware.js"
 
 const router = Router()
 
-router.use(verifyJWT)
-
-router.route("/send-collab/:docId").post(verifyDocumentOwner, sendCollaboration)
+router.route("/send-collab/:docId").post(verifyJWT,verifyDocumentOwner, sendCollaboration)
 
 router.route("/:email/:join").post(acceptCollaboration)
 
