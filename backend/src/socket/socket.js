@@ -25,49 +25,15 @@ const mountJoinDocumentEvent = (socket) => {
     if(docOwnerId.toString() !== currentUserId.toString()) {
       console.error("your not owner of this doc");
     }
-
     let user =   document.users.filter((user)=>{
       user._id.toString() === socker.user._id.toString()
       return user.role
     })
-    
-
-    console.log("docUSer", user)
-
-
-
-
-
 
     console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", data.docId);
     socket.join(data.docId);
     socket.roomId = data.docId;
   });
-
-/*
-  document {
-  _id: new ObjectId('6a1ea3843eb0e4ad6667e2dd'),
-  title: 'new doc',
-  ownerId: new ObjectId('6a1e98445da01085b3e65c50'),
-  isPublic: false,
-  isTrash: false,
-  users: [],
-  createdAt: 2026-06-02T09:33:56.906Z,
-  updatedAt: 2026-06-02T09:33:56.906Z,
-  __v: 0
-}
-
-user {
-  _id: '6a1e97ff5da01085b3e65c4f',
-  fullName: 'Laxman Shinde',
-  email: 'shindelaxman@gmail.com',
-  avatar: '',
-  isEmailVerified: false,
-  createdAt: '2026-06-02T08:44:47.782Z',
-  updatedAt: '2026-06-02T08:44:47.973Z',
-  __v: 0
-}
-*/
 
   //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
   // ** : WRITE HERE THIS LOGIC
@@ -122,10 +88,11 @@ export const initializeSocketIO = (io) => {
       socket.emit(CONNECT_DISCONNET_EVENT.CONNECT);
       console.log("🤝🌐🔗 USER CONNECTED USER ID : ", user._id.toString());
 
-      // common event mounted here
+      // event mounted here
       mountJoinDocumentEvent(socket);
       mountDocumentReciveOperation(socket);
       mountDocumentSendOperation(socket);
+      mountJoinDocumentNewUser(socket)
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
         console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER ID : ", user._id.toString());
@@ -141,3 +108,7 @@ export const initializeSocketIO = (io) => {
     }
   });
 };
+
+export const emitSocketEvent = (req,roomId, event, payload) => {
+  req.app.get('io').in(roomId).emit(event, payload)
+}

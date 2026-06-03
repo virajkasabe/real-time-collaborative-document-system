@@ -13,11 +13,10 @@ export const mountDocumentSendOperation = (socket) => {
     //  TODO : FOR TESTING USE MESSAGE BUT WHEN ENTER ON PRODUCTION THE USE DATA OR PAYLOAD
     /*
     ?? data WILL GET ON INSTED OF MESSAGE IN PARAM
-
   */
 
-    // INTEGRETE OT HERE ( operational transformation )
-    // USING TIMESTAMP
+    // ?? INTEGRETE OT HERE ( operational transformation )
+    // ?? USING TIMESTAMP
 
 
     console.log(data);

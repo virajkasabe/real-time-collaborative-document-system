@@ -1,12 +1,16 @@
 import { Router } from "express"
-import { acceptCollaboration, sendCollaboration } from "./collab.controller.js"
+import { acceptCollaboration, declineJoinCollaboration, sendCollaboration } from "./collab.controller.js"
 import { verifyJWT } from "../../middleware/auth.middleware.js"
 import { verifyDocumentOwner } from "../../middleware/document.middleware.js"
 
 const router = Router()
 
-router.route("/send-collab/:docId").post(verifyJWT,verifyDocumentOwner, sendCollaboration)
+router.use(verifyJWT)
+
+router.route("/send-collab/:docId").post(verifyDocumentOwner, sendCollaboration)
 
 router.route("/:email/:join").post(acceptCollaboration)
+
+router.route("/declien/:email/:join").post(declineJoinCollaboration)
 
 export default router;

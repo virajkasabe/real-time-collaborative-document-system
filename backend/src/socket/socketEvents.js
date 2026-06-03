@@ -10,6 +10,12 @@ export const DOCUMENT_EVENT = Object.freeze({
   VERSION_SAVED : "versionSaved"
 });
 
+export const COLLABORATION_EVENT = Object.freeze({
+      ACCEPT_COLLABORATION : "acceptCollaborationRequest",
+      DECLINE_COLLABORATION : "declineCollaborationRequest",
+})
+
+
 export const CONNECT_DISCONNET_EVENT = Object.freeze({
   CONNECTION: "connection",
   DISCONNECT: "Disconnect",

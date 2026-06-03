@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { uploadCloudinary } from "../../config/cloudinary.js";
+import { uploadCloudinary, uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
 import { deleteuser, getOTP, setOTP, setUser } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
@@ -95,8 +95,6 @@ export const registerUser = asyncHandler(async (req, res) => {
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // console.log(req.body);
-
   requiredField([email, password]);
 
   const user = await User.findOne({ email });
@@ -105,7 +103,6 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "User doesn't exist with this email");
   }
 
-  // console.log(user)
 
   if (user.isEmailVerified === false) {
     throw new ApiError(
@@ -201,37 +198,39 @@ export const refreshTokenHandler = asyncHandler(async (req, res) => {
 });
 
 export const currentUser = asyncHandler(async (req, res) => {
-  // const user = await User.findById(req.user?._id).populate()
-
-  //  await removeRefreshTokenAndPassword(user._id)
-
-  const user = req.user;
-
   return res
     .status(200)
-    .json(new ApiResponse(200, { user }, "user fetch Successfully"));
+    .json(new ApiResponse(200, { user : req.user }, "user fetch Successfully"));
 });
 
 export const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName } = req.body;
-
-  if (!fullName) {
-    throw new ApiError(400, "FullName is required");
+  const { fullName, avatar } = req.body;
+  const userData = {}
+  if(fullName) {
+    userData.fullName = fullName
   }
+
+  if(avatar) {
+    const uploadCloudinary = await uploadCloudinary(avatar)
+    userData.avatar = avatar
+  }
+
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
-        ...(fullName && { fullName }),
+        userData
       },
     },
     { new: true }
-  ).select("-password -refreshToken");
+  );
+
+  const secure = await secureUser(user._id)
 
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"));
+    .json(new ApiResponse(200, { user : secure }, "Account details updated successfully"));
 });
 
 export const updateUserAvatar = asyncHandler(async (req, res) => {
@@ -295,10 +294,10 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
 export const resetPassword = asyncHandler(async (req, res) => {
   const { unHashedToken } = req.params;
 
-  const { oldPassword, newPassword } = req.body;
+  const { newPassword , confirmPassword} = req.body;
 
-  if (oldPassword === newPassword) {
-    throw new ApiError(400, "oldPassword and new password can't be same");
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(400, "New Password and Confirm Password can't be same");
   }
 
   if (!unHashedToken) {
@@ -330,9 +329,15 @@ export const resetPassword = asyncHandler(async (req, res) => {
 });
 
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  requiredField([oldPassword, newPassword,confirmPassword])
 
-  // requiredField([oldPassword, newPassword])
+  if (oldPassword !== newPassword) {
+    throw new ApiError(400, "Old Password and Confirm Password can't be same");
+  }
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(400, "New Password and Confirm Password can't be same");
+  }
 
   const user = await User.findById(req.user._id);
 

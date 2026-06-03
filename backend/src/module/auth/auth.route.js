@@ -23,22 +23,25 @@ router.route("/login").post(loginUser);
 
 router.route("/logout").get(verifyJWT, logoutUser);
 
-router.route("/refresh-token").post(refreshTokenHandler);
+router.route("/refresh-token-refreshed").post(refreshTokenHandler);
 
 router.route("/getme").get(verifyJWT, currentUser);
 
-router.route("/profile").put(verifyJWT, updateAccountDetails);
+// router
+//   .route("/update-profile")
+//   .put(verifyJWT, uploadAvatar.single("avatar"), updateAccountDetails);
 
-router.route("/password").put(verifyJWT, changeCurrentPassword);
+router.route("/update-profile").put(verifyJWT, updateAccountDetails);
+
+router.route("/update-current-password").put(verifyJWT, changeCurrentPassword);
 
 router.route("/verify-email/:unHashedToken").post(verifyEmail);
 
 router.route("/verify-email-request").post(verifyEmailRequest);
 
-router.route("/forgot-password-request").post(forgetPasswordRequest)
+router.route("/forgot-password-request").post(forgetPasswordRequest);
 
-router.route("/reset-password/:unHashedToken").post(resetPassword)
-
+router.route("/reset-password/:unHashedToken").post(resetPassword);
 
 //!! =====  DANGER ZONE =====
 router.route("/delete").delete(deleteUser);
