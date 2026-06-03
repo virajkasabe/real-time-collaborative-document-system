@@ -124,8 +124,6 @@ export const declineCollab = async(io,socket,data) => {
 
         io.to(inviter._id).emit(COLLABORATION_EVENT.DECLINE_COLLABORATION, declineCollabData);
     }
-
-      
 }
 
 
