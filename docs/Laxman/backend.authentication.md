@@ -150,7 +150,11 @@ http://localhost:5000/api/v1/rtcds/auth/refresh-token-refreshed
 
 ```bash
 
+<<<<<<< HEAD
 http://localhost:5000/api/v1/rtcds/auth/c
+=======
+http://localhost:5000/api/v1/rtcds/auth/forgot-password-request
+>>>>>>> 8bfb4f6 (feat: update collaboration routes for clarity; refactor accept and decline collaboration logic; enhance document creation API)
 
 ```
 
