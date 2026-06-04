@@ -29,7 +29,6 @@ const onlineUser = async(io, realTimeNotificationData, collabData, email) => {
     await setCollaboration(realTimeNotificationData.collabId, collabData, notificationExpiry)
 }
 
-
 const notregisteredUser = async(pendingNotification, collabData, email) => {
     pendingNotification.expiry = new Date(Date.now() +  7* 24 * 60 * 60 * 1000).toLocaleString()
     const inviteUserExpiry = 7 * 24 *  15 * 60;
@@ -37,15 +36,12 @@ const notregisteredUser = async(pendingNotification, collabData, email) => {
     await setCollaboration(pendingNotification.collabId, collabData, inviteUserExpiry)
 }
 
-
-
 const logoutUser = async(pendingNotification, collabData, email) => {
     pendingNotification.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
     const inviteUserExpiry = 20 * 60;
     await setNotification(email, pendingNotification, inviteUserExpiry)
     await setCollaboration(pendingNotification.collabId, collabData, inviteUserExpiry)
 }
-
 
 export const sendCollaboration = asyncHandler(async(req,res) => {
   const { docId } = req.params;
