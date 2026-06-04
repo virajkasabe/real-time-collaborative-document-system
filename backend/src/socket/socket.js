@@ -39,6 +39,12 @@ const mountJoinDocumentEvent = (socket) => {
   // ** : WRITE HERE THIS LOGIC
 };
 
+const mountNotificationEvent = (socket) => {
+  socket.on("notification"), async(data)=> {
+      socket.user = 
+  }
+}
+
 export const initializeSocketIO = (io) => {
   return io.on(CONNECT_DISCONNET_EVENT.CONNECTION, async (socket) => {
     try {
@@ -90,6 +96,7 @@ export const initializeSocketIO = (io) => {
 
       // event mounted here
       mountJoinDocumentEvent(socket);
+      mountNotificationEvent(socket)
       mountDocumentReciveOperation(socket);
       mountDocumentSendOperation(socket);
       mountJoinDocumentNewUser(socket)

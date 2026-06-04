@@ -87,3 +87,20 @@ PONG
 ```
 
 - then your redis server is up an runing successfully
+
+
+
+## THIS COMMANDS FOR WHO USE THE MONGO AND REDIS WILL USING DOCKER
+
+```docker
+
+docker start mongodb
+
+```
+/// ----- ///
+
+```docker
+
+docker start redis-stack
+
+```

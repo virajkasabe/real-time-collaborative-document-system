@@ -12,7 +12,9 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { fetchDoc, secureUser } from "../../utils/helper.js";
+import User from "../auth/auth.model.js";
 import Doc from "../document/document.model.js";
+import { registerAndJoinCollab } from "../../services/sendCollabLink.service.js";
 
 const option = {
   httpOnly: true,
@@ -41,14 +43,32 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     role,
   };
 
+  const user = await User.findOne({ email });
+
+  if (!user) {
+  await setCollaboration(email, payload, collabExpiry);
+  const collabLink = `${ENV.BACKEND_URI}/collab/email=${email}/join=${unHashedToken}`;
+   await registerAndJoinCollab(collabLink)
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { collabLink }, "user register first"));
+  }
+
+
   await setCollaboration(hashedToken, payload, collabExpiry);
 
-  const collablink = `${ENV.BACKEND_URI}/collab/email=${email}/join=${unHashedToken}`;
+  const collabLink = `${ENV.BACKEND_URI}/collab/email=${email}/join=${unHashedToken}`;
+
+
+  /*
+   TODO : ADD HERE THE EMAIL_SEND_SERVICE FOR COLLABLINK
+   await sendCollabLink(collabLink)
+  */
 
   return res
-    .status(201)
+    .status(200)
     .json(
-      new ApiResponse(201, { collablink }, "collab link send successfully")
+      new ApiResponse(201, { collabLink }, "collab link send successfully")
     );
 });
 
