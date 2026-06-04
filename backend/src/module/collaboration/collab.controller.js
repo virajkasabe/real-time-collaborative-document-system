@@ -56,61 +56,57 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
   const { email: upcommingEmail, join } = req.params;
   const emailAccept = upcommingEmail.replace("email=", "");
   const collabToken = join.replace("join=", "");
-  try {
-    const user = await secureUser(req.user._id);
-    const hashedTokenID = crypto
-      .createHash("sha256")
-      .update(collabToken)
-      .digest("hex");
+  const user = await secureUser(req.user._id);
+  const hashedTokenID = crypto
+    .createHash("sha256")
+    .update(collabToken)
+    .digest("hex");
 
-    const collabData = await getCollaboration(hashedTokenID);
-    if (!collabData) {
-      throw new ApiError(400, "Token Expired or Invalid");
-    }
+  const collabData = await getCollaboration(hashedTokenID);
+  if (!collabData) {
+    throw new ApiError(400, "Token Expired or Invalid");
+  }
 
-    const doc = await fetchDoc(collabData.docId);
+  const doc = await fetchDoc(collabData.docId);
 
-    if (doc.ownerId.toString() === req.user._id.toString()) {
-      throw new ApiError(400, "Owner can't add on Users");
-    }
+  if (doc.ownerId.toString() === user._id.toString()) {
+    throw new ApiError(400, "Owner can't add on Users");
+  }
 
-    const userAlreadyExits = doc.users.some((user) => {
-      let users = user.req.user._id.toString() === req.user._id.toString();
-      return users;
-    });
+  const userAlreadyExits = doc.users.some((user) => {
+    let users = user._id.toString() !== req.user._id.toString();
+    return users;
+  });
 
-    if (userAlreadyExits) {
-      await deleteCollaboration(hashedTokenID);
-      throw new ApiError(401, "User Already exist");
-    }
+  if (userAlreadyExits) {
+    await deleteCollaboration(hashedTokenID);
+    throw new ApiError(401, "User Already exist");
+  }
 
-    const updateDocument = await Doc.findByIdAndUpdate(
-      collabData.docId,
-      {
-        $push: {
-          users: {
-            userId: user._id,
-            role: collabData.role,
-          },
+  const updateDocument = await Doc.findByIdAndUpdate(
+    collabData.docId,
+    {
+      $push: {
+        users: {
+          userId: user._id,
+          role: collabData.role,
         },
       },
-      { new: true }
-    );
+    },
+    { new: true }
+  );
 
-    emitSocketEvent(
-      req,
-      collabData.docId,
-      COLLABORATION_EVENT.ACCEPT_COLLABORATION,
-      "Your invitation to collaborate has been accepted."
-    );
-    await deleteCollaboration(hashedTokenID);
-    await setDocument(updateDocument._id, updateDocument);
-    return res
-      .status(200)
-      .json(new ApiResponse(200, {}, "user add on collaboration successfully"));
-  } catch (error) {
-    user = null;
-  }
+  emitSocketEvent(
+    req,
+    collabData.docId,
+    COLLABORATION_EVENT.ACCEPT_COLLABORATION,
+    "Your invitation to collaborate has been accepted."
+  );
+  await deleteCollaboration(hashedTokenID);
+  await setDocument(updateDocument._id, updateDocument);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "user add on collaboration successfully"));
 });
 
 export const declineJoinCollaboration = asyncHandler(async (req, res) => {
@@ -122,6 +118,11 @@ export const declineJoinCollaboration = asyncHandler(async (req, res) => {
     .createHash("sha256")
     .update(collabToken)
     .digest("hex");
+
+  const collabData = await getCollaboration(hashedTokenID);
+  if (!collabData) {
+    throw new ApiError(400, "Token Expired or Invalid");
+  }
 
   const doc = await fetchDoc(collabData.docId);
   await deleteCollaboration(hashedTokenID);

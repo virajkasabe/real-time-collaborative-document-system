@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { uploadCloudinary, uploadCloudinary } from "../../config/cloudinary.js";
+import { uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
 import { deleteuser, getOTP, setOTP, setUser } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";

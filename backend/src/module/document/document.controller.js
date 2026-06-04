@@ -9,12 +9,8 @@ import Doc from "./document.model.js";
 export const createDocument = asyncHandler(async (req, res) => {
   const { title } = req.body;
 
-  if (!title) {
-    throw new ApiError(400, "Title is required");
-  }
-
   const docData = {
-    title: title,
+    title: title || "Untitle Document",
     ownerId: req.user._id,
   };
 

@@ -9,8 +9,8 @@ router.use(verifyJWT)
 
 router.route("/send-collab/:docId").post(verifyDocumentOwner, sendCollaboration)
 
-router.route("/:email/:join").post(acceptCollaboration)
+router.route("/accept/:email/:join").post(acceptCollaboration)
 
-router.route("/declien/:email/:join").post(declineJoinCollaboration)
+router.route("/decline/:email/:join").post(declineJoinCollaboration)
 
 export default router;
