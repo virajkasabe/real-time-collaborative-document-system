@@ -1,6 +1,52 @@
+import User from "../module/auth/auth.model.js";
+import Doc from "../module/document/document.model.js";
+import { getDocument, getUser, setDocument, setUser } from "../redis/client.js";
+import { doc } from "../TESTING_FOLDER/document.js";
+import ApiError from "./ApiError.js";
 
-/*
+export const secureUser = async (userId) => {
+  let user = null;
+  user = await getUser(userId)
+  if(!user) {
+       user = await User.findById(userId).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+      );
+      if(user) {
+            await setUser(userId, user)
+      }
+  }
+  return user;
+};
 
-      some function which was repeated this will write here and export and use it
+export const fetchDoc = async (docId) => {
+  let document = null;
+  document = await getDocument(docId);
+  console.log("docuemt", document)
+  if (!document) {
+    document = await Doc.findById(docId);
+    console.log("docuemt", document)
+    if (document) {
+      await setDocument(docId, document);
+    }
+  }
+  if(!document) {
+    throw new ApiError(400, "Document not exists")
+  }
 
-*/
+  return document;
+};
+
+export const otpGenerator = () => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let otp = "";
+  for (let i = 0; i < 6; i++) {
+    otp += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return otp;
+};
+
+export const requiredField = (required = []) => {
+  if (required.some((field) => field.trim() === "" || field === undefined)) {
+    throw new ApiError(400, "all field are required");
+  }
+};

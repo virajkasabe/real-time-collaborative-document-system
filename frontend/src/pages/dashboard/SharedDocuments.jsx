@@ -1,0 +1,110 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Star, Eye, ShieldAlert, ArrowRight } from 'lucide-react';
+import Sidebar from '../../components/layout/Sidebar';
+import Navbar from '../../components/layout/Navbar';
+import { documentService } from '../../services/documentService';
+import { useAuth } from '../../context/AuthContext';
+
+export default function SharedDocuments() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dbVer, setDbVer] = useState(0);
+
+  const triggerReload = () => setDbVer(prev => prev + 1);
+
+  const getSharedDocs = () => {
+    let list = documentService.getShared(user?.email);
+    if (searchQuery.trim()) {
+      list = list.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    return list;
+  };
+
+  const sharedDocs = getSharedDocs();
+
+  return (
+    <div className="min-h-screen bg-[#F7FAFF] dark:bg-[#070B14] text-[#081B3A] dark:text-[#E5E7EB] transition-colors duration-300 flex">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarOpen ? 'pl-[200px]' : 'pl-12'}`}>
+        <Navbar onSearchChange={setSearchQuery} />
+
+        <main className="flex-1 p-5 md:p-6 space-y-5 max-w-7xl w-full mx-auto overflow-y-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 select-none text-left border-b border-[#E5E7EB] dark:border-white/10 pb-4 transition-colors duration-300">
+            <div className="space-y-1">
+              <h2 className="font-sans font-bold text-[22px] text-[#081B3A] dark:text-white leading-tight normal-case tracking-tight transition-colors duration-300">
+                Shared with me
+              </h2>
+              <p className="text-[13px] font-normal text-[#6B7280] dark:text-[#94A3B8]/80 mt-0.5">
+                Documents co-authored with teammates
+              </p>
+            </div>
+          </div>
+
+          {/* List display */}
+          {sharedDocs.length === 0 ? (
+            <div className="py-24 border border-dashed border-[#E5E7EB] dark:border-white/10 rounded-2xl text-center text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8]/60 transition-all select-none">
+              No shared documents found. Invite others to share files with you!
+            </div>
+          ) : (
+            <div className="space-y-2 select-none text-left">
+              {sharedDocs.map((doc) => {
+                // Find logged in user's role on this document
+                const memberDetails = doc.sharedUsers.find(u => u.email === user?.email);
+                const userRole = memberDetails ? memberDetails.role : 'Viewer';
+
+                 return (
+                  <div
+                    key={doc.id}
+                    onClick={() => navigate(`/editor/${doc.id}`)}
+                    className="flex items-center justify-between h-14 px-3 bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/10 hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A] hover:border-[#E5E7EB] dark:hover:border-white/20 rounded-xl transition-all duration-300 cursor-pointer group"
+                  >
+                    {/* Left details */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText size={14} className="text-[#0D6EFD] shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-semibold text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] dark:group-hover:text-white transition-colors truncate block">
+                          {doc.name}
+                        </span>
+                        <span className="text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 block mt-0.5 leading-none transition-colors">
+                          Shared by: <span className="font-medium text-[12.5px] text-[#081B3A] dark:text-slate-200">{doc.owner.name}</span> • Updated {doc.updatedAt}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right details: Access Badge */}
+                    <div className="flex items-center gap-4 shrink-0 font-semibold">
+                      <div className="flex items-center gap-1">
+                        {userRole === 'Editor' ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#0D6EFD]/10 text-[#0D6EFD] font-semibold">
+                            <ShieldAlert size={10} />
+                            <span>Editor</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#E5E7EB] text-[#6B7280] dark:bg-white/10 dark:text-[#94A3B8] font-semibold">
+                            <Eye size={10} />
+                            <span>Viewer</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-[13px] text-[#0D6EFD] hover:text-[#0D6EFD]/80 flex items-center gap-0.5 font-semibold">
+                        <span>Open</span>
+                        <ArrowRight size={10} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+        </main>
+      </div>
+    </div>
+  );
+}

@@ -1,24 +1,25 @@
-/*
 
-    write here contanst variable
-
-*/
-
-
-export const loginType = {
+export const loginType = Object.freeze({
       EMAIL_PASSWORD : "EMAIL_PASSWORD",
       GOOGLE : "GOOGLE"
-}
+})
 
-export const docsUserType = {
+export const DOCUMENT_ROLES = Object.freeze({
   VIEWR : "Viwer",
   EDITOR : "Editor",
   OWNER : "Owner"
-}
+})
+
+export const DOCUMENT_ROLES_ENUM = Object.values(DOCUMENT_ROLES)
+
+
+export const redisEvent = Object.freeze({
+    ERROR : "error",
+    CONNECT : "connect"
+})
 
 
 export const loginTypeEnum = Object.values(loginType)
-export const docsUserTypeEnum = Object.values(docsUserType)
 
 
 
