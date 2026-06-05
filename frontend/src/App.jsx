@@ -1,3 +1,12 @@
+
+import Login from "./Pages/auth/login";
+
+function App() {
+  return <Login />;
+}
+
+export default App;
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -163,7 +172,7 @@ function ToastNotifier() {
     info: Info
   };
 
-<<<<<<< HEAD
+
   // SYNC ACTION
   const handleSyncLogs = () => {
     showToast("Synching metrics with CollabDocs Server...", "info");
@@ -380,9 +389,8 @@ function ToastNotifier() {
 
     return () => clearInterval(liveInterval);
   }, [teamMembers.length]);
-=======
   const IconComponent = Icons[toast.type] || Info;
->>>>>>> origin/dev
+
 
   if (currentDocument) {
     return (
@@ -410,7 +418,7 @@ function ToastNotifier() {
   }
 
   return (
-<<<<<<< HEAD
+
     <div className={`min-h-screen flex ${theme === 'dark' ? 'dark' : ''} transition-colors duration-300 bg-[#F7FAFF] dark:bg-[#070B14] text-[#081B3A] dark:text-[#E5E7EB]`}>
       
       
@@ -602,11 +610,11 @@ function ToastNotifier() {
           )}
 
         </main>
-=======
+
     <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 px-3.5 py-2.5 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-xl shadow-md select-none animate-fade-in transition-all duration-300">
       <div className={`p-1 rounded-md ${typeStyles[toast.type]}`}>
         <IconComponent size={12} />
->>>>>>> origin/dev
+
       </div>
       <span className="text-[10.5px] font-bold text-[#081B3A] dark:text-[#E5E7EB]">
         {toast.message}
@@ -614,3 +622,4 @@ function ToastNotifier() {
     </div>
   );
 }
+
