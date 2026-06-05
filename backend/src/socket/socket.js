@@ -1,7 +1,7 @@
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import { ENV } from "../config/ENV.js";
-import { getUser, setUser } from "../redis/client.js";
+import { getPendingNotification, getUser, setUser } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
 import { fetchDoc, secureUser } from "../utils/helper.js";
 import {
@@ -9,7 +9,7 @@ import {
   mountDocumentSendOperation,
   mountJoinDocumentEvent,
 } from "./document.socket.js";
-import { mountNotificationEvent } from "./notification.socket.js";
+import { mountNotificationEvent, mountPendingNotification } from "./notification.socket.js";
 import {
   CONNECT_DISCONNET_EVENT,
   DOCUMENT_EVENT
@@ -56,11 +56,15 @@ export const initializeSocketIO = (io) => {
         socket.user._id.toString()
       );
 
+
       // event mounted here
+      await mountPendingNotification(socket)
       mountJoinDocumentEvent(socket, io);
       mountNotificationEvent(socket);
       mountDocumentRecivedOperation(socket);
       mountDocumentSendOperation(socket);
+      mountRecivedRealTimeNotification(socket)
+      
       // mountJoinDocumentNewUser(socket)
       // mountNotificationEvent()
 

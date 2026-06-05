@@ -143,12 +143,12 @@ export const loginUser = asyncHandler(async (req, res) => {
 });
 
 export const logoutUser = asyncHandler(async (req, res) => {
-  const user = req.user;
+  const userId = req.user._id;
 
-  await deleteuser(req.user._id);
+  await deleteuser(userId);
 
   await User.findByIdAndUpdate(
-    user._id,
+    userId,
     {
       $set: {
         refreshToken: "",
@@ -156,6 +156,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
     },
     { new: true }
   );
+
+  req.user = ""
 
   return res
     .status(200)

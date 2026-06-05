@@ -9,7 +9,10 @@ import {
   setrealtimeNotification,
 } from "../../redis/client.js";
 import { emitSocketEvent } from "../../socket/socket.js";
-import { COLLABORATION_EVENT } from "../../socket/socketEvents.js";
+import {
+  COLLABORATION_EVENT,
+  NOTIFICATION_EVENT,
+} from "../../socket/socketEvents.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -48,7 +51,15 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
   if (!user) {
     // Deferred/Delayed Notification or Pre-Registreation Invite Queue
-    await setPendingNotification(email, payload);
+    const pendingNotificationData = {
+      title: `invitation for collaboration in ${document.title}`,
+      inviter: inviter.fullName,
+      tokenId: hashedToken,
+      time: Date.now().toLocaleString(),
+    };
+
+    await setPendingNotification(email, pendingNotificationData);
+
     /*
         TODO : SERVICE FOR REGISTER AND JOIN COLLAB
         await registerAndJoinCollab(collabLink)
@@ -72,7 +83,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
   if (isOnline) {
     await setrealtimeNotification(unHashedToken, payload);
-    io.to(userId).emit("send_real-time_notification", payload);
+    io.to(userId).emit(NOTIFICATION_EVENT.SEND_REAL_TIME_NOTIFICATION, payload);
     return res
       .status(200)
       .json(
@@ -83,7 +94,16 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
         )
       );
   }
-  await setPendingNotification(unHashedToken, payload);
+
+  const pendingNotificationData = {
+    title: `Invitation for collaboration in ${document.title}`,
+    inviter: inviter.fullName,
+    tokenId: hashedToken,
+    time: new Date(Date.now()).toLocaleString(),
+    expiry: new Date(Date.now() + 20 * 60 * 1000).toLocaleString(),
+  };
+
+  await setPendingNotification(email, pendingNotificationData);
   return res
     .status(200)
     .json(

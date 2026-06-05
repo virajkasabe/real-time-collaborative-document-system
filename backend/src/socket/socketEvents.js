@@ -17,8 +17,17 @@ export const COLLABORATION_EVENT = Object.freeze({
 
 export const NOTIFICATION_EVENT = Object.freeze({
     NOTIFICATION_SEND : "notificationSend",
-    NOTIFICATION_RECIVED : "notificationRecived"
+    NOTIFICATION_RECIVED : "notificationRecived",
+    SEND_REAL_TIME_NOTIFICATION : "sendRealTimeNotification",
+    RECIVED_REAL_TIME_NOTIFICATION : "recivedRealTimeNotification"
 })
+
+export const INVITATION_EVENT = Object.freeze({
+    ACCEPT_INVITATION : "acceptIneInvitation",
+    DECLINE_INVITATION : "declineInvitation",
+})
+
+
 
 export const CONNECT_DISCONNET_EVENT = Object.freeze({
   CONNECTION: "connection",

@@ -89,7 +89,7 @@ const flushOnMongo = asyncHandler(async (payload) => {
 });
 
 
-// TODO : INPIREATION for document join
+// TODO : INPIREATION for join document
 /*
 
     import { DOCUMENT_EVENT, NOTIFICATION_EVENT } from "./socketEvents.js";

@@ -177,15 +177,16 @@ export const setPendingNotification = async (
 ) => {
   if (!client || !isConnected) return null;
   const key = `pending:${pendingKey}`;
-  await client.rpush(key, expiry, JSON.stringify(payload));
+  await client.rpush(key, JSON.stringify(payload));
+  await client.expire(key, expiry);
 };
 
 // ***** Get real-time notification *****
 export const getPendingNotification = async (pendingKey) => {
   if (!client || !isConnected) return null;
   const key = `pending:${pendingKey}`;
-  const payload = await client.lrange(key,0 ,-1);
-  return payload ? JSON.parse(payload) : null;
+  const payloads = await client.lrange(key,0 ,-1);
+  return payloads ?  payloads.map((item) => JSON.parse(item)) : null;
 };
 
 // ***** delete real-time notification *****
