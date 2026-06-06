@@ -1,11 +1,32 @@
-import {
-  getUpdateDocumentOperation,
-  setUpdateDocumentOperation,
-} from "../redis/client.js";
+import { setUpdateDocumentOperation } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { fetchDoc } from "../utils/helper.js";
 import { DOCUMENT_EVENT } from "./socketEvents.js";
+
+const documentQueues = new Map();
+
+const queueDocumentOperation = (docId, task) => {
+  if (!documentQueues.has(docId)) {
+    documentQueues.set(docId, Promise.resolve());
+  }
+  const currentPromise = documentQueues.get(docId);
+  const nextPromise = currentPromise.then(async () => {
+    try {
+      await task();
+    } catch (error) {
+      console.error(`${error.message} ` || "Task QUEUE FAILED ");
+    }
+  });
+  documentQueues.set(docId, nextPromise);
+
+  nextPromise.then(() => {
+    if (documentQueues.get(docId) === nextPromise) {
+      documentQueues.delete(docId);
+    }
+  });
+  return nextPromise;
+};
 
 export const mountJoinDocumentEvent = (socket, io) => {
   socket.on(DOCUMENT_EVENT.USER_JOIN, async (data) => {
@@ -82,19 +103,16 @@ export const mountDocumentRecivedOperation = (socket) => {
   socket.on(DOCUMENT_EVENT.SEND_OPERATION, async (data) => {
     // const { docId, delta } = message;
 
+    const payload = data.data || data;
+
+    const { docId, actions, version } = payload;
+
     console.log(data);
     const { docId, delta } = data.data;
     console.log("delta", delta);
     console.log("docId", docId);
 
-
-    delta.operation === "CONTENT_CHANGE"
-
-
-
-
-
-
+    delta.operation === "CONTENT_CHANGE";
 
     if (!docId) {
       throw new ApiError(400, "Doc Id is required");
