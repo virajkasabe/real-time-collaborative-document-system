@@ -193,6 +193,7 @@ export const mountDocumentRecivedOperation = (socket) => {
 };
 
 export const startDocumentFlushScheduler = () => {
+  console.log("Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾")
     setInterval(async()=>{
       try {
           const dirtyDocIds = await getDirtyDocument();
