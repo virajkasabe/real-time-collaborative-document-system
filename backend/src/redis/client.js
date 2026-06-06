@@ -214,7 +214,7 @@ export const removeDirtyDocument = async (docId) => {
 
 // ?? ======= DOCUMENT VERSION HISTORY =======
 
-export const openDocHistory = async(docId, version, actions, expiry = 3600) => {
+export const appendDocHistory = async(docId, version, actions, expiry = 3600) => {
   if(!client || !isConnected) return null;
   const key = `doc:${docId}:history`
   const payload = JSON.stringify({version, actions})
@@ -223,7 +223,7 @@ export const openDocHistory = async(docId, version, actions, expiry = 3600) => {
   return await client.expire(key, expiry)
 }
 
-export const getDocument = async(docId) => {
+export const getDocHistory= async(docId) => {
   if(!client || !isConnected) {
     const key = `doc:${docId}:history`
     const list = await client.lrange(key,0,-1)

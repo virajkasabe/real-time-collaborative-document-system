@@ -1,3 +1,5 @@
+import Doc from "../module/document/document.model.js";
+import { appendDocHistory, getDirtyDocument, getDocHistory, getDocument, markDocumentDirty, setDocument } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
 import { fetchDoc } from "../utils/helper.js";
 import { applyOperation, transformOperations } from "../utils/ot.js";
@@ -136,7 +138,7 @@ export const mountDocumentRecivedOperation = (socket) => {
             `[OT Conflict] client version ${clientVersion} < Server Version ${document.version}. Tranforming.....`
           );
 
-          const history = await GetDocHistory(docId); // from client
+          const history = await getDocHistory(docId); // from client
           const concurrentOts = history.filter(
             (op) => op.version > clientVersion
           );
@@ -149,14 +151,6 @@ export const mountDocumentRecivedOperation = (socket) => {
             );
           }
         }
-
-        /**
-         * GetDocHistory
-         * setDocument
-         * appendDocHistory
-         * markDocumentDirty
-         */
-
         let currentContentText = document.content;
         if (
           typeof currentContentText === "object" &&
@@ -197,3 +191,43 @@ export const mountDocumentRecivedOperation = (socket) => {
     });
   });
 };
+
+export const startDocumentFlushScheduler = () => {
+    setInterval(async()=>{
+      try {
+          const dirtyDocIds = await getDirtyDocument();
+          if(!dirtyDocIds || dirtyDocIds.length === 0) {
+              return;
+          }
+          for(const docId of dirtyDocIds) {
+               const removed = await removeDirtyDocument(docId);
+               if(removed) {
+                    const document = await getDocument(docId)
+                    if(document) {
+                      try {
+                        await Doc.findByIdAndUpdate(
+                          docId,
+                          {
+                            $set : {
+                                content : document.content,
+                                version : document.version,
+                                title : document.title
+                            }
+                          },
+                          {
+                            new  : true, runValidators : true
+                          }
+                        )
+                        console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`)
+                    } catch (dbError) {
+                          console.error("failed to save in mongodb" , dbError.message);
+                          await markDocumentDirty(docId)
+                    }
+                    }
+               }
+          }
+      } catch (error) {
+          console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message)
+      }
+    },10000)
+}

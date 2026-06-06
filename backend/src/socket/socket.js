@@ -7,6 +7,7 @@ import {
   mountDocumentRecivedOperation,
   // mountDocumentSendOperation,
   mountJoinDocumentEvent,
+  startDocumentFlushScheduler,
 } from "./document.socket.js";
 import {
   mountPendingNotification,
@@ -15,6 +16,7 @@ import {
 import { CONNECT_DISCONNET_EVENT, DOCUMENT_EVENT } from "./socketEvents.js";
 
 export const initializeSocketIO = (io) => {
+  startDocumentFlushScheduler()
   return io.on(CONNECT_DISCONNET_EVENT.CONNECTION, async (socket) => {
     try {
       const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
@@ -54,11 +56,11 @@ export const initializeSocketIO = (io) => {
       // event mounted here
       await mountPendingNotification(socket);
       mountJoinDocumentEvent(socket, io);
-      // mountNotificationEvent(socket);
       mountDocumentRecivedOperation(socket);
-      // mountDocumentSendOperation(socket);
       mountRecivedRealTimeNotification(socket);
 
+      // mountDocumentSendOperation(socket);
+      // mountNotificationEvent(socket);
       // mountJoinDocumentNewUser(socket)
       // mountNotificationEvent()
 
