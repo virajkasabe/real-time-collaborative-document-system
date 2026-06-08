@@ -435,7 +435,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-    // console.log("user", user)
+
 
   return res
     .status(200)
@@ -471,7 +471,6 @@ const googleLoginCallback = asyncHandler(async (req, res) => {
 // !! ==== DANGER ZONE ====
 export const deleteUser = asyncHandler(async (req, res) => {
   await User.findByIdAndDelete(req.user._id);
-
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "User DELETE Successfully"));

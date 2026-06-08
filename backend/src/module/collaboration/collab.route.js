@@ -4,12 +4,10 @@ import { verifyJWT } from "../../middleware/auth.middleware.js"
 
 const router = Router()
 
-router.use(verifyJWT)
+router.route("/send-collab/:docId").post(verifyJWT, sendCollaboration)
 
-router.route("/send-collab/:docId").post(sendCollaboration)
+router.route("/accept/:email/:join").post(verifyJWT, acceptCollaboration)
 
-router.route("/accept/:email/:join").post(acceptCollaboration)
-
-router.route("/decline/:email/:join").post(declineJoinCollaboration)
+router.route("/decline/:email/:join").get(declineJoinCollaboration)
 
 export default router;

@@ -1,10 +1,12 @@
-import { setCollaboration, setDocument } from "../../redis/client.js";
+import mongoose from "mongoose";
+import { setDocument } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { fetchDoc } from "../../utils/helper.js";
 import Doc from "./document.model.js";
-
+import User from "../auth/auth.model.js";
+import { getDocumentRole } from "../../middleware/document.middleware.js";
 
 export const createDocument = asyncHandler(async (req, res) => {
   const { title } = req.body;
@@ -29,13 +31,107 @@ export const createDocument = asyncHandler(async (req, res) => {
 
 export const fetchDocument = asyncHandler(async (req, res) => {
   const { docId } = req.params;
+  const user = req.user
 
   if (!docId) {
     throw new ApiError(400, "Doc Id is required");
   }
+
+  const docRole = await getDocumentRole(docId, user)
+
+  if(!docRole) {
+    throw new ApiError(401, "YOUR NOT PARTCIPANT OF THE DOCUMENT")
+  }
+
   const document = await fetchDoc(docId);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, document, "Document Fetch Successfully"));
+    .json(new ApiResponse(200, { document, role : docRole }, "Document Fetch Successfully"));
+});
+
+export const fetchDocumentFolder = asyncHandler(async (req, res) => {
+  const userId = req.user._id.toString();
+    let documentFolder = null;
+    let documentOtherUser = null;
+
+  const documentOwner = await User.aggregate([
+    {
+      $match: {
+            _id: new mongoose.Types.ObjectId(req.user._id)
+      },
+    },
+    {
+      $lookup: {
+            from: "documents",
+            localField: "_id",
+            foreignField: "ownerId",
+            as: "ownerDocs",
+             pipeline : [
+                {
+                    $project : {
+                        updatedAt : 0,
+                        createdAt : 0,
+                        isTrash : 0,
+                        isPublic : 0,
+                        ownerId : 0,
+                        __v : 0,
+                }
+                }
+            ]
+        }
+      },
+  ]);
+
+  if(documentOwner && documentOwner[0]?.ownerDocs?.length > 0) {
+      documentFolder = documentOwner[0].ownerDocs
+      documentOtherUser = documentFolder.map(i => i.users)
+  }
+
+  const usersDoc = await User.aggregate([
+    {
+      $match: {
+            _id: new mongoose.Types.ObjectId(req.user._id)
+      },
+    },
+    {
+      $lookup: {
+            from: "documents",
+            localField: "_id",
+            foreignField: "users.userId",
+            as: "users",
+            pipeline : [
+                {
+                    $project : {
+                        updatedAt : 0,
+                        createdAt : 0,
+                        isTrash : 0,
+                        isPublic : 0,
+                        ownerId : 0,
+                        __v : 0
+                }
+                }
+            ]
+        }
+      },
+  ]);
+
+    if(usersDoc && usersDoc[0]?.users?.length > 0) {
+      documentFolder = usersDoc[0].users
+      documentOtherUser = usersDoc[0].users.users
+  }
+
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          documentFolder,
+          documentOtherUser
+         },
+        "fetch your documents successfully"
+      )
+    );
 });
