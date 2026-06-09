@@ -8,10 +8,11 @@ import {
   markDocumentDirty,
   setDocument,
 } from "../redis/client.js";
+import { subscribeToDocument } from "../redis/subClient.js";
 import ApiError from "../utils/ApiError.js";
 import { fetchDoc } from "../utils/helper.js";
 import { applyOperation, transformOperations } from "../utils/ot.js";
-import { DOCUMENT_EVENT, SOCKET_EVENT } from "./socketEvents.js";
+import { CURSOR_EVENT, DOCUMENT_EVENT, SOCKET_EVENT } from "./socketEvents.js";
 
 const documentQueues = new Map();
 
@@ -50,6 +51,8 @@ export const mountJoinDocumentEvent = (socket, io) => {
       const userInDoc = document.users.find(
         (u) => u.userId.toString() === currentUserId
       );
+
+      await subscribeToDocument(data.docId, io)
 
       if (!isOwner && !userInDoc) {
         socket.emit(DOCUMENT_EVENT.ERROR, {

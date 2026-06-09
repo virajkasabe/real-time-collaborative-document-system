@@ -1,9 +1,10 @@
 import { CURSOR_EVENT, SOCKET_EVENT } from "./socketEvents.js";
 
 export const mountCursorChangeOperation = (socket) => {
-  socket.on(CURSOR_EVENT.CURSOR_CHANGE, async (data) => {
+  socket.on(CURSOR_EVENT.CURSOR_UPDATE, async (data) => {
     try {
       const { docId, range, userId, username, color } = data;
+      console.log("data",data)
 
       if (!docId) {
         return socket.emit(SOCKET_EVENT.ERROR, {

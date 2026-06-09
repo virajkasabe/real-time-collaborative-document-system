@@ -226,7 +226,7 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
     accepterEmail: user.email,
     documentTitle: doc.title,
     inviterEmail: inviter.email,
-    createdAt: new Date.now().toLocaleString()
+    createdAt:  Date.now()
   });
 
   await deleteCollaboration(hashedTokenID);
