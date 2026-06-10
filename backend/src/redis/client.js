@@ -213,7 +213,6 @@ export const removeDirtyDocument = async (docId) => {
 };
 
 // ?? ======= DOCUMENT VERSION HISTORY =======
-
 export const appendDocHistory = async(docId, version, actions, expiry = 3600) => {
   if(!client || !isConnected) return null;
   const key = `doc:${docId}:history`

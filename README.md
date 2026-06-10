@@ -92,6 +92,15 @@ PONG
 
 ## THIS COMMANDS FOR WHO USE THE MONGO AND REDIS WILL USING DOCKER
 
+docker_mongo_image
+
+```
+
+docker run -d -p 27017:27017 --name my-mongo -v mongo-data:/data/db mongo:latest    
+
+```
+
+
 ```docker
 
 docker start mongodb

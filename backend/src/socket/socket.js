@@ -54,7 +54,7 @@ export const initializeSocketIO = (io) => {
       console.log(`🤝 USER CONNECTED | USER : ${socket.user.fullName}`);
 
       // event mounted here
-      await mountPendingNotification(socket);
+       mountPendingNotification(socket);
       mountJoinDocumentEvent(socket, io);
       mountDocumentRecivedOperation(socket);
       mountRecivedRealTimeNotification(socket);
