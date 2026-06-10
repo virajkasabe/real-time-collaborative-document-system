@@ -14,6 +14,7 @@ import { instrument } from "@socket.io/admin-ui";
 const app = express();
 const httpServer = createServer(app);
 
+
 const io = new Server(httpServer, {
   pingTimeout: 60000,
   cors: {
@@ -52,10 +53,11 @@ const limit = rateLimit({
 app.use(limit)
 
 app.set("io", io);
-
+app.use(express.static("public"));
 app.use(express.json({ extended: true, limit: "40kb" }));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
-app.use(express.static("/public"));
+
+
 app.use(cookieParser());
 app.use(helmet());
 app.use(cors({
@@ -74,6 +76,7 @@ import AuthRouter from "./module/auth/auth.route.js";
 import DocRouter from "./module/document/document.route.js";
 import CollabRouter from "./module/collaboration/collab.route.js";
 import ApiResponse from "./utils/ApiResponse.js";
+import path from "path";
 
 
 // TODO : USE ALL ROUTES HERE

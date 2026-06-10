@@ -11,7 +11,7 @@ import { BRAND_NAME } from "../../utils/constants";
 export default function LoginPage() {
   const { login, triggerToast } = useAuth();
   const navigate = useNavigate();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -51,8 +51,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div 
-      style={{ 
+    <div
+      style={{
         fontFamily: 'Inter, "SF Pro Display", "Segoe UI", sans-serif',
         background: 'linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%)'
       }}
@@ -67,7 +67,7 @@ export default function LoginPage() {
 
         {/* LEFT PANEL: Brand Info Panel (50% Width, vertically centered internally) */}
         <div className="hidden lg:flex lg:w-1/2 bg-[#F8FAFC]/50 p-12 xl:p-16 flex-col justify-center select-none">
-          
+
           {/* Logo Branding */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-md shadow-[#2563EB]/10">
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
         {/* RIGHT PANEL: Login Form Card (50% Width, vertically centered) */}
         <div className="w-full lg:w-1/2 bg-gradient-to-b from-[#F8FAFC] to-[#EEF4FF] flex items-center justify-center p-6 sm:p-12">
-          
+
           {/* Card - max-width 520px, Radius 24px, subtle shadow, vertically centered */}
           <div className="login-card-wrapper text-left space-y-6">
 
@@ -187,9 +187,9 @@ export default function LoginPage() {
               {/* Remember & Forgot Password */}
               <div className="flex justify-between items-center pt-1">
                 <label className="flex items-center gap-2 text-[#64748B] cursor-pointer text-sm font-medium">
-                  <input 
-                    type="checkbox" 
-                    className="rounded text-[#2563EB] focus:ring-[#2563EB]/20 border-[#D0D7E2] w-4 h-4 cursor-pointer" 
+                  <input
+                    type="checkbox"
+                    className="rounded text-[#2563EB] focus:ring-[#2563EB]/20 border-[#D0D7E2] w-4 h-4 cursor-pointer"
                   />
                   Remember me
                 </label>

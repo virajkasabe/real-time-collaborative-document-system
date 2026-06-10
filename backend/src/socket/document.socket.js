@@ -1,9 +1,18 @@
+import { verifyDocumentEditor } from "../middleware/document.middleware.js";
 import Doc from "../module/document/document.model.js";
-import { appendDocHistory, getDirtyDocument, getDocHistory, getDocument, markDocumentDirty, setDocument } from "../redis/client.js";
+import {
+  appendDocHistory,
+  getDirtyDocument,
+  getDocHistory,
+  getDocument,
+  markDocumentDirty,
+  setDocument,
+} from "../redis/client.js";
+import { subscribeToDocument } from "../redis/subClient.js";
 import ApiError from "../utils/ApiError.js";
 import { fetchDoc } from "../utils/helper.js";
 import { applyOperation, transformOperations } from "../utils/ot.js";
-import { DOCUMENT_EVENT } from "./socketEvents.js";
+import { CURSOR_EVENT, DOCUMENT_EVENT, SOCKET_EVENT } from "./socketEvents.js";
 
 const documentQueues = new Map();
 
@@ -42,6 +51,8 @@ export const mountJoinDocumentEvent = (socket, io) => {
       const userInDoc = document.users.find(
         (u) => u.userId.toString() === currentUserId
       );
+
+      await subscribeToDocument(data.docId, io)
 
       if (!isOwner && !userInDoc) {
         socket.emit(DOCUMENT_EVENT.ERROR, {
@@ -112,14 +123,24 @@ export const mountDocumentRecivedOperation = (socket) => {
       throw new ApiError(400, "Doc Id is required");
     }
 
+    const isUserAuthorizedToEdit = await verifyDocumentEditor(
+      docId,
+      socket.user
+    );
+    if (!isUserAuthorizedToEdit) {
+      return socket.emit(SOCKET_EVENT.ERROR, {
+        message: "YOUR NOT AUTHORIZED FOR THIS ACTION",
+      });
+    }
+
     if (!actions || !Array.isArray(actions)) {
-      return socket.emit("error", {
+      return socket.emit(SOCKET_EVENT.ERROR, {
         message: "actionss array is required for OT",
       });
     }
 
     if (typeof version !== "number") {
-      return socket.emit("error", {
+      return socket.emit(SOCKET_EVENT.ERROR, {
         message: "version number is required or OT",
       });
     }
@@ -144,7 +165,8 @@ export const mountDocumentRecivedOperation = (socket) => {
           );
 
           for (const op of concurrentOts) {
-            transformedActions = transformOperations( // ot
+            transformedActions = transformOperations(
+              // ot
               // from ot.js
               op.actions,
               transformedActions
@@ -184,7 +206,7 @@ export const mountDocumentRecivedOperation = (socket) => {
         console.log(`Document ${docId} version update to ${document.version}`);
       } catch (error) {
         console.error("SEND OPERATION", error.message);
-        socket.emit("error", {
+        socket.emit(SOCKET_EVENT.ERROR, {
           message: error.message || "Failed to proccess OT operations",
         });
       }
@@ -193,42 +215,47 @@ export const mountDocumentRecivedOperation = (socket) => {
 };
 
 export const startDocumentFlushScheduler = () => {
-  console.log("Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾")
-    setInterval(async()=>{
-      try {
-          const dirtyDocIds = await getDirtyDocument();
-          if(!dirtyDocIds || dirtyDocIds.length === 0) {
-              return;
-          }
-          for(const docId of dirtyDocIds) {
-               const removed = await removeDirtyDocument(docId);
-               if(removed) {
-                    const document = await getDocument(docId)
-                    if(document) {
-                      try {
-                        await Doc.findByIdAndUpdate(
-                          docId,
-                          {
-                            $set : {
-                                content : document.content,
-                                version : document.version,
-                                title : document.title
-                            }
-                          },
-                          {
-                            new  : true, runValidators : true
-                          }
-                        )
-                        console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`)
-                    } catch (dbError) {
-                          console.error("failed to save in mongodb" , dbError.message);
-                          await markDocumentDirty(docId)
-                    }
-                    }
-               }
-          }
-      } catch (error) {
-          console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message)
+  console.log(
+    "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
+  );
+  setInterval(async () => {
+    try {
+      const dirtyDocIds = await getDirtyDocument();
+      if (!dirtyDocIds || dirtyDocIds.length === 0) {
+        return;
       }
-    },10000)
-}
+      for (const docId of dirtyDocIds) {
+        const removed = await removeDirtyDocument(docId);
+        if (removed) {
+          const document = await getDocument(docId);
+          if (document) {
+            try {
+              await Doc.findByIdAndUpdate(
+                docId,
+                {
+                  $set: {
+                    content: document.content,
+                    version: document.version,
+                    title: document.title,
+                  },
+                },
+                {
+                  new: true,
+                  runValidators: true,
+                }
+              );
+              console.log(
+                `flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`
+              );
+            } catch (dbError) {
+              console.error("failed to save in mongodb", dbError.message);
+              await markDocumentDirty(docId);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message);
+    }
+  }, 10000);
+};

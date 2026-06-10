@@ -101,7 +101,16 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
 export const mountPendingNotification = async (socket) => {
   const payload = await getPendingNotification(socket.user.email);
-  if (payload?.length >= 1) {
-    socket.emit(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, payload);
+
+  const userNotifications = payload.filter((i)=>{
+     return  i.inviterEmail === socket.user.email
+  })
+
+  console.log("userNotifications", userNotifications)
+
+  if (payload?.length >= 0) {
+    console.log("userNotifications", userNotifications)
+    socket.emit(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, userNotifications)
   }
+
 };

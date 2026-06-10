@@ -1,7 +1,6 @@
 import User from "../module/auth/auth.model.js";
 import Doc from "../module/document/document.model.js";
 import { getDocument, getUser, setDocument, setUser } from "../redis/client.js";
-import { doc } from "../TESTING_FOLDER/document.js";
 import ApiError from "./ApiError.js";
 
 export const secureUser = async (userId) => {
