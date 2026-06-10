@@ -1826,6 +1826,19 @@ h1, h2, h3, h4, h5, h6 {
   animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
 /* Modern Gradient Pulse */
 @keyframes pulse-slow {
   0%, 100% {
@@ -1983,11 +1996,18 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   max-width: 1400px;
   background: #ffffff;
-  border-radius: 24px;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.04);
+  border-radius: 32px;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.85);
   overflow: hidden;
   min-height: min(720px, 90vh);
+  transition: all 0.3s ease;
+}
+
+.dark .login-page-container {
+  background: #111827;
+  border-color: #1f2937;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 @media (min-width: 1024px) {
@@ -2014,7 +2034,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 100%;
   width: auto;
   height: auto;
-  max-height: min(270px, 28vh);
+  max-height: min(340px, 35vh);
 }
 
 .login-card-wrapper {
@@ -2025,6 +2045,13 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.5);
   padding: clamp(24px, 3.8vh, 40px);
+  transition: all 0.3s ease;
+}
+
+.dark .login-card-wrapper {
+  background-color: #1f2937;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
 }
 
 /* --- Viewport-Aware ForgotPasswordPage Refinement --- */
@@ -2104,10 +2131,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .register-hero-illustration {
-  max-width: 100%;
+  max-width: 220px;
   width: auto;
   height: auto;
-  max-height: min(288px, 28vh);
+  max-height: 180px;
 }
 
 .register-section-gap {
@@ -2211,5 +2238,40 @@ h1, h2, h3, h4, h5, h6 {
 .word-ribbon-toolbar-panel select {
   display: none !important;
 }
+
+/* --- High Contrast Auth Pages Fix for Dark Mode --- */
+.dark .forgot-page-container h1,
+.dark .forgot-page-container h2,
+.dark .forgot-page-container h3,
+.dark .register-page-container h1,
+.dark .register-page-container h2,
+.dark .register-page-container h3,
+.dark .verify-page-container h1,
+.dark .verify-page-container h2,
+.dark .verify-page-container h3,
+.dark .set-password-container h1,
+.dark .set-password-container h2,
+.dark .set-password-container h3 {
+  color: #0F172A !important;
+}
+
+.dark .forgot-hero-heading {
+  color: #0F172A !important;
+}
+
+.dark .forgot-hero-description {
+  color: #4B5563 !important;
+}
+
+.dark .forgot-page-container h1.text-blue-600,
+.dark .register-page-container h1.text-slate-900 {
+  color: #0F172A !important;
+}
+
+.dark .register-page-container span.text-blue-500 {
+  color: #3b82f6 !important;
+}
+
+
 
 

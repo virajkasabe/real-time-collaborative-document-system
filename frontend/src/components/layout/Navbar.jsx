@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Bell, LogOut, User, FolderDot } from 'lucide-react';
+import { Search, Plus, Bell, LogOut, User, FolderDot, Menu } from 'lucide-react';
 import ThemeToggle from '../common/ThemeToggle';
 import { useAuth } from '../../context/AuthContext';
 import { documentService } from '../../services/documentService';
 import Button from '../common/Button';
+import NotificationBell from '../notifications/NotificationBell';
 
-export default function Navbar({ onSearchChange }) {
+export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) {
   const { user, logout, triggerToast } = useAuth();
   const navigate = useNavigate();
   const [searchVal, setSearchVal] = useState('');
@@ -32,6 +33,15 @@ export default function Navbar({ onSearchChange }) {
   return (
     <header className="h-14 bg-white/85 dark:bg-[#070B14]/80 backdrop-blur-md border-b border-[#E5E7EB] dark:border-white/10 sticky top-0 z-30 px-6 flex items-center justify-between transition-colors duration-300">
       
+      {/* Mobile Sidebar Toggle */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="md:hidden p-1.5 mr-2 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-[#E5E7EB]/40 dark:hover:bg-[#0F172A] transition-colors duration-300 cursor-pointer"
+        aria-label="Toggle Sidebar"
+      >
+        <Menu size={18} />
+      </button>
+
       {/* Search Bar */}
       <form onSubmit={handleSearchSubmit} className="flex-1 max-w-[420px] relative">
         <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[#6B7280] dark:text-slate-500">
@@ -50,7 +60,7 @@ export default function Navbar({ onSearchChange }) {
       </form>
 
       {/* Utilities Control */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         
         {/* Create Document button */}
         <Button size="md" onClick={handleCreateDocument} icon={Plus} className="text-[13px] font-semibold px-3 h-9 inline-flex items-center shadow-sm shadow-blue-500/10">
@@ -60,13 +70,8 @@ export default function Navbar({ onSearchChange }) {
         {/* Theme Toggle Button */}
         <ThemeToggle />
 
-        {/* Notifications mock bell */}
-        <button
-          onClick={() => triggerToast('No unread notifications', 'info')}
-          className="p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-[#E5E7EB]/40 dark:hover:bg-[#0F172A] transition-colors duration-300"
-        >
-          <Bell size={15} />
-        </button>
+        {/* Notifications bell */}
+        <NotificationBell />
 
         {/* Profile Circle Dropdown */}
         <div className="relative">
@@ -74,18 +79,18 @@ export default function Navbar({ onSearchChange }) {
             onClick={() => setProfileOpen(!profileOpen)}
             className="flex items-center rounded-full hover:ring-2 hover:ring-[#0D6EFD]/35 transition-all duration-300 shrink-0"
           >
-            <img
-              src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256'}
-              alt={user?.name}
-              className="w-10 h-10 rounded-full object-cover border border-[#E5E7EB] dark:border-[#0D6EFD]/25 transition-colors duration-300"
-            />
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center cursor-pointer ring-2 ring-blue-500/30 hover:ring-blue-500/60 transition-all duration-200 flex-shrink-0">
+              <span className="text-white text-sm font-extrabold uppercase">
+                {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+              </span>
+            </div>
           </button>
 
           {profileOpen && (
             <div className="absolute right-0 mt-2 w-52 glass-card shadow-md p-1.5 z-50 border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#0F172A] transition-colors duration-300 rounded-xl text-left select-none">
               <div className="px-2.5 py-1.5 border-b border-[#E5E7EB] dark:border-white/10">
-                <p className="font-bold text-xs text-[#081B3A] dark:text-[#E5E7EB] truncate">{user?.name}</p>
-                <p className="text-[10px] text-[#6B7280] dark:text-[#94A3B8]/60 truncate">{user?.email}</p>
+                <p className="font-bold text-white truncate">{user?.name}</p>
+                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
               </div>
 
               <div className="mt-1.5 space-y-0.5">

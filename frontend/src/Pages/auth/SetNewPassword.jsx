@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
+
 import bgImage from "../../assets/SET-PASSWORD.png";
 import { useAuth } from "../../context/AuthContext";
 
 export default function SetNewPassword() {
-  const { resetPassword, isAuthenticated, triggerToast, login } = useAuth();
+  const { resetPassword, isAuthenticated, triggerToast } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
@@ -69,14 +69,6 @@ export default function SetNewPassword() {
     }
   };
 
-  const handleGoogleMock = async () => {
-    setLoading(true);
-    const success = await login('google.user@company.com', 'password');
-    setLoading(false);
-    if (success) {
-      navigate('/dashboard');
-    }
-  };
 
   return (
     <div className="h-screen bg-[#dcecff] flex items-center justify-center overflow-hidden">
@@ -90,8 +82,8 @@ export default function SetNewPassword() {
         />
 
         {/* Right Side Form */}
-        <div className="absolute inset-0 flex justify-end items-center pr-[11%]">
-          <div className="w-[450px] bg-white rounded-[30px] shadow-2xl p-8 text-left border border-slate-100">
+        <div className="absolute inset-0 flex justify-center lg:justify-end items-center px-4 sm:px-6 lg:px-0 lg:pr-[11%]">
+          <div className="w-full max-w-[450px] bg-white rounded-[30px] shadow-2xl p-8 text-left border border-slate-100 set-password-container">
 
             {/* Lock Icon */}
             <div className="flex justify-center mb-5">
@@ -186,25 +178,8 @@ export default function SetNewPassword() {
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 h-px bg-gray-300"></div>
-              <span className="text-gray-500 text-sm font-medium">OR</span>
-              <div className="flex-1 h-px bg-gray-300"></div>
-            </div>
-
-            {/* Google Button */}
-            <button
-              onClick={handleGoogleMock}
-              disabled={loading}
-              className="w-full border border-gray-300 py-3 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 transition duration-150 font-medium text-slate-700"
-            >
-              <FcGoogle size={22} />
-              Continue with Google
-            </button>
-
             {/* Back to Login */}
-            <div className="text-center mt-5 font-semibold text-sm">
+            <div className="text-center mt-6 font-semibold text-sm">
               <Link
                 to="/login"
                 className="text-blue-600 hover:underline inline-flex items-center"
