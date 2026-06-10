@@ -45,8 +45,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
 
   return (
     <aside 
-      className={`glass-panel h-full z-20 flex flex-col justify-between transition-all duration-300 border-r border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#080E1A] select-none text-left shrink-0
-        ${sidebarOpen ? 'w-64' : 'w-16'}
+      className={`glass-panel h-full z-40 flex flex-col justify-between transition-all duration-300 border-r border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#080E1A] select-none text-left shrink-0
+        absolute md:static top-0 left-0
+        ${sidebarOpen ? 'w-[240px] translate-x-0' : 'w-0 md:w-[64px] -translate-x-full md:translate-x-0 overflow-hidden border-none'}
       `}
     >
       {/* Top Branding & Main Navigation */}

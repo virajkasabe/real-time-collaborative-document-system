@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { User, FileText, Users, Star, Check, X } from 'lucide-react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import { User, FileText, Users, Star, Check, X, Lock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import { documentService } from '../../services/documentService';
 export default function Profile() {
   const { user, triggerToast } = useAuth();
   const { sidebarOpen } = useOutletContext();
+  const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -64,9 +65,14 @@ export default function Profile() {
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setIsEditing(true)} icon={User}>
-                  Edit Profile
-                </Button>
+                <>
+                  <Button variant="outline" onClick={() => navigate('/reset-password')} icon={Lock}>
+                    Reset Password
+                  </Button>
+                  <Button onClick={() => setIsEditing(true)} icon={User}>
+                    Edit Profile
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -75,17 +81,15 @@ export default function Profile() {
             
             {/* Left: Profile Summary Card */}
             <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-6 shadow-sm flex flex-col items-center text-center space-y-4 transition-all duration-300">
-              <div className="relative w-24 h-24">
-                <img 
-                  src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256'} 
-                  alt={name} 
-                  className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-[#0F172A] shadow-md ring-1 ring-slate-100 dark:ring-white/10"
-                />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center mx-auto shadow-xl ring-4 ring-blue-500/30">
+                <span className="text-white text-4xl font-extrabold uppercase">
+                  {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </span>
               </div>
 
               <div className="space-y-1">
-                <h3 className="font-sans font-bold text-base text-[#081B3A] dark:text-white truncate">
-                  {name}
+                <h3 className="text-xl font-bold text-white mt-3 capitalize">
+                  {user?.name || user?.email?.split('@')[0]}
                 </h3>
                 <p className="text-xs text-[#6B7280] dark:text-[#94A3B8]/80 font-medium truncate">
                   {user?.email}

@@ -6,14 +6,16 @@ import Landing from '../pages/landing/Landing';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
-import VerifyEmailPage from '../pages/auth/VerifyEmailPage';
-import SetNewPassword from '../pages/auth/SetNewPassword';
+import EmailVerificationPage from '../pages/auth/EmailVerificationPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import Dashboard from '../pages/dashboard/Dashboard';
 import Documents from '../pages/dashboard/Documents';
 import SharedDocuments from '../pages/dashboard/SharedDocuments';
 import EditingPage from '../pages/EditingPage';
 import Profile from '../pages/profile/Profile';
 import Settings from '../pages/profile/Settings';
+import ResetPassword from '../pages/profile/ResetPassword';
+import NotificationsPage from '../pages/NotificationsPage';
 
 // Layout and Protected Route
 import Layout from '../components/layout/Layout';
@@ -27,8 +29,9 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
-      <Route path="/set-new-password" element={<SetNewPassword />} />
+      <Route path="/verify-email" element={<EmailVerificationPage />} />
+      <Route path="/set-new-password" element={<ResetPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Secure Authenticated Pages wrapped in Layout */}
       <Route element={
@@ -41,6 +44,8 @@ export default function AppRoutes() {
         <Route path="/shared" element={<SharedDocuments />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Route>
       
       {/* Standalone Editor Route for immersive editing */}

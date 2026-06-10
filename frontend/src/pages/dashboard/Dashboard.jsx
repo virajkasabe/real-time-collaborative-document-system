@@ -389,23 +389,23 @@ export default function Dashboard() {
         <h4 className="font-sans font-semibold text-[15px] tracking-tight text-[#081B3A] dark:text-white px-0.5">
           Quick Actions
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {quickActionCards.map((card, idx) => {
             const Icon = card.icon;
             return (
               <div
                 key={idx}
                 onClick={card.action}
-                className="glass-card p-2 px-3 border border-[#E5E7EB] dark:border-white/5 bg-white dark:bg-[#0F172A]/40 transition-all duration-300 ease-in-out cursor-pointer flex items-center gap-3 group relative rounded-xl h-[52px] hover:border-[#0D6EFD]/35 dark:hover:border-blue-500/25 hover:shadow-[0_0_15px_rgba(13,110,253,0.12)] hover:scale-[1.01] hover:-translate-y-0.5"
+                className="glass-card p-2 px-3 border border-[#E5E7EB] dark:border-white/5 bg-white dark:bg-[#0F172A]/40 transition-all duration-300 ease-in-out cursor-pointer flex items-center gap-3 group relative rounded-xl min-h-[52px] py-2 min-w-[120px] hover:border-[#0D6EFD]/35 dark:hover:border-blue-500/25 hover:shadow-[0_0_15px_rgba(13,110,253,0.12)] hover:scale-[1.01] hover:-translate-y-0.5"
               >
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm ${card.color}`}>
                   <Icon size={14} />
                 </div>
-                <div className="min-w-0 flex-1 text-left">
-                  <h5 className="font-semibold text-[13.5px] text-[#081B3A] dark:text-slate-200 truncate leading-tight group-hover:text-blue-500 dark:group-hover:text-white transition-colors">
+                <div className="min-w-0 flex-1 text-left py-0.5">
+                  <h5 className="font-semibold text-[13.5px] text-[#081B3A] dark:text-slate-200 leading-tight group-hover:text-blue-500 dark:group-hover:text-white transition-colors break-words">
                     {card.title}
                   </h5>
-                  <p className="text-[11.5px] text-[#6B7280] dark:text-[#94A3B8]/70 font-normal leading-none truncate mt-0.5">
+                  <p className="text-[11.5px] text-[#6B7280] dark:text-[#94A3B8]/70 font-normal leading-normal break-words mt-0.5">
                     {card.desc}
                   </p>
                 </div>
