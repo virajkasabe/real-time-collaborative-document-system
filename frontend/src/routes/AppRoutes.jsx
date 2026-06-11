@@ -20,6 +20,16 @@ import NotificationsPage from '../pages/NotificationsPage';
 // Layout and Protected Route
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
+import ToastNotification from '../components/notifications/ToastNotification';
+
+const DashboardLayout = ({ children }) => {
+  return (
+    <>
+      <ToastNotification />
+      {children}
+    </>
+  );
+};
 
 export default function AppRoutes() {
   return (
@@ -36,7 +46,9 @@ export default function AppRoutes() {
       {/* Secure Authenticated Pages wrapped in Layout */}
       <Route element={
         <ProtectedRoute>
-          <Layout />
+          <DashboardLayout>
+            <Layout />
+          </DashboardLayout>
         </ProtectedRoute>
       }>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -51,7 +63,9 @@ export default function AppRoutes() {
       {/* Standalone Editor Route for immersive editing */}
       <Route path="/editor/:id" element={
         <ProtectedRoute>
-          <EditingPage />
+          <DashboardLayout>
+            <EditingPage />
+          </DashboardLayout>
         </ProtectedRoute>
       } />
 

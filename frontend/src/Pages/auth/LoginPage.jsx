@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
-import { FaFileAlt } from "react-icons/fa";
 import { HiOutlineMail } from "react-icons/hi";
 import { FiLock, FiEye, FiEyeOff, FiUsers, FiShield, FiClock, FiUserCheck } from "react-icons/fi";
 import bgImage from "../../assets/collab-bg.png";
 import { useAuth } from "../../context/AuthContext";
 import { BRAND_NAME } from "../../utils/constants";
+import athenuraLogo from "../../assets/athenura-logo.png";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function LoginPage() {
   const { login, triggerToast } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
@@ -56,7 +59,7 @@ export default function LoginPage() {
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-[#EEF2F7] dark:bg-[#070B14] p-4 font-sans">
       {/* Main Card Container */}
-      <div className="w-full max-w-5xl flex flex-row h-[90vh] max-h-[700px] min-h-[560px] rounded-2xl shadow-2xl shadow-blue-900/5 dark:shadow-black/50 overflow-hidden bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 transition-all">
+      <div className="w-full max-w-5xl flex flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-2xl shadow-blue-900/5 dark:shadow-black/50 overflow-hidden bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 transition-all">
         
         {/* LEFT PANEL: Branding & Info (50% width on desktop) */}
         <div className="hidden md:flex w-1/2 flex-col justify-between overflow-hidden p-8 bg-gradient-to-br from-[#F4F8FD] to-[#E5EFFE] dark:from-[#131B2E] dark:to-[#0A0D18] relative self-stretch border-r border-slate-200/40 dark:border-slate-800/40">
@@ -78,13 +81,16 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex flex-col gap-1 relative z-10">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-[#2563EB] flex items-center justify-center shadow-lg shadow-[#2563EB]/20">
-                <FaFileAlt className="text-white text-lg" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">
-                <span className="text-slate-900 dark:text-white">Collab</span>
-                <span className="text-[#2563EB]">Docs</span>
-              </span>
+              <img 
+                src={athenuraLogo}
+                alt="Athenura"
+                className="h-10 w-auto object-contain"
+                style={{ 
+                  maxWidth: '160px',
+                  filter: isDark ? 'brightness(10)' : 'brightness(0.2)',
+                  opacity: '0.95'
+                }}
+              />
             </div>
           </div>
 
@@ -158,7 +164,7 @@ export default function LoginPage() {
         </div>
 
         {/* RIGHT PANEL: Login Form (50% width) */}
-        <div className="w-full md:w-1/2 bg-white dark:bg-[#0E1524] flex flex-col justify-center overflow-hidden py-6 px-8 relative self-stretch">
+        <div className="w-full md:w-1/2 bg-white dark:bg-[#0E1524] flex flex-col justify-center overflow-hidden p-8 relative self-stretch">
           
           {/* Subtle dot grid in top-right */}
           <div 
@@ -181,7 +187,7 @@ export default function LoginPage() {
               
               {/* Email Input */}
               <div className="space-y-1 text-left">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 normal-case mb-1">
                   Email Address
                 </label>
                 <div className="relative">
@@ -193,7 +199,7 @@ export default function LoginPage() {
                     onFocus={() => setEmailFocused(true)}
                     onBlur={() => setEmailFocused(false)}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full h-[38px] text-sm bg-slate-50 dark:bg-slate-800/30 border ${
+                    className={`w-full h-10 text-sm bg-slate-50 dark:bg-slate-800/30 border ${
                       errors.email ? 'border-red-500 focus:ring-red-400/20' : 'border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
                     } rounded-lg pl-10 pr-4 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all font-medium`}
                   />
@@ -205,7 +211,7 @@ export default function LoginPage() {
 
               {/* Password Input */}
               <div className="space-y-1 text-left">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 normal-case mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -217,7 +223,7 @@ export default function LoginPage() {
                     onFocus={() => setPasswordFocused(true)}
                     onBlur={() => setPasswordFocused(false)}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full h-[38px] text-sm bg-slate-50 dark:bg-slate-800/30 border ${
+                    className={`w-full h-10 text-sm bg-slate-50 dark:bg-slate-800/30 border ${
                       errors.password ? 'border-red-500 focus:ring-red-400/20' : 'border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
                     } rounded-lg pl-10 pr-10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all font-medium`}
                   />
@@ -266,7 +272,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-[38px] rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex items-center justify-center"
+                className="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex items-center justify-center"
               >
                 {loading ? 'Sign In...' : 'Sign In'}
               </button>
@@ -285,7 +291,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full h-[38px] border border-slate-200 dark:border-slate-700/60 rounded-lg bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 active:bg-slate-200/50 dark:active:bg-slate-850 text-slate-700 dark:text-slate-300 font-semibold text-xs flex justify-center items-center gap-2.5 cursor-pointer transition-all"
+                className="w-full h-10 border border-slate-200 dark:border-slate-700/60 rounded-lg bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/80 active:bg-slate-200/50 dark:active:bg-slate-850 text-slate-700 dark:text-slate-300 font-semibold text-xs flex justify-center items-center gap-2.5 cursor-pointer transition-all"
               >
                 <FcGoogle size={18} />
                 Continue with Google

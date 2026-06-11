@@ -1,9 +1,27 @@
 import React from 'react';
 import { FiX, FiMail, FiCheck } from 'react-icons/fi';
 import { useNotifications } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 export default function ToastNotification() {
   const { toasts, dismissToast } = useNotifications();
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // List of auth/public routes
+  const publicRoutes = [
+    '/', 
+    '/login', 
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/verify-email',
+    '/set-new-password'
+  ];
+
+  if (!user) return null;
+  if (publicRoutes.includes(location.pathname)) return null;
 
   const getToastTitle = (type) => {
     switch (type) {
@@ -36,7 +54,7 @@ export default function ToastNotification() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="flex items-start gap-3 bg-white dark:bg-gray-850 border border-gray-150 dark:border-gray-700 rounded-2xl shadow-xl p-4 min-w-[320px] max-w-[400px] relative overflow-hidden animate-slide-in-right pointer-events-auto"
+          className="flex items-start gap-3 bg-white dark:bg-[#1E2535] border border-gray-100 dark:border-gray-700 rounded-2xl shadow-2xl p-4 min-w-[320px] max-w-[400px] relative overflow-hidden animate-slide-in-right pointer-events-auto"
         >
           {/* Icon based on type */}
           <div

@@ -5,13 +5,13 @@ export default function NotificationItem({ notification, onRead }) {
   const getIcon = (type) => {
     switch (type) {
       case 'COLLAB_INVITED':
-        return <FiMail className="text-[#2563EB] dark:text-blue-400" />;
+        return <FiMail className="text-[#2563EB] text-base" />;
       case 'COLLAB_ACCEPTED':
-        return <FiUserCheck className="text-green-500" />;
+        return <FiUserCheck className="text-green-500 text-base" />;
       case 'COLLAB_DECLINED':
-        return <FiUserX className="text-red-500" />;
+        return <FiUserX className="text-red-500 text-base" />;
       default:
-        return <FiBell className="text-gray-400" />;
+        return <FiBell className="text-gray-400 text-base" />;
     }
   };
 
@@ -44,7 +44,7 @@ export default function NotificationItem({ notification, onRead }) {
   return (
     <div
       onClick={() => onRead(notification.id)}
-      className={`flex items-start gap-3 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 border-b border-gray-50 dark:border-gray-700/50 ${
+      className={`flex items-start gap-3 p-4 cursor-pointer transition-colors duration-150 border-b border-gray-50 dark:border-gray-700/30 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${
         !notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
       }`}
     >
@@ -55,7 +55,7 @@ export default function NotificationItem({ notification, onRead }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0 text-left">
-        <p className="text-sm text-[#0F172A] dark:text-white leading-snug break-words">
+        <p className="text-sm text-[#0F172A] dark:text-gray-200 leading-snug break-words">
           {getMessage(notification)}
         </p>
         <p className="text-xs text-[#94A3B8] dark:text-gray-500 mt-1">
@@ -65,7 +65,7 @@ export default function NotificationItem({ notification, onRead }) {
 
       {/* Unread dot */}
       {!notification.read && (
-        <div className="w-2 h-2 bg-[#2563EB] rounded-full flex-shrink-0 mt-1" />
+        <div className="w-2 h-2 bg-[#2563EB] rounded-full flex-shrink-0 mt-1.5" />
       )}
     </div>
   );
