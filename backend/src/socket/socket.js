@@ -19,9 +19,19 @@ export const initializeSocketIO = (io) => {
   startDocumentFlushScheduler()
   return io.on(CONNECT_DISCONNET_EVENT.CONNECTION, async (socket) => {
     try {
+      console.log("🚀 ~ file: socket.js:22 ~ socket.handshake.headers:", socket);
       const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
+      console.log("🚀 ~ file: socket.js:23 ~ cookies:", socket);
 
       let token = cookies?.accessToken;
+
+      console.log("🚀 ~ file: socket.js:26 ~ token from header:", socket.header);
+
+      if(!token){
+         token = socket.header("Authorization")?.replace("Bearer ", "");
+      }  
+      
+      console.log("🚀 ~ file: socket.js:24 ~ token:", token);
 
       if (!token) {
         token = token.handshake.auth?.token;
@@ -65,7 +75,7 @@ export const initializeSocketIO = (io) => {
       // mountNotificationEvent()
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
-        console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER ID : ", user.fullName);
+        console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER : ", user.fullName);
         if (socket.docId) {
           socket.to(socket.docId).emit(DOCUMENT_EVENT.USER_LEFT, {
             messag: `${socket.user.fullName} was offine`,
