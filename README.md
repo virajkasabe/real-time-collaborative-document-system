@@ -96,7 +96,7 @@ docker_mongo_image
 
 ```
 
-docker run -d -p 27017:27017 --name my-mongo -v mongo-data:/data/db mongo:latest    
+docker run -d --name mongodb-lts -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password mongo:6.0      
 
 ```
 
