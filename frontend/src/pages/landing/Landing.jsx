@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
-  FolderDot, 
   Activity, 
   Sparkles, 
   Shield, 
@@ -23,6 +22,8 @@ import {
 import Button from '../../components/common/Button';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import { BRAND_NAME } from '../../utils/constants';
+import { useTheme } from '../../context/ThemeContext';
+import athenuraLogo from '../../assets/athenura-logo.png';
 
 // 1. LIGHTWEIGHT SCROLL REVEAL COMPONENT ( IntersectionObserver )
 function RevealOnScroll({ children, delay = 0 }) {
@@ -150,6 +151,22 @@ function AnimatedDecimalCounter({ end, duration = 1500, suffix = "" }) {
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
+
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      forceUpdate(n => n + 1);
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    return () => observer.disconnect();
+  }, []);
+
   
   // Real-time editor typing simulation script
   const [typedText, setTypedText] = useState("");
@@ -246,11 +263,19 @@ export default function Landing() {
       {/* STICKY GLASS NAVIGATION NAVBAR */}
       <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
         <div className="max-w-[1280px] mx-auto px-[24px] h-[72px] flex items-center justify-between">
-          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-8 h-8 rounded-lg bg-[#0D6EFD] flex items-center justify-center shadow-md shadow-blue-500/20 transform group-hover:scale-105 transition-transform duration-200">
-              <FolderDot size={18} className="text-white" />
-            </div>
-            <span className="font-sans font-extrabold text-sm uppercase tracking-widest text-[#081B3A] dark:text-white">{BRAND_NAME}</span>
+          <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
+            <img 
+              src={athenuraLogo}
+              alt="Athenura"
+              className="h-10 w-auto object-contain"
+              style={{ 
+                maxWidth: '160px',
+                filter: isDark 
+                  ? 'brightness(10)' 
+                  : 'brightness(0.2)',
+                opacity: '0.95'
+              }}
+            />
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />

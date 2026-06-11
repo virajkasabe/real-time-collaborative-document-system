@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import verifyImage from "../../assets/verify-email.png";
 import { useAuth } from "../../context/AuthContext";
-import { FaFileAlt } from 'react-icons/fa';
+import athenuraLogo from "../../assets/athenura-logo.png";
+import { useTheme } from "../../context/ThemeContext";
 import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
 
 export default function EmailVerificationPage() {
   const { triggerToast } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
@@ -122,13 +125,16 @@ export default function EmailVerificationPage() {
           {/* Logo */}
           <div className="flex flex-col text-left relative z-10 shrink-0 mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-md shadow-blue-500/20">
-                <FaFileAlt className="text-white text-base" />
-              </div>
-              <span className="text-xl font-extrabold tracking-tight">
-                <span className="text-[#0F172A] dark:text-white">Collab</span>
-                <span className="text-[#2563EB]">Docs</span>
-              </span>
+              <img 
+                src={athenuraLogo}
+                alt="Athenura"
+                className="h-10 w-auto object-contain"
+                style={{ 
+                  maxWidth: '160px',
+                  filter: isDark ? 'brightness(10)' : 'brightness(0.2)',
+                  opacity: '0.95'
+                }}
+              />
             </div>
             <div className="w-8 h-[3px] bg-[#2563EB] mt-1.5 rounded-full" />
           </div>

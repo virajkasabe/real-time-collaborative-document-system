@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom';
 import { FiBell } from 'react-icons/fi';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationItem from './NotificationItem';
+import { useAuth } from '../../context/AuthContext';
 
 export default function NotificationBell() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
+
+  if (!user) return null;
 
   return (
     <div className="relative">
@@ -27,10 +31,10 @@ export default function NotificationBell() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-12 w-[340px] sm:w-[380px] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-12 w-[380px] bg-white dark:bg-[#1E2535] border border-gray-100 dark:border-gray-700 rounded-2xl shadow-2xl z-[100] overflow-hidden">
           
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 select-none">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700/50">
             <div className="text-left">
               <h3 className="font-bold text-base text-[#0F172A] dark:text-white">
                 Notifications
@@ -45,7 +49,7 @@ export default function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-xs text-[#2563EB] dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+                  className="text-xs text-[#2563EB] font-semibold hover:underline cursor-pointer"
                 >
                   Mark all read
                 </button>
@@ -86,15 +90,13 @@ export default function NotificationBell() {
 
           {/* Footer - View All */}
           {notifications.length > 0 && (
-            <div className="p-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 select-none">
-              <Link
-                to="/notifications"
-                onClick={() => setOpen(false)}
-                className="block text-center text-sm text-[#2563EB] dark:text-blue-400 font-semibold hover:underline"
-              >
-                View all notifications →
-              </Link>
-            </div>
+            <Link
+              to="/notifications"
+              onClick={() => setOpen(false)}
+              className="block text-center text-sm text-[#2563EB] font-semibold p-3 hover:underline border-t border-gray-100 dark:border-gray-700"
+            >
+              View all notifications →
+            </Link>
           )}
         </div>
       )}

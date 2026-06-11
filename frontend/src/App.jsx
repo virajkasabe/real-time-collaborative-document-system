@@ -7,7 +7,6 @@ import EmailVerificationPage from './pages/auth/EmailVerificationPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
-import ToastNotification from './components/notifications/ToastNotification';
 
 export default function App() {
   const { toast } = useAuth();
@@ -15,7 +14,6 @@ export default function App() {
   return (
     <SocketProvider>
       <NotificationProvider>
-        <ToastNotification />
         <AppRoutes />
         {/* Routes list:
           <Route path="/verify-email" element={<EmailVerificationPage />} />

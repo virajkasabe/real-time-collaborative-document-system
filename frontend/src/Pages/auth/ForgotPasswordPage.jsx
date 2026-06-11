@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaFileAlt } from 'react-icons/fa';
 import { HiOutlineMail } from 'react-icons/hi';
+import athenuraLogo from "../../assets/athenura-logo.png";
+import { useTheme } from "../../context/ThemeContext";
 import { FiLock, FiSend, FiShield, FiUsers,
          FiClock, FiRefreshCw, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
@@ -9,6 +10,8 @@ import { FiLock, FiSend, FiShield, FiUsers,
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -70,13 +73,16 @@ export default function ForgotPasswordPage() {
           {/* a) Logo */}
           <div className="flex flex-col relative z-10 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-md shadow-blue-500/20">
-                <FaFileAlt className="text-white text-lg" />
-              </div>
-              <span className="text-2xl font-extrabold tracking-tight">
-                <span className="text-[#0F172A] dark:text-white">Collab</span>
-                <span className="text-[#2563EB]">Docs</span>
-              </span>
+              <img 
+                src={athenuraLogo}
+                alt="Athenura"
+                className="h-10 w-auto object-contain"
+                style={{ 
+                  maxWidth: '160px',
+                  filter: isDark ? 'brightness(10)' : 'brightness(0.2)',
+                  opacity: '0.95'
+                }}
+              />
             </div>
             {/* b) Blue underline divider */}
             <div className="w-10 h-[3px] bg-[#2563EB] mt-2 rounded-full" />

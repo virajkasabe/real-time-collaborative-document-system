@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -11,17 +11,44 @@ import {
   Settings, 
   ChevronLeft, 
   ChevronRight,
-  FolderOpen,
   LogOut
 } from 'lucide-react';
-import { BRAND_NAME } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import athenuraCircle from '../../assets/athenura-circle.png';
+import athenuraLogo from '../../assets/athenura-logo.png';
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark' || document.documentElement.classList.contains('dark');
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname + location.search;
   const { logout, triggerToast } = useAuth();
+
+  const [blendMode, setBlendMode] = useState(
+    document.documentElement.classList.contains('dark') 
+      ? 'screen' : 'multiply'
+  );
+
+  useEffect(() => {
+    const updateBlendMode = () => {
+      setBlendMode(
+        document.documentElement.classList.contains('dark')
+          ? 'screen' : 'multiply'
+      );
+    };
+
+    // Watch for class changes on html element
+    const observer = new MutationObserver(updateBlendMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
 
   const mainNavItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -53,16 +80,28 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       {/* Top Branding & Main Navigation */}
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {/* Header Branding */}
-        <div className={`h-14 flex items-center border-b border-[#E5E7EB] dark:border-white/10 shrink-0 ${sidebarOpen ? 'gap-2 px-4' : 'justify-center'}`}>
-          <div className="text-[#0D6EFD] shrink-0">
-            <FolderOpen size={16} />
+        {sidebarOpen ? (
+          <div className="flex items-center px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+            <img
+              src={athenuraLogo}
+              alt="Athenura"
+              className="h-9 w-auto object-contain"
+              style={{
+                maxWidth: '150px',
+                mixBlendMode: blendMode
+              }}
+            />
           </div>
-          {sidebarOpen && (
-            <span className="font-sans font-bold text-xs uppercase tracking-wider text-[#081B3A] dark:text-[#E5E7EB]">
-              {BRAND_NAME}
-            </span>
-          )}
-        </div>
+        ) : (
+          <div className="h-14 flex items-center justify-center border-b border-[#E5E7EB] dark:border-white/10 shrink-0">
+            <img 
+              src={athenuraCircle} 
+              alt="Athenura" 
+              className="w-7 h-7 object-contain"
+              style={{ mixBlendMode: blendMode }}
+            />
+          </div>
+        )}
 
         {/* Primary Navigation Menu */}
         <nav className="mt-3 px-2 space-y-1 shrink-0">
