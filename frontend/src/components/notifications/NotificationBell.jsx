@@ -1,16 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiBell } from 'react-icons/fi';
-import { useNotifications } from '../../context/NotificationContext';
-import NotificationItem from './NotificationItem';
+import { FiBell, FiTrash2, FiCheck, FiX, FiMail, FiUserCheck, FiUserX } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { useSocketHooks } from '../../hooks/useSocketHooks';
+import { NOTIFICATION_EVENT } from '../../constants/events';
 
 export default function NotificationBell() {
-  const { user } = useAuth();
+  const { user, acceptInvitation, declineInvitation, triggerToast } = useAuth();
   const [open, setOpen] = useState(false);
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
+
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('collabdocs_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [count, setCount] = useState(() => {
+    const saved = localStorage.getItem('collabdocs_notification_count');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem('collabdocs_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('collabdocs_notification_count', count.toString());
+  }, [count]);
+
+  // Real-time socket events integration
+  useSocketHooks({
+    [NOTIFICATION_EVENT.NOTIFICATION_RECEIVED]: (data) => {
+      // Deduplicate by tokenId if it's an invite
+      if (data.tokenId && notifications.some(n => n.tokenId === data.tokenId)) {
+        return;
+      }
+      const newNotif = {
+        ...data,
+        id: data.id || Date.now() + Math.random(),
+        read: false,
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+      setCount((prev) => prev + 1);
+    }
+  });
 
   if (!user) return null;
+
+  const handleMarkAsRead = (id) => {
+    setNotifications(prev =>
+      prev.map(n => {
+        if (n.id === id && !n.read) {
+          setCount(c => Math.max(0, c - 1));
+          return { ...n, read: true };
+        }
+        return n;
+      })
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setCount(0);
+  };
+
+  const handleClearAll = () => {
+    setNotifications([]);
+    setCount(0);
+  };
+
+  const handleAccept = async (e, notif) => {
+    e.stopPropagation();
+    try {
+      await acceptInvitation(notif.accepterEmail, notif.tokenId);
+      triggerToast('Collaboration invitation accepted successfully!', 'success');
+      setNotifications(prev =>
+        prev.map(n => n.id === notif.id ? { ...n, read: true, status: 'accepted' } : n)
+      );
+      if (!notif.read) {
+        setCount(c => Math.max(0, c - 1));
+      }
+    } catch (err) {
+      triggerToast(err.message || 'Failed to accept invitation', 'error');
+    }
+  };
+
+  const handleDecline = async (e, notif) => {
+    e.stopPropagation();
+    try {
+      await declineInvitation(notif.accepterEmail, notif.tokenId);
+      triggerToast('Collaboration invitation declined successfully!', 'success');
+      setNotifications(prev =>
+        prev.map(n => n.id === notif.id ? { ...n, read: true, status: 'rejected' } : n)
+      );
+      if (!notif.read) {
+        setCount(c => Math.max(0, c - 1));
+      }
+    } catch (err) {
+      triggerToast(err.message || 'Failed to decline invitation', 'error');
+    }
+  };
+
+  const getIcon = (type) => {
+    switch (type) {
+      case 'COLLAB_INVITE':
+        return <FiMail className="text-[#2563EB] text-base" />;
+      case 'INVITE_ACCEPTED':
+        return <FiUserCheck className="text-green-500 text-base" />;
+      case 'INVITE_REJECTED':
+        return <FiUserX className="text-red-500 text-base" />;
+      default:
+        return <FiBell className="text-gray-400 text-base" />;
+    }
+  };
+
+  const getBg = (type) => {
+    switch (type) {
+      case 'COLLAB_INVITE':
+        return 'bg-blue-105 dark:bg-blue-900/30';
+      case 'INVITE_ACCEPTED':
+        return 'bg-green-105 dark:bg-green-900/30';
+      case 'INVITE_REJECTED':
+        return 'bg-red-105 dark:bg-red-900/30';
+      default:
+        return 'bg-gray-100 dark:bg-gray-700';
+    }
+  };
 
   return (
     <div className="relative">
@@ -22,9 +137,9 @@ export default function NotificationBell() {
         <FiBell className="text-[#0F172A] dark:text-white text-lg" />
         
         {/* Unread Badge */}
-        {unreadCount > 0 && (
+        {count > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold animate-pulse">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {count > 9 ? '9+' : count}
           </span>
         )}
       </button>
@@ -39,16 +154,16 @@ export default function NotificationBell() {
               <h3 className="font-bold text-base text-[#0F172A] dark:text-white">
                 Notifications
               </h3>
-              {unreadCount > 0 && (
+              {count > 0 && (
                 <p className="text-xs text-[#64748B] dark:text-gray-400 mt-0.5">
-                  {unreadCount} unread
+                  {count} unread
                 </p>
               )}
             </div>
             <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
+              {count > 0 && (
                 <button
-                  onClick={markAllAsRead}
+                  onClick={handleMarkAllAsRead}
                   className="text-xs text-[#2563EB] font-semibold hover:underline cursor-pointer"
                 >
                   Mark all read
@@ -56,9 +171,10 @@ export default function NotificationBell() {
               )}
               {notifications.length > 0 && (
                 <button
-                  onClick={clearAll}
-                  className="text-xs text-red-500 font-semibold hover:underline cursor-pointer"
+                  onClick={handleClearAll}
+                  className="text-xs text-red-500 font-semibold hover:underline cursor-pointer flex items-center gap-1"
                 >
+                  <FiTrash2 size={12} />
                   Clear all
                 </button>
               )}
@@ -73,17 +189,77 @@ export default function NotificationBell() {
                 <p className="text-sm font-semibold text-[#64748B] dark:text-gray-400">
                   No notifications yet
                 </p>
-                <p className="text-xs text-gray-450 dark:text-gray-500 mt-1">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   You're all caught up!
                 </p>
               </div>
             ) : (
-              notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onRead={markAsRead}
-                />
+              notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  onClick={() => handleMarkAsRead(notif.id)}
+                  className={`flex items-start gap-3 p-4 cursor-pointer transition-colors duration-150 border-b border-gray-50 dark:border-gray-700/30 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${
+                    !notif.read ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''
+                  }`}
+                >
+                  {/* Icon */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${getBg(notif.type)}`}>
+                    {getIcon(notif.type)}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm text-[#0F172A] dark:text-gray-200 leading-snug break-words">
+                      {notif.title}
+                    </p>
+                    <p className="text-xs text-[#94A3B8] dark:text-gray-500 mt-1">
+                      From: <span className="font-semibold text-gray-700 dark:text-gray-300">{notif.inviterName}</span>
+                    </p>
+                    <p className="text-[11px] text-gray-450 dark:text-gray-400 mt-0.5">
+                      Doc: <span className="font-medium">{notif.documentTitle}</span>
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {new Date(notif.createdAt).toLocaleString()}
+                    </p>
+
+                    {/* Action Buttons for COLLAB_INVITE type */}
+                    {notif.type === 'COLLAB_INVITE' && (
+                      <div className="mt-3 flex items-center gap-2">
+                        {notif.status === 'accepted' ? (
+                          <span className="text-xs font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <FiCheck /> Accepted
+                          </span>
+                        ) : notif.status === 'rejected' ? (
+                          <span className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1">
+                            <FiX /> Declined
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              onClick={(e) => handleAccept(e, notif)}
+                              className="px-2.5 py-1 rounded-md bg-[#2563EB] hover:bg-blue-700 text-white text-[11px] font-bold flex items-center gap-1 transition-colors"
+                            >
+                              <FiCheck size={12} />
+                              Accept
+                            </button>
+                            <button
+                              onClick={(e) => handleDecline(e, notif)}
+                              className="px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-[11px] font-bold flex items-center gap-1 hover:bg-gray-150 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <FiX size={12} />
+                              Decline
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Unread dot */}
+                  {!notif.read && (
+                    <div className="w-2 h-2 bg-[#2563EB] rounded-full flex-shrink-0 mt-1.5" />
+                  )}
+                </div>
               ))
             )}
           </div>

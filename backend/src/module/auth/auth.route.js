@@ -46,6 +46,7 @@ router.route("/verify-otp").post(verifyJWT, verifyOTP);
 
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
+router.post('/reset-password', resetPassword);
 
 router.route("/google").get(
   passport.authenticate("google", { scope: ["profile", "email"] })

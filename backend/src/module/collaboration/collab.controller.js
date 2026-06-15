@@ -59,15 +59,23 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
   await setCollaboration(hashedToken, payload, collabExpiry);
 
   if (!user) {
-    // Deferred/Delayed Notification or Pre-Registreation Invite Queue
-    const pendingNotificationData = {
-      title: `invitation for collaboration in ${document.title}`,
-      inviter: inviter.fullName,
-      tokenId: hashedToken,
-      time: Date.now().toLocaleString(),
+    // Deferred/Delayed Notification or Pre-Registration Invite Queue
+    const notificationData = {
+      type: "COLLAB_INVITE",
+      title: `Invitation for collaboration in ${document.title}`,
+      docId,
+      tokenId: unHashedToken,
+      documentTitle: document.title,
+      inviterName: inviter.fullName,
+      inviterEmail: inviter.email,
+      accepterEmail: email,
+      createdAt: Date.now(),
+      expiry: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
+      ).toLocaleString()
     };
 
-    await setPendingNotification(email, pendingNotificationData);
+    await setPendingNotification(email, notificationData);
 
     return res.status(200).json(
       new ApiResponse(
@@ -81,16 +89,32 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       )
     );
   }
-  // TODO : IF USER REGISTER
 
   const userId = user._id.toString();
   const socketsInRoom = await io.in(userId).fetchSockets();
   const isOnline = socketsInRoom.length > 0;
-  // console.log("isOnline", isOnline);
+
+  const notificationData = {
+    type: "COLLAB_INVITE",
+    title: `Invitation for collaboration in ${document.title}`,
+    docId,
+    tokenId: unHashedToken,
+    documentTitle: document.title,
+    inviterName: inviter.fullName,
+    inviterEmail: inviter.email,
+    accepterEmail: user.email,
+    createdAt: Date.now(),
+    expiry: new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
+    ).toLocaleString()
+  };
 
   if (isOnline) {
     await setrealtimeNotification(unHashedToken, payload);
-    io.to(userId).emit(NOTIFICATION_EVENT.SEND_REAL_TIME_NOTIFICATION, payload);
+    io.to(userId).emit(
+      NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
+      notificationData
+    );
     return res
       .status(200)
       .json(
@@ -106,15 +130,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       );
   }
 
-  const pendingNotificationData = {
-    title: `Invitation for collaboration in ${document.title}`,
-    inviter: inviter.fullName,
-    tokenId: hashedToken,
-    time: new Date(Date.now()).toLocaleString(),
-    expiry: new Date(Date.now() + 20 * 60 * 1000).toLocaleString(),
-  };
-
-  await setPendingNotification(email, pendingNotificationData);
+  await setPendingNotification(email, notificationData);
   return res
     .status(200)
     .json(
@@ -122,9 +138,10 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
         200,
         {
           login : loginLink,
-           acceptCollab: acceptCollabLink,
-            declineCollab: declineCollabLink,
-          sentVia: ["redis"] },
+          acceptCollab: acceptCollabLink,
+          declineCollab: declineCollabLink,
+          sentVia: ["redis"]
+        },
         "User offline. Saved to Redis"
       )
     );
@@ -179,27 +196,26 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
 
   const sockets = await io.in(inviter._id.toString()).fetchSockets();
 
+  const acceptNotificationData = {
+    type: "INVITE_ACCEPTED",
+    title: `${user.fullName} accepted your invitation to collaborate on ${doc.title}`,
+    docId: collabData.docId,
+    documentTitle: doc.title,
+    inviterName: inviter.fullName,
+    inviterEmail: inviter.email,
+    accepterName: user.fullName,
+    accepterEmail: user.email,
+    createdAt: Date.now()
+  };
+
   if (sockets.length > 0) {
-    emitSocketEvent(
-      req,
-      inviter._id.toString(),
-      COLLABORATION_EVENT.ACCEPT_COLLABORATION,
-      {
-        accepterName: user.fullName,
-        accepterEmail: user.email,
-        documentTitle: doc.title,
-      }
+    io.to(inviter._id.toString()).emit(
+      NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
+      acceptNotificationData
     );
   }
 
-  await setPendingNotification(inviter.email, {
-    type: "COLLAB_ACCEPTED",
-    accepterName: user.fullName,
-    accepterEmail: user.email,
-    documentTitle: doc.title,
-    inviterEmail: inviter.email,
-    createdAt:  Date.now()
-  });
+  await setPendingNotification(inviter.email, acceptNotificationData);
 
   await deleteCollaboration(hashedTokenID);
   await setDocument(updatedDoc._id.toString(), updatedDoc);
@@ -235,23 +251,25 @@ export const declineJoinCollaboration = asyncHandler(async (req, res) => {
 
   const sockets = await io.in(inviter._id.toString()).fetchSockets();
 
+  const declineNotificationData = {
+    type: "INVITE_REJECTED",
+    title: `${req.user?.fullName || 'Someone'} declined your invitation to collaborate on ${doc.title}`,
+    docId: collabData.docId,
+    documentTitle: doc.title,
+    inviterName: inviter.fullName,
+    inviterEmail: inviter.email,
+    accepterEmail: req.user?.email || collabData.email,
+    createdAt: Date.now()
+  };
+
   if (sockets.length > 0) {
-    emitSocketEvent(
-      req,
-      inviter._id.toString(),
-      COLLABORATION_EVENT.DECLINE_COLLABORATION,
-      {
-        documentTitle: doc.title,
-      }
+    io.to(inviter._id.toString()).emit(
+      NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
+      declineNotificationData
     );
   }
 
-  await setPendingNotification(inviter.email, {
-    type: "COLLAB_DECLINED",
-    documentTitle: doc.title,
-    inviterEmail: inviter.email,
-    createdAt: new Date.now().toLocaleString(),
-  });
+  await setPendingNotification(inviter.email, declineNotificationData);
 
   await deleteCollaboration(hashedTokenID);
 

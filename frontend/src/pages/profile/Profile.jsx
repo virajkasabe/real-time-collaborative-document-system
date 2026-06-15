@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
 import { documentService } from '../../utils/documentService';
+import axios from 'axios';
 
 export default function Profile() {
   const { user, updateProfile, triggerToast } = useAuth();
@@ -12,6 +13,32 @@ export default function Profile() {
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
+
+  const handleResetPasswordClick = async () => {
+    if (!user?.email) {
+      triggerToast('User email not found', 'error');
+      return;
+    }
+    try {
+      setIsResetLoading(true);
+      const res = await axios.post(
+        'http://localhost:5000/api/v1/rtcds/auth/forgot-password',
+        { email: user.email },
+        { withCredentials: true }
+      );
+      const token = res.data?.resetToken || res.data?.data?.resetToken;
+      if (!token) {
+        throw new Error('Reset token not found in API response');
+      }
+      navigate(`/reset-password/${token}`);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to initiate password reset';
+      triggerToast(msg, 'error');
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
 
   const handleSave = async (e) => {
     if (e && e.preventDefault) {
@@ -55,7 +82,12 @@ export default function Profile() {
                 </>
               ) : (
                 <>
-                  <Button variant="outline" onClick={() => navigate('/reset-password')} icon={Lock}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResetPasswordClick} 
+                    loading={isResetLoading} 
+                    icon={Lock}
+                  >
                     Reset Password
                   </Button>
                   <Button onClick={() => setIsEditing(true)} icon={User}>

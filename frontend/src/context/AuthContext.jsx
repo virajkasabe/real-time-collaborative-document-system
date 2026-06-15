@@ -159,17 +159,18 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true); setError(''); setDevResetURL('');
       const res = await axios.post(
-        `${BASE_URL}/forgot-password`, { email },
+        `${BASE_URL}/forgot-password`,
+        { email },
         { withCredentials: true }
       );
-      const resetURL = res.data?.resetURL || res.data?.data?.resetURL;
-      if (resetURL) {
-        setDevResetURL(resetURL);
-        console.log("Dev Reset URL:", resetURL); // REMOVE IN PRODUCTION
+      if (res.data.resetURL) {
+        setDevResetURL(res.data.resetURL);
+        console.log("Dev Reset URL:", res.data.resetURL);
       }
       return res.data;
     } catch (err) {
-      const msg = err.response?.data?.message || "Failed to send reset link";
+      const msg = err.response?.data?.message
+        || "Failed to generate reset link";
       setError(msg); throw new Error(msg);
     } finally { setLoading(false); }
   };
@@ -178,13 +179,48 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (token, password) => {
     try {
       setLoading(true); setError('');
+      if (!token) throw new Error("Token missing from URL");
       const res = await axios.post(
-        `${BASE_URL}/reset-password/${token}`, { password },
+        `${BASE_URL}/reset-password/${token}`,
+        { password },
         { withCredentials: true }
       );
       return res.data;
     } catch (err) {
-      const msg = err.response?.data?.message || "Password reset failed";
+      const msg = err.response?.data?.message
+        || err.message
+        || "Password reset failed";
+      setError(msg); throw new Error(msg);
+    } finally { setLoading(false); }
+  };
+
+  // ACCEPT COLLABORATION INVITATION
+  const acceptInvitation = async (email, tokenId) => {
+    try {
+      setLoading(true); setError('');
+      const res = await axios.post(
+        `http://localhost:5000/api/v1/rtcds/collab/accept/email=${email}/join=${tokenId}`,
+        {},
+        { withCredentials: true }
+      );
+      return res.data;
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to accept invitation";
+      setError(msg); throw new Error(msg);
+    } finally { setLoading(false); }
+  };
+
+  // DECLINE COLLABORATION INVITATION
+  const declineInvitation = async (email, tokenId) => {
+    try {
+      setLoading(true); setError('');
+      const res = await axios.get(
+        `http://localhost:5000/api/v1/rtcds/collab/decline/email=${email}/join=${tokenId}`,
+        { withCredentials: true }
+      );
+      return res.data;
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to decline invitation";
       setError(msg); throw new Error(msg);
     } finally { setLoading(false); }
   };
@@ -282,7 +318,8 @@ export const AuthProvider = ({ children }) => {
       login, logout,
       forgotPassword, resetPassword,
       changePassword, updateProfile, deleteAccount,
-      fetchCurrentUser, triggerToast, loginWithGoogle
+      fetchCurrentUser, triggerToast, loginWithGoogle,
+      acceptInvitation, declineInvitation
     }}>
       {children}
     </AuthContext.Provider>
