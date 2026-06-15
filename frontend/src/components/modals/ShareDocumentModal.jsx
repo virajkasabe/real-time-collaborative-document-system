@@ -3,7 +3,7 @@ import { UserPlus, Trash2, Shield, User, Link2, Copy, Check } from 'lucide-react
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import { documentService } from '../../services/documentService';
+import { documentService } from '../../utils/documentService';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ShareDocumentModal({

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { HiOutlineMail } from 'react-icons/hi';
 import athenuraLogo from "../../assets/athenura-logo.png";
@@ -7,36 +7,41 @@ import { FiLock, FiEye, FiEyeOff, FiShield,
          FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import axios from 'axios';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function ResetPasswordPage() {
-  const { resetPassword, triggerToast } = useAuth();
+  const { resetPassword, loading, error, triggerToast } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
   const { token } = useParams();
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
-
-  // Support fallback state from VerifyEmail flow or direct url tokens
-  const email = location.state?.email || searchParams.get('email') || 'user@example.com';
-  const code = location.state?.code || token || searchParams.get('token') || searchParams.get('code') || '123456';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isTokenInvalid, setIsTokenInvalid] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Check if token is missing from URL on mount
+  useEffect(() => {
+    if (!token) {
+      setIsTokenInvalid(true);
+      toast.error('Reset token is missing from the URL');
+    }
+  }, []);
 
   // Strength calculation
   const getStrength = (pwd) => {
     let s = 0;
     if (pwd.length >= 8) s++;
-    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) s++;
+    if (/[A-Z]/.test(pwd)) s++;
+    if (/[a-z]/.test(pwd)) s++;
     if (/[0-9]/.test(pwd)) s++;
     if (/[^A-Za-z0-9]/.test(pwd)) s++;
-    return s;
+    return Math.min(s, 4);
   };
 
   const strength = getStrength(password);
@@ -48,49 +53,65 @@ export default function ResetPasswordPage() {
 
   // Requirements checklist validations
   const requirements = [
-    { label: 'At least 8 characters long', met: password.length >= 8 },
-    { label: 'Include uppercase and lowercase', met: /[A-Z]/.test(password) && /[a-z]/.test(password) },
-    { label: 'Include at least one number', met: /[0-9]/.test(password) },
-    { label: 'Include at least one special character', met: /[^A-Za-z0-9]/.test(password) },
+    { label: 'Minimum 8 characters', met: password.length >= 8 },
+    { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
+    { label: 'One lowercase letter', met: /[a-z]/.test(password) },
+    { label: 'One number', met: /[0-9]/.test(password) },
+    { label: 'One special character', met: /[^A-Za-z0-9]/.test(password) },
   ];
 
-  const canSubmit = password && confirmPassword && password === confirmPassword && strength >= 2;
+  const canSubmit = password && confirmPassword && password === confirmPassword && requirements.every(req => req.met);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     let errs = {};
 
-    const meetsRequirements = requirements.every(req => req.met);
     if (!password) {
       errs.password = 'Password is required';
-    } else if (!meetsRequirements) {
-      errs.password = 'Password does not meet all security requirements';
+    }
+
+    if (!confirmPassword) {
+      errs.confirmPassword = 'Confirm password is required';
     }
 
     if (password !== confirmPassword) {
       errs.confirmPassword = 'Passwords do not match';
     }
 
+    const meetsRequirements = requirements.every(req => req.met);
+    if (password && !meetsRequirements) {
+      errs.password = 'Password does not meet all security requirements';
+    }
+
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      if (errs.password) triggerToast(errs.password, 'warning');
-      else if (errs.confirmPassword) triggerToast(errs.confirmPassword, 'warning');
+      const firstError = Object.values(errs)[0];
+      toast.error(firstError);
       return;
     }
 
-    setLoading(true);
-    const successResult = await resetPassword(email, code, password);
-    setLoading(false);
+    if (!token) {
+      toast.error('Reset token is missing from the URL');
+      return;
+    }
 
-    if (successResult) {
+    try {
+      await resetPassword(token, password);
+
+      toast.success('Password reset successful! Please login.');
       setSuccess(true);
-      triggerToast('Password updated successfully!', 'success');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (err) {
+      toast.error(err.message || 'Failed to reset password. Please try again.');
     }
   };
 
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#090D16] dark:to-[#04060B] font-sans select-none">
+      <Toaster position="top-center" reverseOrder={false} />
       
       {/* MAIN CARD: same as other auth pages */}
       <div className="w-full max-w-6xl flex flex-col md:flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-[#0F172A]">
@@ -198,7 +219,26 @@ export default function ResetPasswordPage() {
         <div className="w-full md:w-[52%] bg-white dark:bg-[#1E2535] flex flex-col justify-center overflow-hidden p-8 md:p-10 self-stretch">
           
           <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center h-full select-text">
-            {!success ? (
+            {isTokenInvalid ? (
+              /* Invalid Token State */
+              <div className="text-center py-4 text-slate-800 dark:text-slate-200">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/35 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FiShield className="text-red-500 text-3xl" />
+                </div>
+                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white">
+                  Invalid Reset Link
+                </h3>
+                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2">
+                  The password reset link is invalid, expired, or missing the token. Please request a new password reset link.
+                </p>
+                <Link 
+                  to="/forgot-password" 
+                  className="mt-4 inline-flex items-center gap-2 w-full h-11 rounded-xl bg-[#2563EB] text-white font-bold justify-center hover:bg-blue-700 cursor-pointer transition-colors shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
+                >
+                  Go to Forgot Password
+                </Link>
+              </div>
+            ) : !success ? (
               <div className="w-full flex flex-col">
                 
                 {/* Top icon (centered) */}
@@ -337,6 +377,12 @@ export default function ResetPasswordPage() {
                       </div>
                     ))}
                   </div>
+
+                  {error && (
+                    <p className="text-red-500 text-xs font-semibold mt-1 text-center">
+                      ⚠️ {error}
+                    </p>
+                  )}
 
                   {/* Update Password Button */}
                   <button

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { HiOutlineMail } from 'react-icons/hi';
 import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
+import { useAuth } from "../../context/AuthContext";
 import { FiLock, FiSend, FiShield, FiUsers,
          FiClock, FiRefreshCw, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
@@ -11,34 +12,36 @@ import { FiLock, FiSend, FiShield, FiUsers,
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { forgotPassword, devResetURL, loading, error, triggerToast } = useAuth();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setSuccess('');
 
     const emailVal = email.trim();
     if (!emailVal) {
-      setError('Email address is required');
+      triggerToast('Please enter your email', 'error');
       return;
     }
 
     // Simple email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailVal)) {
-      setError('Please enter a valid email address');
+      triggerToast('Please enter a valid email address', 'error');
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigate('/reset-password');
-    }, 1500);
+    try {
+      const result = await forgotPassword(emailVal);
+      if (result) {
+        setSuccess('Reset link generated!');
+      }
+    } catch (err) {
+      // Handled by context error state
+    }
   };
 
 
@@ -195,7 +198,7 @@ export default function ForgotPasswordPage() {
           />
 
           <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center h-full select-text">
-            {!sent ? (
+            {!success ? (
               <div className="w-full flex flex-col">
                 
                 {/* a) Mail+lock icon circle (centered) */}
@@ -269,22 +272,53 @@ export default function ForgotPasswordPage() {
               </div>
             ) : (
               /* Success State */
-              <div className="text-center py-6 animate-fade-in w-full">
+              <div className="text-center py-6 animate-fade-in w-full text-left">
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/35 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FiCheck className="text-green-500 text-3xl" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white">
-                  Email Sent!
+                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white text-center">
+                  Reset Link Generated!
                 </h3>
-                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2">
-                  Check your inbox for reset instructions.
+                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2 text-center">
+                  Please copy the reset link below to update your password.
                 </p>
-                <Link
-                  to="/login"
-                  className="mt-6 inline-flex items-center gap-1 text-[#2563EB] dark:text-blue-400 font-semibold text-sm hover:underline"
-                >
-                  <FiArrowLeft size={14} /> Back to Login
-                </Link>
+
+                {/* Dev mode - show reset URL */}
+                {devResetURL && (
+                  <div style={{
+                    background: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginTop: '16px'
+                  }}>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#856404', fontWeight: 'bold' }}>
+                      🔗 Development Reset URL (email disabled):
+                    </p>
+                    <a
+                      href={devResetURL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: '#1a73e8',
+                        wordBreak: 'break-all',
+                        fontSize: '13px',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {devResetURL}
+                    </a>
+                  </div>
+                )}
+
+                <div className="text-center mt-6">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1 text-[#2563EB] dark:text-blue-400 font-semibold text-sm hover:underline cursor-pointer"
+                  >
+                    <FiArrowLeft size={14} /> Back to Login
+                  </Link>
+                </div>
               </div>
             )}
 

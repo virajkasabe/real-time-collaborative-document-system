@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
-import { documentService } from '../../services/documentService';
+import { documentService } from '../../utils/documentService';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Dashboard() {

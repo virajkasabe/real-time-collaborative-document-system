@@ -4,34 +4,23 @@ import { User, FileText, Users, Star, Check, X, Lock } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
-import { documentService } from '../../services/documentService';
+import { documentService } from '../../utils/documentService';
 
 export default function Profile() {
-  const { user, triggerToast } = useAuth();
+  const { user, updateProfile, triggerToast } = useAuth();
   const { sidebarOpen } = useOutletContext();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
     if (!name.trim()) return;
 
-    // Update localStorage user so name persists across reloads
-    if (user) {
-      const updatedUser = { ...user, name: name.trim() };
-      localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
-    }
-
-    triggerToast('Profile updated successfully!', 'success');
     setIsEditing(false);
-
-    // Short timeout to let the toast render before we refresh to update Navbar user name
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    await updateProfile({ fullName: name.trim(), avatar: user?.avatar });
   };
 
   const allDocs = documentService.getAll();

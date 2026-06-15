@@ -9,10 +9,6 @@ import {
   setPendingNotification,
   setrealtimeNotification,
 } from "../../redis/client.js";
-import {
-  joinCollab,
-  registerAndJoinCollab,
-} from "../../services/sendCollabLink.service.js";
 import { emitSocketEvent } from "../../socket/socket.js";
 import {
   COLLABORATION_EVENT,
@@ -73,19 +69,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
     await setPendingNotification(email, pendingNotificationData);
 
-    /*
-    TODO : SERVICE FOR REGISTER AND JOIN COLLAB
-    */
-    await registerAndJoinCollab(
-      document.title,
-      inviter.fullName,
-      acceptCollabLink,
-      declineCollabLink,
-      email,
-      inviter.email,
-      null,
-      registerationLink
-    );
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -94,7 +77,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
           acceptCollab: acceptCollabLink,
           declineCollab: declineCollabLink
         },
-        "user not register invite link send via email"
+        "user not registered, invitation notification queued"
       )
     );
   }
@@ -131,17 +114,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     expiry: new Date(Date.now() + 20 * 60 * 1000).toLocaleString(),
   };
 
-  /*
-  await joinCollab(
-    document.title,
-    inviter.fullName,
-    acceptCollabLink,
-    declineCollabLink,
-    email,
-    inviter.email,
-    loginLink
-  );
-*/
   await setPendingNotification(email, pendingNotificationData);
   return res
     .status(200)
@@ -152,8 +124,8 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
           login : loginLink,
            acceptCollab: acceptCollabLink,
             declineCollab: declineCollabLink,
-          sentVia: ["email", "redis"] },
-        "User offline. Saved to Redis + email sent"
+          sentVia: ["redis"] },
+        "User offline. Saved to Redis"
       )
     );
 });

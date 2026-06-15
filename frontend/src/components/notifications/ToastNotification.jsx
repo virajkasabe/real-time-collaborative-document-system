@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiMail, FiCheck } from 'react-icons/fi';
 import { useNotifications } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -49,8 +50,8 @@ export default function ToastNotification() {
     }
   };
 
-  return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none select-none">
+  return createPortal(
+    <div className="fixed z-[9999] flex flex-col gap-2 pointer-events-none select-none" style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999 }}>
       {toasts.map((toast) => (
         <div
           key={toast.id}
@@ -97,6 +98,7 @@ export default function ToastNotification() {
           <div className="absolute bottom-0 left-0 h-[3px] bg-blue-500 rounded-full animate-shrink-width" />
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   );
 }

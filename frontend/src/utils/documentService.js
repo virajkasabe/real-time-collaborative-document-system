@@ -1,6 +1,6 @@
 // Documents CRUD persistence database layer simulated using localStorage
 
-import { generateId } from '../utils/helpers';
+import { generateId } from './helpers';
 
 const INITIAL_DOCS = [
   {

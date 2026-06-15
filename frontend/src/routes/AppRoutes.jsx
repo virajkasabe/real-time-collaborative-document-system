@@ -8,6 +8,7 @@ import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import EmailVerificationPage from '../pages/auth/EmailVerificationPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
+import GoogleCallbackPage from '../pages/auth/GoogleCallbackPage';
 import Dashboard from '../pages/dashboard/Dashboard';
 import Documents from '../pages/dashboard/Documents';
 import SharedDocuments from '../pages/dashboard/SharedDocuments';
@@ -19,7 +20,7 @@ import NotificationsPage from '../pages/NotificationsPage';
 
 // Layout and Protected Route
 import Layout from '../components/layout/Layout';
-import ProtectedRoute from '../components/layout/ProtectedRoute';
+import ProtectedRoute from './ProtectedRoute';
 import ToastNotification from '../components/notifications/ToastNotification';
 
 const DashboardLayout = ({ children }) => {
@@ -41,7 +42,8 @@ export default function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/verify-email" element={<EmailVerificationPage />} />
       <Route path="/set-new-password" element={<ResetPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
       {/* Secure Authenticated Pages wrapped in Layout */}
       <Route element={
