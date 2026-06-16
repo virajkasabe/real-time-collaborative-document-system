@@ -3,6 +3,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Pages imports
 import Landing from '../pages/landing/Landing';
+import AboutUs from '../pages/aboutus';
+import ContactUs from '../pages/contactus';
+import HelpPage from '../pages/help';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
@@ -37,6 +40,9 @@ export default function AppRoutes() {
     <Routes>
       {/* Public Pages */}
       <Route path="/" element={<Landing />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/contact" element={<ContactUs />} />
+      <Route path="/help" element={<HelpPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
