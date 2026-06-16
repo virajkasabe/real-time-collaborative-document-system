@@ -20,6 +20,7 @@ const io = new Server(httpServer, {
   cors: {
     origin: [
       ENV.CORS_ORIGIN,
+      ENV.CLIENT_URL,
       "https://admin.socket.io"
     ],
     credentials: true,
@@ -61,7 +62,11 @@ app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 app.use(cookieParser());
 app.use(helmet());
 app.use(cors({
-    origin : ENV.CORS_ORIGIN,
+    origin : [
+      ENV.CORS_ORIGIN,
+      ENV.CLIENT_URL,
+      "https://admin.socket.io"
+    ],
     credentials : true
 }))
 
