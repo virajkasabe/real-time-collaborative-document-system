@@ -42,12 +42,7 @@ export const fetchDoc = async (docId) => {
 };
 
 export const otpGenerator = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let otp = "";
-  for (let i = 0; i < 6; i++) {
-    otp += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return otp;
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 export const requiredField = (required = []) => {

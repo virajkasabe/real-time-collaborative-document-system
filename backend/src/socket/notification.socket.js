@@ -3,6 +3,7 @@ import {
   deleteCollaboration,
   getCollaboration,
   getPendingNotification,
+  deletePendingNotification,
   setDocument,
 } from "../redis/client.js";
 import { fetchDoc } from "../utils/helper.js";
@@ -13,104 +14,28 @@ import {
 } from "./socketEvents.js";
 
 export const mountRecivedRealTimeNotification = (socket) => {
+  // Real-time invites and responses are now handled via HTTP API in collab.controller.js
+  // and delivered via socket rooms, so we keep these as placeholders or no-ops.
   socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
-    const user = await secureUser(socket.user._id);
-    const hashedTokenID = crypto
-      .createHash("sha256")
-      .update(tokenId)
-      .digest("hex");
-
-    const collabData = await getCollaboration(hashedTokenID);
-    if (!collabData) {
-      throw new ApiError(400, "Token Expired or Invalid");
-    }
-
-    const doc = await fetchDoc(collabData.docId);
-
-    if (doc.ownerId.toString() === user._id.toString()) {
-      throw new ApiError(400, "Owner can't add on Users");
-    }
-
-    const userAlreadyExists = doc.users.some(
-      (collaborator) =>
-        collaborator.userId.toString() === req.user._id.toString()
-    );
-
-    if (userAlreadyExists) {
-      await deleteCollaboration(hashedTokenID);
-      throw new ApiError(401, "User Already exist");
-    }
-
-    const updateDocument = await Doc.findByIdAndUpdate(
-      collabData.docId,
-      {
-        $push: {
-          users: {
-            userId: user._id,
-            role: collabData.role,
-          },
-        },
-      },
-      { new: true }
-    );
-
-    const acceptCollabData = {
-      type: "COLLAB_ACCEPTED",
-      accepterName: socket.user.fullName,
-      documentId: doc._id,
-      documentName: doc.title,
-      message: `${socket.user.fullName} accepted your collaboration on "${doc.title}"`,
-      time: new Date().toISOString(),
-    };
-
-    socket
-      .to(doc.inviterId)
-      .emit(COLLABORATION_EVENT.ACCEPT_COLLABORATION, acceptCollabData);
-    await deleteCollaboration(hashedTokenID);
-    await setDocument(updateDocument._id, updateDocument);
+    console.log("Accept invitation via socket received:", data);
   });
 
   socket.on(INVITATION_EVENT.DECLINE_INVITATION, async (data) => {
-    const user = await secureUser(socket.user._id);
-    const hashedTokenID = crypto
-      .createHash("sha256")
-      .update(tokenId)
-      .digest("hex");
-
-    const collabData = await getCollaboration(hashedTokenID);
-    if (!collabData) {
-      throw new ApiError(400, "Token Expired or Invalid");
-    }
-
-    const doc = await fetchDoc(collabData.docId);
-
-    const declineCollabData = {
-      type: "COLLAB_DECLINED",
-      declineUserName: socket.user.fullName,
-      documentId: doc._id,
-      documentName: doc.title,
-      message: `${socket.user.fullName} decline your collaboration on "${doc.title}"`,
-      time: new Date().toISOString(),
-    };
-
-    socket
-      .to(doc.inviterId)
-      .emit(COLLABORATION_EVENT.DECLINE_COLLABORATION, acceptCollabData);
+    console.log("Decline invitation via socket received:", data);
   });
 };
 
 export const mountPendingNotification = async (socket) => {
-  const payload = await getPendingNotification(socket.user.email);
-
-  const userNotifications = payload.filter((i)=>{
-     return  i.inviterEmail === socket.user.email
-  })
-
-  console.log("userNotifications", userNotifications)
-
-  if (payload?.length >= 0) {
-    console.log("userNotifications", userNotifications)
-    socket.emit(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, userNotifications)
+  try {
+    const payload = await getPendingNotification(socket.user.email);
+    if (payload && payload.length > 0) {
+      payload.forEach((notif) => {
+        socket.emit(NOTIFICATION_EVENT.NOTIFICATION_RECEIVED, notif);
+      });
+      // Clear pending queue from Redis now that they have been dispatched
+      await deletePendingNotification(socket.user.email);
+    }
+  } catch (error) {
+    console.error("Error mounting pending notifications:", error);
   }
-
 };

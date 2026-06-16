@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
 import { deleteuser, getOTP, setOTP, setUser } from "../../redis/client.js";
@@ -45,10 +46,12 @@ export const registerUser = asyncHandler(async (req, res) => {
     avatarURI = await uploadCloudinary(avatar);
   }
 
-  const alreadyExist = await User.findOne({ email });
-
-  if (alreadyExist) {
-    throw new ApiError(400, `${alreadyExist.email} already exist`);
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      message: "Email already exists. Please login or use different email."
+    });
   }
 
   const user = await User.create({
@@ -64,14 +67,11 @@ export const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = tokenExpiry;
 
   const otp = otpGenerator();
-  await setOTP(user._id, { otp: otp });
-  console.log({
-    otp,
-  });
+  const hashedOtp = await bcrypt.hash(otp.toString(), 10);
+  user.otp = hashedOtp;
+  user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
 
-  await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
-  );
+  console.log("Generated OTP:", otp);
 
   await user.save({ validateBeforeSave: false });
 
@@ -83,12 +83,17 @@ export const registerUser = asyncHandler(async (req, res) => {
     user._id
   );
 
+  const responseData = { token: unHashedToken };
+  if (process.env.NODE_ENV === "development" || ENV.NODE_ENV === "development") {
+    responseData.otp = otp; // REMOVE IN PRODUCTION
+  }
+
   return res
     .status(201)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
     .json(
-      new ApiResponse(201, { token: unHashedToken}, `user created  successfully`)
+      new ApiResponse(201, responseData, `user created  successfully`)
     );
 });
 
@@ -293,42 +298,95 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
     );
 });
 
-export const resetPassword = asyncHandler(async (req, res) => {
-  const { unHashedToken } = req.params;
+// FORGOT PASSWORD
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({
+      success: false, message: "Email is required"
+    });
 
-  const { newPassword , confirmPassword} = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({
+      success: false,
+      message: "No account found with this email"
+    });
 
-  if (newPassword !== confirmPassword) {
-    throw new ApiError(400, "New Password and Confirm Password can't be same");
+    // Generate plain token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash and save to DB
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+    user.resetPasswordExpiry = Date.now() + 30 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+
+    const resetURL = 
+      `http://localhost:5173/reset-password/${resetToken}`;
+
+    console.log("DEV Reset URL:", resetURL); // dev only
+
+    return res.status(200).json({
+      success: true,
+      message: "Reset link generated",
+      resetToken, // REMOVE IN PRODUCTION
+      resetURL    // REMOVE IN PRODUCTION
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false, message: error.message
+    });
   }
+};
 
-  if (!unHashedToken) {
-    throw new ApiError(400, "Email verification token missing");
+// RESET PASSWORD
+export const resetPassword = async (req, res) => {
+  try {
+    const token = req.params.token || req.body.token;
+    const password = req.body.password || req.body.newPassword;
+
+    if (!token) return res.status(400).json({
+      success: false, message: "Token is required"
+    });
+    if (!password) return res.status(400).json({
+      success: false, message: "Password is required"
+    });
+
+    // Hash incoming token to match DB
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({
+      success: false,
+      message: "Token is invalid or expired. Request new link."
+    });
+
+    // ✅ CRITICAL - plain text only
+    // pre-save hook handles hashing - never bcrypt here
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save(); // pre-save hook hashes automatically
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successful. Please login."
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false, message: error.message
+    });
   }
-
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(unHashedToken)
-    .digest("hex");
-
-  const user = await User.findOne({
-    forgotPasswordToken: hashedToken,
-    forgotPasswordExpiry: { $gt: Date.now() },
-  }).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
-  );
-
-  user.password = newPassword;
-
-  user.forgotPasswordToken = undefined;
-  user.forgotPasswordExpiry = undefined;
-
-  await user.save({ validateBeforeSave: false });
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Your password was changed successfully"));
-});
+};
 
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
@@ -373,22 +431,26 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
     user.generateTemporaryToken(user._id);
 
   const otp = otpGenerator();
+  console.log("Resent OTP:", otp);
 
-  await setOTP(user._id, { otp: otp });
+  const hashedNewOtp = await bcrypt.hash(otp.toString(), 10);
 
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
+  user.otp = hashedNewOtp;
+  user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   await user.save({ validateBeforeSave: false });
 
-  console.log("OTP", otp);
-
-  console.log(`${ENV.BACKEND_URI}/auth/verify-email/${unHashedToken}`);
+  const responseData = { token: unHashedToken };
+  if (process.env.NODE_ENV === "development" || ENV.NODE_ENV === "development") {
+    responseData.otp = otp; // REMOVE IN PRODUCTION
+  }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, { token: unHashedToken }, `user verify emailId`)
+      new ApiResponse(200, responseData, `New OTP sent successfully`)
     );
 });
 
@@ -396,8 +458,8 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const { unHashedToken } = req.params;
   const { otp } = req.body;
 
-  console.log("unHashedToken",unHashedToken)
-  console.log("otp",otp)
+  console.log("unHashedToken", unHashedToken)
+  console.log("otp", otp)
 
   if (!unHashedToken) {
     throw new ApiError(400, "Email verification token missing");
@@ -411,38 +473,40 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     emailVerificationToken: hashedToken,
     emailVerificationExpiry: { $gt: Date.now() },
-  }).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
-  );
-
-
+  });
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired verification token");
   }
 
-  const verifyOTP = await getOTP(user._id);
+  // Check OTP Expiry
+  if (!user.otp || !user.otpExpiry || Date.now() > user.otpExpiry) {
+    throw new ApiError(400, "Invalid or expired OTP");
+  }
 
-  if (verifyOTP.otp !== otp) {
-    throw new ApiError(401, "OTP INVALID");
+  // Compare hashed OTP
+  const isMatch = await bcrypt.compare(otp.toString(), user.otp);
+  if (!isMatch) {
+    throw new ApiError(400, "Invalid or expired OTP");
   }
 
   await setUser(user._id, user);
   user.isEmailVerified = true;
 
+  // Clear verification & OTP fields after success
   user.emailVerificationToken = undefined;
   user.emailVerificationExpiry = undefined;
+  user.otp = undefined;
+  user.otpExpiry = undefined;
 
   await user.save({ validateBeforeSave: false });
-
-
 
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Email verified successfully"));
 });
 
-const googleLoginCallback = asyncHandler(async (req, res) => {
+export const googleLoginCallback = asyncHandler(async (req, res) => {
   const user = req.user;
 
   if (!user) {
@@ -453,19 +517,52 @@ const googleLoginCallback = asyncHandler(async (req, res) => {
     user._id
   );
 
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
-
-  const redirectUrl = "http://localhost:5173/dashboard";
+  const redirectUrl = "http://localhost:5173/auth/google/callback";
 
   return res
     .status(200)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
     .redirect(
-      `${process.env.CLIENT_URL || "http://localhost:5173"}${redirectUrl}`
+      `${redirectUrl}?token=${accessToken}`
     );
+});
+
+export const verifyOTP = asyncHandler(async (req, res) => {
+  const { otp } = req.body;
+
+  if (!otp) {
+    throw new ApiError(400, "OTP is required");
+  }
+
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Check OTP Expiry
+  if (!user.otp || !user.otpExpiry || Date.now() > user.otpExpiry) {
+    throw new ApiError(400, "Invalid or expired OTP");
+  }
+
+  // Compare hashed OTP
+  const isMatch = await bcrypt.compare(otp.toString(), user.otp);
+  if (!isMatch) {
+    throw new ApiError(400, "Invalid or expired OTP");
+  }
+
+  user.isEmailVerified = true;
+  user.otp = undefined;
+  user.otpExpiry = undefined;
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  await user.save({ validateBeforeSave: false });
+  await setUser(user._id, user);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Email verified successfully"));
 });
 
 // !! ==== DANGER ZONE ====
@@ -475,3 +572,9 @@ export const deleteUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "User DELETE Successfully"));
 });
+
+// Aliases for routing consistency
+export const register = registerUser;
+export const login = loginUser;
+export const logout = logoutUser;
+

@@ -10,7 +10,7 @@ import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function RegisterPage() {
-  const { register, login, triggerToast } = useAuth();
+  const { register, devOTP, loading, error } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -23,7 +23,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleRegister = async (e) => {
@@ -61,25 +60,23 @@ export default function RegisterPage() {
       return;
     }
 
-    setLoading(true);
-    // Call register(email, name, password) matching AuthContext signature
-    const success = await register(email.trim(), fullName.trim(), password);
-    setLoading(false);
-
-    if (success) {
-      navigate('/verify-email', { state: { email: email } });
+    try {
+      const result = await register({ fullName: fullName.trim(), email: email.trim(), password });
+      if (result && result.success) {
+        navigate('/verify-email', { 
+          state: { 
+            email: email.trim(),
+            token: result.token 
+          } 
+        });
+      }
+    } catch (err) {
+      // Handled by context error state
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    // Google signup: same as login page simulation
-    const success = await login('google.user@company.com', 'password');
-    setLoading(false);
-    if (success) {
-      triggerToast('Signed up with Google (Simulated)', 'success');
-      navigate('/dashboard');
-    }
+  const handleGoogleSignup = () => {
+    window.location.href = 'http://localhost:5000/api/v1/rtcds/auth/google';
   };
 
   return (
@@ -383,6 +380,51 @@ export default function RegisterPage() {
                 <FcGoogle size={18} />
                 Continue with Google
               </button>
+
+              {/* Show OTP on UI for testing (REMOVE IN PRODUCTION) */}
+              {devOTP && (
+                <div style={{
+                  background: '#fff3cd',
+                  border: '1px solid #ffc107',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  marginTop: '10px',
+                  textAlign: 'center'
+                }}>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#856404' }}>
+                    🔐 Development OTP (email disabled):
+                  </p>
+                  <h2 style={{ margin: '5px 0', color: '#333', letterSpacing: '4px' }} className="font-extrabold">
+                    {devOTP}
+                  </h2>
+                </div>
+              )}
+
+              {/* Show error message on UI */}
+              {error && (
+                <div style={{
+                  background: '#ffe0e0',
+                  border: '1px solid #ff4444',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  color: '#cc0000',
+                  marginTop: '10px',
+                  fontSize: '14px',
+                  textAlign: 'center'
+                }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              {loading && (
+                <div style={{
+                  textAlign: 'center',
+                  marginTop: '10px',
+                  color: '#1a73e8'
+                }}>
+                  Please wait...
+                </div>
+              )}
 
               {/* Sign In Link */}
               <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
