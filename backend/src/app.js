@@ -10,6 +10,7 @@ import { rateLimit } from 'express-rate-limit'
 import ApiError from "./utils/ApiError.js";
 import requestIp from 'request-ip'
 import { instrument } from "@socket.io/admin-ui";
+import ApiResponse from "./utils/ApiResponse.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -80,14 +81,14 @@ app.use("/api/v1/rtcds/health", (req,res)=>{
 import AuthRouter from "./module/auth/auth.route.js";
 import DocRouter from "./module/document/document.route.js";
 import CollabRouter from "./module/collaboration/collab.route.js";
-import ApiResponse from "./utils/ApiResponse.js";
-import path from "path";
+import ChatRouter from './module/chats/chat.route.js'
 
 
 // TODO : USE ALL ROUTES HERE
 app.use("/api/v1/rtcds/auth", AuthRouter);
 app.use("/api/v1/rtcds/doc", DocRouter);
 app.use("/api/v1/rtcds/collab", CollabRouter);
+app.use("/api/v1/rtcds/chats", ChatRouter)
 
 app.use("/", (req,res)=>{
     res.status(200).json(new ApiResponse(400, { success : false}, "PAGE NOT FOUND"))

@@ -47,3 +47,8 @@ export const CURSOR_EVENT = Object.freeze({
 export const ROLE_CHANGE = Object.freeze({
   ROLE_UPDATE: "roleUpdate",
 });
+
+export const CHATS_EVENT = Object.freeze({
+  SEND_CHAT: "sendChat",
+  RECIVED_CHAT : "recivedChat"
+});

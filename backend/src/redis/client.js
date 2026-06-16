@@ -230,4 +230,22 @@ export const getDocHistory= async(docId) => {
   }
 }
 
+// ?? ======= DOCUMENT CHATS =======
+export const appendChats = async(docId, data, expiry = 3600) => {
+  if(!client || !isConnected) return null;
+  const key = `chats:${docId}:history`
+  const payload = JSON.stringify({data})
+  await client.rpush(key, payload)
+  await client.ltrim(key, -200, -1)
+  return await client.expire(key, expiry)
+}
+
+export const getChats = async(docId) => {
+  if(!client || !isConnected) {
+    const key = `chats:${docId}:history`
+    const list = await client.lrange(key,0,-1)
+    return list ? list.map((item)=> JSON.parse(item)) : []
+  }
+}
+
 export { Publisher, Subscriber };
