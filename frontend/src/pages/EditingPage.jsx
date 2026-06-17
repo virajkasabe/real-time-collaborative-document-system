@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { documentService } from '../services/documentService';
+import { fetchDoc } from '../apis/api';
 
 export default function EditingPage() {
   const { id } = useParams();
@@ -17,17 +18,23 @@ export default function EditingPage() {
   const { user, triggerToast } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [doc, setDoc] = useState(null);
+  const [docUserRole, setDocUserRole] = useState(null)
 
   // Fetch document details
   useEffect(() => {
-    const fetched = documentService.getById(id);
-    if (!fetched) {
-      triggerToast('Document not found', 'warning');
-      navigate('/dashboard');
-      return;
-    }
-    setDoc(fetched);
-  }, [id, navigate, triggerToast]);
+
+    ;(async()=>{
+        const fetched = await fetchDoc(id);
+        triggerToast("document fetch Successfully", 'success')
+        if (!fetched) {
+          triggerToast('Document not found', 'warning');
+          navigate('/dashboard');
+          return;
+        }
+        setDocUserRole(fetched.data.data.role)
+        setDoc(fetched.data.data);
+    })()
+  }, [id]);
 
   const handleSave = (newTitle, newContent, words) => {
     const updated = documentService.update(id, { name: newTitle, content: newContent, wordCount: words });
@@ -50,16 +57,17 @@ export default function EditingPage() {
 
   return (
     <EditingPageContent
-      document={doc}
+      document={doc.document}
       theme={theme}
       toggleTheme={toggleTheme}
       onBack={handleBack}
       onSave={handleSave}
+      docUserRole={docUserRole}
     />
   );
 }
 
-function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave }) {
+function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave, docUserRole }) {
   const [title, setTitle] = useState(doc.title || doc.name || 'Untitled Document')
   const [isSyncing, setIsSyncing] = useState(false)
   
@@ -162,6 +170,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave 
   const [shareRole, setShareRole] = useState('editor')
   const [copied, setCopied] = useState(false)
 
+
   const quillRef = useRef(null)
   const quillInstance = useRef(null)
   const chatBottomRef = useRef(null)
@@ -198,7 +207,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave 
       quillInstance.current.clipboard.dangerouslyPasteHTML(initialContent)
 
       // Initial outline extraction
-      setTimeout(updateOutline, 100)
+      setTimeout(updateOutline, 100)  
 
       // Handle editor content updates
       quillInstance.current.on('text-change', () => {
@@ -504,6 +513,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave 
             <span className="word-title-cloud-status" title="Saved to Cloud" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '6px', height: '32px' }}>
               <Cloud size={14} style={{ color: 'var(--accent)' }} />
             </span>
+            <span className="text-center text-[14px] text-yellow-400">{docUserRole}</span>
           </div>
         </div>
 

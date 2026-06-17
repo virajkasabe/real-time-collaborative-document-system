@@ -9,11 +9,11 @@ export const userRegister = (data) => {
     return apiClient.post("/auth/register",data)
 }
 
-export const verifyEmail = async(otp, email) => {
+export const verifyUserEmail = async(otp, email) => {
     return await apiClient.post(`/auth/verify-email`, {otp, email})
 }
 
-export const verifyEmailRequest = async(email) => {
+export const verifyUserEmailRequest = async(email) => {
     return await apiClient.post(`/auth/verify-email-request`, {email})
 }
 
@@ -33,7 +33,7 @@ export const updateUserProfile = (data) => {
     return apiClient.post("/auth/update-profile", data)
 }
 
-export const userPasswordForgetRequest = (data) => {
+export const userForgetPasswordRequest = (data) => {
     return apiClient.post("/auth/forgot-password-request", data)
 }
 

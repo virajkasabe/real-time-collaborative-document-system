@@ -118,7 +118,7 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
 
     if(usersDoc && usersDoc[0]?.users?.length > 0) {
       documentFolder = usersDoc[0].users
-      documentOtherUser = usersDoc[0].users.users
+      // documentOtherUser = usersDoc[0].users.users
   }
 
 
@@ -129,7 +129,7 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
         200,
         {
           documentFolder,
-          documentOtherUser
+          // documentOtherUser
          },
         "fetch your documents successfully"
       )

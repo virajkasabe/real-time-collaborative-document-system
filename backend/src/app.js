@@ -94,6 +94,14 @@ app.use("/", (req,res)=>{
     res.status(200).json(new ApiResponse(400, { success : false}, "PAGE NOT FOUND"))
 })
 
+app.use((err, req, res, next) => {
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message,
+    errors: err.errors || [],
+  });
+});
+
 initializeSocketIO(io);
 
 export {

@@ -28,6 +28,7 @@ import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
+import { createDoc, deleteDoc, fetchDocumentFolder } from '../../apis/api';
 
 export default function Dashboard() {
   const { user, triggerToast } = useAuth();
@@ -36,11 +37,11 @@ export default function Dashboard() {
   const [dbVer, setDbVer] = useState(0);
   const [statusFilter, setStatusFilter] = useState('All');
   const [docTypeFilter, setDocTypeFilter] = useState('All');
-  const [openDropdown, setOpenDropdown] = useState(null); // 'status' | 'type' | 'sort' | null
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [sortColumn, setSortColumn] = useState('lastModified');
   const [sortDirection, setSortDirection] = useState('desc');
   const [selectedDocIds, setSelectedDocIds] = useState(new Set());
-  
+  const [rawDocs, setRawDocs] = useState([])
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -72,7 +73,18 @@ export default function Dashboard() {
     setSelectedDocIds(new Set());
   };
 
-  const rawDocs = documentService.getAll();
+  // const rawDocs = documentService.getAll();
+
+  useEffect(()=>{
+    if(user) {
+      ;(async()=>{
+      const payload = await fetchDocumentFolder()
+      setRawDocs(payload.data.data.documentFolder)
+    })()
+    }
+  },[])
+
+
 
   // Enriched documents with file types & status dynamically
   const enrichedDocs = useMemo(() => {
@@ -113,7 +125,7 @@ export default function Dashboard() {
 
     if (searchQuery.trim()) {
       list = list.filter(d => 
-        d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        d.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
         d.owner.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -198,13 +210,15 @@ export default function Dashboard() {
 
   // Select all visible on current page
   const isPageAllSelected = paginatedDocs.length > 0 && paginatedDocs.every(d => selectedDocIds.has(d.id));
+  
+    console.log(paginatedDocs)
   const handleSelectAll = () => {
     setSelectedDocIds(prev => {
       const next = new Set(prev);
       if (isPageAllSelected) {
-        paginatedDocs.forEach(d => next.delete(d.id));
+        paginatedDocs.forEach(d => next.delete(d._id));
       } else {
-        paginatedDocs.forEach(d => next.add(d.id));
+        paginatedDocs.forEach(d => next.add(d._id));
       }
       return next;
     });
@@ -218,11 +232,11 @@ export default function Dashboard() {
     triggerReload();
   };
 
-  const handleDuplicate = (e, doc) => {
+  const handleDuplicate = async(e, doc) => {
     e.stopPropagation();
-    const newDoc = documentService.create(`Copy of ${doc.name}`, doc.category, user?.email, user?.name);
+    const newDoc = await createDoc(`Copy of ${doc.title}`, doc.category, user?.email, user?.name);
     if (newDoc) {
-      triggerToast(`Duplicated: ${doc.name}`, 'success');
+      triggerToast(`Duplicated: ${doc.title}`, 'success');
       setRowMenuOpen(null);
       triggerReload();
     }
@@ -252,7 +266,7 @@ export default function Dashboard() {
 
   // Bulk processing
   const handleBulkDelete = () => {
-    selectedDocIds.forEach(id => documentService.delete(id));
+    selectedDocIds.forEach(async(id) => await deleteDoc(id));
     triggerToast(`Moved ${selectedDocIds.size} files to Trash`, 'success');
     triggerReload();
   };
@@ -266,11 +280,11 @@ export default function Dashboard() {
   };
 
   // Quick Action Creators
-  const createDocumentWithType = (name, type, cat) => {
-    const doc = documentService.create(name, cat, user?.email, user?.name);
+  const createDocumentWithType = async(name, type, cat) => {
+    const doc = await createDoc(name, cat, user?.email, user?.name);
     if (doc) {
       triggerToast(`Created new ${type} Document`, 'success');
-      navigate(`/editor/${doc.id}`);
+      navigate(`/editor/${doc._id}`);
     }
   };
 
@@ -588,18 +602,18 @@ export default function Dashboard() {
                 </tr>
               ) : (
                 paginatedDocs.map((doc) => {
-                  const isSelected = selectedDocIds.has(doc.id);
+                  const isSelected = selectedDocIds.has(doc._id);
                   
                   return (
                     <tr
-                      key={doc.id}
-                      onClick={() => navigate(`/editor/${doc.id}`)}
+                      key={doc._id}
+                      onClick={() => navigate(`/editor/${doc._id}`)}
                       className={`hover:bg-[#F7FAFF]/80 dark:hover:bg-[#0F172A]/40 cursor-pointer transition-all duration-200 h-[52px] group relative border-b border-[#E5E7EB]/50 dark:border-white/5
                         ${isSelected ? 'bg-[#0D6EFD]/5 dark:bg-[#0D6EFD]/5' : ''}
                       `}
                     >
                       {/* Checked column checkbox */}
-                      <td className="px-3" onClick={(e) => handleSelectRow(e, doc.id)}>
+                      <td className="px-3" onClick={(e) => handleSelectRow(e, doc._id)}>
                         <button className="text-[#6B7280] hover:text-[#0D6EFD] transition-colors">
                           {isSelected ? <CheckSquare size={13} className="text-[#0D6EFD]" /> : <Square size={13} />}
                         </button>
@@ -611,7 +625,7 @@ export default function Dashboard() {
                           {renderTypeIcon(doc.fileType)}
                           <div className="min-w-0">
                             <span className="font-semibold text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] transition-colors truncate block">
-                              {doc.name}
+                              {doc.title}
                             </span>
                             <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">
                               {doc.fileType}
@@ -627,13 +641,13 @@ export default function Dashboard() {
 
                       {/* Owner Name */}
                       <td className="px-3 text-[12.5px] text-[#6B7280] dark:text-[#94A3B8]/75 font-medium truncate max-w-[140px]">
-                        {doc.owner.name}
+                        { user.fullName || doc.owner.name || user.fullName}
                       </td>
 
                       {/* Collaborator Avatar Stack */}
                       <td className="px-3">
                         <div className="flex -space-x-1.5 overflow-hidden">
-                          {doc.sharedUsers.slice(0, 3).map((collab, idx) => (
+                          {doc.users.slice(0, 3).map((collab, idx) => (
                             <img
                               key={idx}
                               className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#070B14] object-cover"
@@ -642,12 +656,12 @@ export default function Dashboard() {
                               title={collab.name}
                             />
                           ))}
-                          {doc.sharedUsers.length > 3 && (
+                          {doc.users.length > 3 && (
                             <span className="flex items-center justify-center h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#070B14] bg-[#E5E7EB] dark:bg-slate-800 text-[9px] font-bold text-[#6B7280] dark:text-[#94A3B8]">
-                              +{doc.sharedUsers.length - 3}
+                              +{doc.users.length - 3}
                             </span>
                           )}
-                          {doc.sharedUsers.length === 0 && (
+                          {doc.users.length === 0 && (
                             <span className="text-[13px] text-[#6B7280] dark:text-slate-500 font-normal italic">Private</span>
                           )}
                         </div>

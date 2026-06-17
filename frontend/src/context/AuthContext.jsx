@@ -3,17 +3,17 @@ import {
   userLogin, 
   userLogout, 
   userRegister,
-  verifyEmail,
-  verifyEmailRequest,
+  verifyUserEmail,
+  verifyUserEmailRequest,
   getUser,
   userForgetPassword,
-  userPasswordForgetRequest,
+  userForgetPasswordRequest,
   changeUserCurrentPassword,
   userAccessTokenRefreshed,
   userRefreshTokenRefreshed
  } from '../apis/api';
- 
-import { LocalStorage } from '../apis/index';
+
+import { LocalStorage, requestHandler } from '../apis/index';
 
 const AuthContext = createContext();
 
@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     const savedUser = LocalStorage.get("user")
@@ -32,20 +33,32 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-     const res = await userLogin({email, password})
-     console.log(res.data.data.user)
-     const { user, accessToken } = res.data.data
-     LocalStorage.set("accessToken", accessToken)
-     LocalStorage.set("user", user)
-     setUser(user)
-     return res.data
-  };
-
-  const register = async (email, name, password) => {
+   const register = async (email, name, password) => {
     const res = await userRegister({email, fullName : name , password})
     return res.data
   };
+
+  const verifyEmail = async() => {
+    const res = await verifyUserEmail()
+  }
+
+
+  const login = async(email, password) => {
+     try {
+      const res = await userLogin({email, password})
+      const { user, accessToken } = res.data.data
+      LocalStorage.set("accessToken", accessToken)
+      LocalStorage.set("user", user)
+      setUser(user)
+      return res.data
+     } catch (error) {
+      console.error(error.message)
+        setError(error.message)
+        return error.message
+     }
+  };
+
+ 
 
   const logout = async() => {
     const res = await userLogout()
@@ -62,11 +75,6 @@ export function AuthProvider({ children }) {
   const resetPassword = async (email, code, newPassword) => {
 
   };
-
-  const verifyEmail = async(token, email) => {
-    const res = await verifyEmail()
-  }
-
   const triggerToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -82,7 +90,8 @@ export function AuthProvider({ children }) {
       register,
       toast,
       logout,
-      forgotPassword,
+      error,
+      // forgotPassword,
       resetPassword,
       triggerToast
     }}>

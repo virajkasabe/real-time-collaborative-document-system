@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FcGoogle } from "react-icons/fc";
+import { MdOutlineError } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { HiOutlineMail } from "react-icons/hi";
 import { FiLock, FiEye, FiEyeOff, FiUsers, FiShield, FiClock, FiUserCheck } from "react-icons/fi";
@@ -10,7 +11,7 @@ import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function LoginPage() {
-  const { login, triggerToast } = useAuth();
+  const { login, triggerToast, error } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -38,10 +39,16 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    const success = await login(email.trim(), password);
+    const res = await login(email.trim(), password);
+    console.log("success", res)
+    if(res.success === false) {
+      setErrors(res.success)
+    }
+
+
     setLoading(false);
 
-    if (success) {
+    if (res.success) {
       navigate('/dashboard');
     }
   };
@@ -182,6 +189,16 @@ export default function LoginPage() {
                 Login to continue to your account
               </p>
             </div>
+
+            {
+            error && (
+              <div className="text-center my-4 text-red-500 font-semibold text-[14px]">
+                <div className="flex items-center justify-center gap-3">
+                  <span>{error}</span>
+                </div>
+              </div>
+            )
+          }
 
             <form onSubmit={handleLogin} className="space-y-3">
               
