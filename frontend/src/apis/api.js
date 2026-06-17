@@ -1,17 +1,16 @@
 
 import { apiClient } from "./index"
 
-
-// ================= XXXX =================
+// ================= ---- =================
 // auth register, login , logout
-// ================= XXXX =================
+// ================= ---- =================
 
 export const userRegister = (data) => {
     return apiClient.post("/auth/register",data)
 }
 
-export const verifyEmail = async(otp, token) => {
-    return await apiClient.post(`/auth/verify-email${token}`, {otp, token})
+export const verifyEmail = async(otp, email) => {
+    return await apiClient.post(`/auth/verify-email`, {otp, email})
 }
 
 export const verifyEmailRequest = async(email) => {
@@ -34,15 +33,11 @@ export const updateUserProfile = (data) => {
     return apiClient.post("/auth/update-profile", data)
 }
 
-export const userRefreshTokenRefreshed = (data) => {
-    return apiClient.post("/auth/refresh-token-refreshed", data)
-}
-
 export const userPasswordForgetRequest = (data) => {
     return apiClient.post("/auth/forgot-password-request", data)
 }
 
-export const forgetPassword = (unHashedToken, data) => {
+export const userForgetPassword = (unHashedToken, data) => {
     return apiClient.post(`/auth/reset-password/${unHashedToken}`,data)
 }
 
@@ -50,10 +45,18 @@ export const changeUserCurrentPassword = (data) => {
     return apiClient.post(`/auth/update-current-password`,data)
 }
 
+export const userAccessTokenRefreshed = (data) => {
+    return apiClient.post("/auth/access-token-refreshed", data)
+}
 
-// ================= XXXX =================
+export const userRefreshTokenRefreshed = (data) => {
+    return apiClient.post("/auth/refresh-token-refreshed", data)
+}
+
+
+// ================= ---- =================
 // collab invite, accept, declined 
-// ================= XXXX =================
+// ================= ---- =================
 
 export const inviteCollab = (docId,data) => {
     return apiClient.post(`/collab/send-collab/${docId}`,data)
@@ -67,9 +70,9 @@ export const declinedCollab = (email,tokenId) => {
     return apiClient.post(`collab/decline/email=${email}/join=${tokenId}`)
 }
 
-// ================= XXXX =================
+// ================= ---- =================
 // docuement create, read, update, delete
-// ================= XXXX =================
+// ================= ---- =================
 
 export const createDoc = (data) => {
     return apiClient.post(`/doc/create-doc`, data)

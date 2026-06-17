@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
 import {
+  accessTokenRefreshed,
   changeCurrentPassword,
   currentUser,
   deleteUser,
@@ -24,6 +25,9 @@ router.route("/login").post(loginUser);
 router.route("/logout").get(verifyJWT, logoutUser);
 
 router.route("/refresh-token-refreshed").post(refreshTokenHandler);
+
+router.route("/access-token-refreshed").post(accessTokenRefreshed);
+
 
 router.route("/getme").get(verifyJWT, currentUser);
 

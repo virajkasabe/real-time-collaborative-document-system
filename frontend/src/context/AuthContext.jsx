@@ -1,6 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userLogin, userLogout, userRegister } from '../apis/api';
-import { LocalStorage } from '../apis';
+import { 
+  userLogin, 
+  userLogout, 
+  userRegister,
+  verifyEmail,
+  verifyEmailRequest,
+  getUser,
+  userForgetPassword,
+  userPasswordForgetRequest,
+  changeUserCurrentPassword,
+  userAccessTokenRefreshed,
+  userRefreshTokenRefreshed
+ } from '../apis/api';
+ 
+import { LocalStorage } from '../apis/index';
 
 const AuthContext = createContext();
 
