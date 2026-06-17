@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
-import { setDocument } from "../../redis/client.js";
+import { deleteDocumet, setDocument } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { fetchDoc } from "../../utils/helper.js";
+import { fetchDoc, requiredField } from "../../utils/helper.js";
 import Doc from "./document.model.js";
 import User from "../auth/auth.model.js";
-import { getDocumentRole } from "../../middleware/document.middleware.js";
+import { getDocumentRole, verifyDocumentAdmin } from "../../middleware/document.middleware.js";
 
 export const createDocument = asyncHandler(async (req, res) => {
   const { title } = req.body;
@@ -135,3 +135,44 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
       )
     );
 });
+
+export const docMoveToTrash = asyncHandler(async(req,res)=>{
+  
+  const { docId } = req.params
+
+  verifyDocumentAdmin(docId, req.user)
+
+  requiredField([docId])
+
+
+  const document = await Doc.findByIdAndUpdate( docId, {
+    $set : {
+      isTrash : true
+    }
+  }, { new : true } )
+
+  await deleteDocumet(docId)
+
+  return res.status(204).json(new ApiResponse(204, {} , "your document move to trash successfully"))
+})
+
+export const deleteDoc = asyncHandler(async(req,res)=>{
+
+  const { docId } = req.params
+
+  verifyDocumentAdmin(docId, req.user)
+
+  requiredField([docId])
+
+
+  await Doc.findByIdAndDelete( docId, {
+    $set : {
+      isTrash : true
+    }
+  }, { new : true } )
+
+  await deleteDocumet(docId)
+
+
+  return res.status(204).json(new ApiResponse(204, {} , "your document deleted successfully"))
+})

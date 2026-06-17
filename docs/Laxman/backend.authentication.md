@@ -150,7 +150,7 @@ http://localhost:5000/api/v1/rtcds/auth/refresh-token-refreshed
 
 ```bash
 
-http://localhost:5000/api/v1/rtcds/auth/forgot-password-request
+http://localhost:5000/api/v1/rtcds/auth/c
 
 ```
 

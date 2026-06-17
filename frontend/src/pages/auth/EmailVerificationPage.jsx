@@ -8,12 +8,15 @@ import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
 
 export default function EmailVerificationPage() {
-  const { triggerToast } = useAuth();
+  const { triggerToast, verifyEmail } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
+  const token = location.state?.token || '';
+
+  console.log("token", token)
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +27,7 @@ export default function EmailVerificationPage() {
   }, [email, navigate]);
 
   const handleChange = (element, index) => {
-    const val = element.value.replace(/[^0-9]/g, ""); // Allow only digits
+    const val = element.value.replace(/[^0-9a-zA-Z]/g, "");
     if (!val) {
       const newOtp = [...otp];
       newOtp[index] = "";
@@ -59,7 +62,7 @@ export default function EmailVerificationPage() {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/[^0-9]/g, "").substring(0, 6);
+    const text = e.clipboardData.getData("text").replace(/[^0-9a-zA-Z]/g, "").substring(0, 6);
     if (text.length === 6) {
       const newOtp = text.split("");
       setOtp(newOtp);
@@ -243,7 +246,6 @@ export default function EmailVerificationPage() {
                     ref={(el) => (inputRefs.current[index] = el)}
                     maxLength={1}
                     type="text"
-                    pattern="[0-9]*"
                     inputMode="numeric"
                     value={digit}
                     onChange={(e) => handleChange(e.target, index)}
