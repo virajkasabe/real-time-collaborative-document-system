@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { FiBell, FiMail, FiUserCheck, FiUserX, FiCheck, FiX, FiTrash2 } from 'react-icons/fi';
 import { useNotifications } from '../context/NotificationContext';
+import { useSocket } from '../context/SocketContext';
+import { INVITATION_EVENT } from '../utils/constants';
 
 export default function NotificationsPage() {
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
   const [activeTab, setActiveTab] = useState('all');
-
+  const { socket } = useSocket()
   const tabs = [
     { id: 'all', label: 'All' },
     { id: 'unread', label: 'Unread' },
@@ -14,6 +16,23 @@ export default function NotificationsPage() {
     { id: 'declined', label: 'Declined' }
   ];
 
+
+   const acceptCollab = (acceptNotif) => {
+    console.log("acces",acceptNotif)
+    markAsRead(acceptNotif.id)
+      socket.emit(INVITATION_EVENT.ACCEPT_INVITATION,
+        acceptNotif
+      )
+    }
+
+  const declinedCollab = (declineNotif) => {
+    console.log("acces",declineNotif)
+    markAsRead(declineNotif.id)
+      socket.emit(INVITATION_EVENT.DECLINE_INVITATION,{
+        declineNotif
+      })
+  }
+  
   const getFilteredNotifications = () => {
     switch (activeTab) {
       case 'unread':
@@ -88,7 +107,7 @@ export default function NotificationsPage() {
   const getMessage = (n) => {
     switch (n.type) {
       case 'COLLAB_INVITED':
-        return `${n.inviter} invited you to collaborate on "${n.title}"`;
+       return `${n.inveterName} invited you to collaborate on "${n.documentTitle}"`;
       case 'COLLAB_ACCEPTED':
         return `${n.accepterName} accepted your invite for "${n.documentTitle}"`;
       case 'COLLAB_DECLINED':
@@ -202,20 +221,14 @@ export default function NotificationsPage() {
                 {notif.type === 'COLLAB_INVITED' && (
                   <>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAsRead(notif.id);
-                      }}
+                      onClick={() => acceptCollab(notif)}
                       className="px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
                     >
                       <FiCheck size={13} />
                       Accept
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAsRead(notif.id);
-                      }}
+                     onClick={() => declinedCollab(notif)}
                       className="px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                     >
                       <FiX size={13} />
@@ -235,7 +248,6 @@ export default function NotificationsPage() {
                   </button>
                 )}
               </div>
-
             </div>
           ))
         )}

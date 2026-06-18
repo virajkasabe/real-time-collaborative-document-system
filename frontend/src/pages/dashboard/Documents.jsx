@@ -22,6 +22,7 @@ import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
+import { createDoc } from '../../apis/api';
 
 export default function Documents() {
   const { user, triggerToast } = useAuth();
@@ -77,7 +78,7 @@ export default function Documents() {
       list = documentService.getTrash();
     } else {
       list = documentService.getAll();
-    }
+    } 
     return list;
   }, [filter, dbVer]);
 
@@ -224,11 +225,11 @@ export default function Documents() {
     triggerReload();
   };
 
-  const handleCreateDocument = () => {
-    const newDoc = documentService.create('New Document', 'blank', user?.email, user?.name);
-    if (newDoc) {
+  const handleCreateDocument = async() => {
+    const newDoc = await createDoc('New Document', 'blank', user?.email, user?.name);
+    if (newDoc.data.doc) {
       triggerToast('Document created successfully!', 'success');
-      navigate(`/editor/${newDoc.id}`);
+      navigate(`/editor/${newDoc.data.doc._id}`);
     }
   };
 

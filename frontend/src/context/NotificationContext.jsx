@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
+import { NOTIFICATION_EVENT } from '../utils/constants';
 
 const NotificationContext = createContext();
 
@@ -44,7 +45,7 @@ export function NotificationProvider({ children }) {
       showToast(data);
     };
 
-    socket.on('notification', handleNotification);
+    socket.on(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
 
     return () => socket.off('notification', handleNotification);
   }, [socket, addNotification, showToast]);

@@ -28,7 +28,6 @@ router.route("/refresh-token-refreshed").post(refreshTokenHandler);
 
 router.route("/access-token-refreshed").post(accessTokenRefreshed);
 
-
 router.route("/getme").get(verifyJWT, currentUser);
 
 // router

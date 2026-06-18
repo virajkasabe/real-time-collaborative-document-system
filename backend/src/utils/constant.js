@@ -5,7 +5,7 @@ export const loginType = Object.freeze({
 });
 
 export const DOCUMENT_ROLES = Object.freeze({
-  VIEWR: "Viwer",
+  VIEWER: "Viewer",
   EDITOR: "Editor",
   OWNER: "Owner",
 });

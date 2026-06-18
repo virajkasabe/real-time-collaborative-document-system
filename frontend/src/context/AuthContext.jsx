@@ -59,12 +59,11 @@ export function AuthProvider({ children }) {
   };
 
  
-
   const logout = async() => {
     const res = await userLogout()
     if(res.data.success) {
-      LocalStorage.remove()
-      // disconnectEven 
+      LocalStorage.remove("user")
+      LocalStorage.remove("accessToken")
     }
   };
 

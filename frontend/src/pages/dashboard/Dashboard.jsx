@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import  { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { 
   Plus, 
@@ -22,7 +22,8 @@ import {
   FileSpreadsheet,
   FileDown,
   FileBadge,
-  ChevronDown
+  ChevronDown,
+  Inbox
 } from 'lucide-react';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
@@ -34,6 +35,10 @@ export default function Dashboard() {
   const { user, triggerToast } = useAuth();
   const navigate = useNavigate();
   const { sidebarOpen, searchQuery } = useOutletContext();
+  
+  // State
+  const [rawDocs, setRawDocs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [dbVer, setDbVer] = useState(0);
   const [statusFilter, setStatusFilter] = useState('All');
   const [docTypeFilter, setDocTypeFilter] = useState('All');
@@ -41,66 +46,66 @@ export default function Dashboard() {
   const [sortColumn, setSortColumn] = useState('lastModified');
   const [sortDirection, setSortDirection] = useState('desc');
   const [selectedDocIds, setSelectedDocIds] = useState(new Set());
-  const [rawDocs, setRawDocs] = useState([])
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // Modal actions states
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [rowMenuOpen, setRowMenuOpen] = useState(null);
 
-  // Click outside to auto-close custom dropdowns
+  // Click outside handler
   useEffect(() => {
     const handleOutsideClick = () => setOpenDropdown(null);
     window.addEventListener('click', handleOutsideClick);
     return () => window.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  const toggleDropdown = (e, menu) => {
-    e.stopPropagation();
-    setOpenDropdown(prev => prev === menu ? null : menu);
-  };
-
+  // Fetch documents
   useEffect(() => {
-    // Reload items on DB version changes
-  }, [dbVer]);
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user, dbVer]);
+
+  const fetchDocuments = async () => {
+    try {
+      setIsLoading(true);
+      const payload = await fetchDocumentFolder();
+      const documents = payload?.data?.data?.documentFolder || [];
+      setRawDocs(documents);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setRawDocs([]);
+      triggerToast('Failed to load documents', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const triggerReload = () => {
     setDbVer(prev => prev + 1);
     setSelectedDocIds(new Set());
   };
 
-  // const rawDocs = documentService.getAll();
+  const toggleDropdown = (e, menu) => {
+    e.stopPropagation();
+    setOpenDropdown(prev => prev === menu ? null : menu);
+  };
 
-  useEffect(()=>{
-    if(user) {
-      ;(async()=>{
-      const payload = await fetchDocumentFolder()
-      setRawDocs(payload.data.data.documentFolder)
-    })()
-    }
-  },[])
-
-
-
-  // Enriched documents with file types & status dynamically
+  // Enriched documents with file types & status
   const enrichedDocs = useMemo(() => {
+    if (!rawDocs.length) return [];
+    
     return rawDocs.map((doc, idx) => {
-      // Deterministically map to professional document types
       let fileType = 'DOCX';
       if (doc.category === 'spec') fileType = 'PDF';
       else if (doc.category === 'minutes') fileType = 'XLSX';
       else if (doc.category === 'proposal') fileType = 'DOCX';
       else {
-        // Fallback layout mapping
         const types = ['DOCX', 'XLSX', 'PDF', 'PPTX'];
         fileType = types[idx % types.length];
       }
 
-      // Deterministically map to professional workflow statuses
       let status = 'Active';
       if (doc.trash) status = 'Archived';
       else if (doc.starred) status = 'Review';
@@ -119,14 +124,14 @@ export default function Dashboard() {
     });
   }, [rawDocs]);
 
-  // Filtering documents
+  // Filtering
   const filteredDocs = useMemo(() => {
     let list = enrichedDocs;
 
     if (searchQuery.trim()) {
       list = list.filter(d => 
         d.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        d.owner.name.toLowerCase().includes(searchQuery.toLowerCase())
+        d.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -141,18 +146,18 @@ export default function Dashboard() {
     return list;
   }, [enrichedDocs, searchQuery, statusFilter, docTypeFilter]);
 
-  // Sorting documents
+  // Sorting
   const sortedDocs = useMemo(() => {
     const sorted = [...filteredDocs];
-    if (!sortColumn) return sorted;
+    if (!sortColumn || !sorted.length) return sorted;
 
     sorted.sort((a, b) => {
       let valA = a[sortColumn];
       let valB = b[sortColumn];
 
       if (sortColumn === 'owner') {
-        valA = a.owner.name;
-        valB = b.owner.name;
+        valA = a.owner?.name || '';
+        valB = b.owner?.name || '';
       }
 
       if (sortColumn === 'lastModified') {
@@ -173,7 +178,7 @@ export default function Dashboard() {
     return sorted;
   }, [filteredDocs, sortColumn, sortDirection]);
 
-  // Paginated documents slice
+  // Pagination
   const totalItems = sortedDocs.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const paginatedDocs = useMemo(() => {
@@ -181,13 +186,13 @@ export default function Dashboard() {
     return sortedDocs.slice(start, start + itemsPerPage);
   }, [sortedDocs, currentPage, itemsPerPage]);
 
-  // Reset page index if scope changes
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
   }, [totalItems, totalPages, currentPage]);
 
+  // Handlers
   const handleSort = (column) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -197,7 +202,6 @@ export default function Dashboard() {
     }
   };
 
-  // Row Select Toggle
   const handleSelectRow = (e, id) => {
     e.stopPropagation();
     setSelectedDocIds(prev => {
@@ -208,10 +212,8 @@ export default function Dashboard() {
     });
   };
 
-  // Select all visible on current page
-  const isPageAllSelected = paginatedDocs.length > 0 && paginatedDocs.every(d => selectedDocIds.has(d.id));
-  
-    console.log(paginatedDocs)
+  const isPageAllSelected = paginatedDocs.length > 0 && paginatedDocs.every(d => selectedDocIds.has(d._id));
+
   const handleSelectAll = () => {
     setSelectedDocIds(prev => {
       const next = new Set(prev);
@@ -224,7 +226,6 @@ export default function Dashboard() {
     });
   };
 
-  // Row Action Dup, Move, Del
   const handleToggleStar = (e, docId, starred) => {
     e.stopPropagation();
     documentService.star(docId, !starred);
@@ -232,7 +233,7 @@ export default function Dashboard() {
     triggerReload();
   };
 
-  const handleDuplicate = async(e, doc) => {
+  const handleDuplicate = async (e, doc) => {
     e.stopPropagation();
     const newDoc = await createDoc(`Copy of ${doc.title}`, doc.category, user?.email, user?.name);
     if (newDoc) {
@@ -242,9 +243,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleDelete = (e, docId) => {
+  const handleDelete = async (e, docId) => {
     e.stopPropagation();
-    documentService.delete(docId);
+    await deleteDoc(docId);
     triggerToast('Moved file to trash', 'info');
     setRowMenuOpen(null);
     triggerReload();
@@ -264,9 +265,10 @@ export default function Dashboard() {
     setRowMenuOpen(null);
   };
 
-  // Bulk processing
-  const handleBulkDelete = () => {
-    selectedDocIds.forEach(async(id) => await deleteDoc(id));
+  const handleBulkDelete = async () => {
+    for (const id of selectedDocIds) {
+      await deleteDoc(id);
+    }
     triggerToast(`Moved ${selectedDocIds.size} files to Trash`, 'success');
     triggerReload();
   };
@@ -279,8 +281,7 @@ export default function Dashboard() {
     triggerToast(`Move wizard opened for ${selectedDocIds.size} items`, 'info');
   };
 
-  // Quick Action Creators
-  const createDocumentWithType = async(name, type, cat) => {
+  const createDocumentWithType = async (name, type, cat) => {
     const doc = await createDoc(name, cat, user?.email, user?.name);
     if (doc) {
       triggerToast(`Created new ${type} Document`, 'success');
@@ -288,6 +289,7 @@ export default function Dashboard() {
     }
   };
 
+  // Quick Action Cards
   const quickActionCards = [
     {
       title: 'New Document',
@@ -326,7 +328,7 @@ export default function Dashboard() {
     }
   ];
 
-  // Helper to render type icons beautifully
+  // Helper Functions
   const renderTypeIcon = (type) => {
     switch (type) {
       case 'XLSX':
@@ -356,7 +358,6 @@ export default function Dashboard() {
     }
   };
 
-  // Helper to render status badges
   const renderStatusBadge = (status) => {
     switch (status) {
       case 'Active':
@@ -386,6 +387,113 @@ export default function Dashboard() {
     }
   };
 
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="px-5 pt-3.5 pb-6 md:px-6 md:pt-4 md:pb-8 max-w-7xl w-full mx-auto">
+        <div className="space-y-0.5 text-left mb-5 pb-2 border-b border-[#E5E7EB] dark:border-white/5">
+          <div className="h-8 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+          <div className="h-4 w-56 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mt-1"></div>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {[...Array(5)].map((_, idx) => (
+            <div key={idx} className="h-[52px] bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+        
+        <div className="bg-white dark:bg-[#0B0F19]/45 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-4 mt-4">
+          <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-4"></div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, idx) => (
+              <div key={idx} className="h-12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty State - No Documents
+  if (!isLoading && rawDocs.length === 0) {
+    return (
+      <div className="px-5 pt-3.5 pb-6 md:px-6 md:pt-4 md:pb-8 max-w-7xl w-full mx-auto">
+        {/* Header */}
+        <div className="space-y-0.5 text-left mb-5 select-none pb-2 border-b border-[#E5E7EB] dark:border-white/5">
+          <h1 className="font-sans font-bold text-[22px] text-[#081B3A] dark:text-white leading-tight tracking-tight">
+            Documents
+          </h1>
+          <p className="text-[13px] font-normal text-[#6B7280] dark:text-[#94A3B8]/80 mt-0.5">
+            Manage and organize your workspace.
+          </p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="space-y-2 text-left">
+          <h4 className="font-sans font-semibold text-[15px] tracking-tight text-[#081B3A] dark:text-white px-0.5">
+            Quick Actions
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {quickActionCards.map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={idx}
+                  onClick={card.action}
+                  className="glass-card p-2 px-3 border border-[#E5E7EB] dark:border-white/5 bg-white dark:bg-[#0F172A]/40 transition-all duration-300 ease-in-out cursor-pointer flex items-center gap-3 group relative rounded-xl min-h-[52px] py-2 min-w-[120px] hover:border-[#0D6EFD]/35 dark:hover:border-blue-500/25 hover:shadow-[0_0_15px_rgba(13,110,253,0.12)] hover:scale-[1.01] hover:-translate-y-0.5"
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm ${card.color}`}>
+                    <Icon size={14} />
+                  </div>
+                  <div className="min-w-0 flex-1 text-left py-0.5">
+                    <h5 className="font-semibold text-[13.5px] text-[#081B3A] dark:text-slate-200 leading-tight group-hover:text-blue-500 dark:group-hover:text-white transition-colors break-words">
+                      {card.title}
+                    </h5>
+                    <p className="text-[11.5px] text-[#6B7280] dark:text-[#94A3B8]/70 font-normal leading-normal break-words mt-0.5">
+                      {card.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Empty State Card */}
+        <div className="bg-white dark:bg-[#0B0F19]/45 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 mt-4">
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-24 h-24 rounded-full bg-[#0D6EFD]/10 flex items-center justify-center mb-6">
+              <Inbox size={40} className="text-[#0D6EFD]" />
+            </div>
+            <h3 className="text-2xl font-bold text-[#081B3A] dark:text-white mb-3">
+              No Documents Yet
+            </h3>
+            <p className="text-[#6B7280] dark:text-[#94A3B8]/80 text-center max-w-md mb-8">
+              Get started by creating your first document. You can create a new document from scratch, import existing files, or upload documents from your device.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <button
+                onClick={() => createDocumentWithType('New Workspace Document', 'DOCX', 'proposal')}
+                className="px-6 py-2.5 bg-[#0D6EFD] text-white rounded-lg font-semibold hover:bg-[#0D6EFD]/90 transition-colors flex items-center gap-2 shadow-lg shadow-[#0D6EFD]/20"
+              >
+                <Plus size={18} />
+                Create Document
+              </button>
+              <button
+                onClick={() => triggerToast('Import document feature coming soon', 'info')}
+                className="px-6 py-2.5 border border-[#E5E7EB] dark:border-white/10 text-[#6B7280] dark:text-[#94A3B8] rounded-lg font-semibold hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A] transition-colors flex items-center gap-2"
+              >
+                <Upload size={18} />
+                Import File
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Render with Documents
   return (
     <div className="px-5 pt-3.5 pb-6 md:px-6 md:pt-4 md:pb-8 space-y-4 max-w-7xl w-full mx-auto">
       {/* Dashboard Page Header */}
@@ -398,7 +506,7 @@ export default function Dashboard() {
         </p>
       </div>
       
-      {/* SECTION 1: QUICK ACTIONS */}
+      {/* Quick Actions */}
       <div className="space-y-2 text-left">
         <h4 className="font-sans font-semibold text-[15px] tracking-tight text-[#081B3A] dark:text-white px-0.5">
           Quick Actions
@@ -429,18 +537,17 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* SECTION 2: RECENT DOCUMENTS TABLE */}
+      {/* Documents Table */}
       <div className="space-y-2 select-none text-left bg-white dark:bg-[#0B0F19]/45 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-4 shadow-sm">
-        {/* Table Controls (Filter & Bulk Operations) */}
+        {/* Table Controls */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-[#E5E7EB] dark:border-white/5 pb-3">
           <div className="flex flex-wrap items-center gap-4">
             <h4 className="font-sans font-semibold text-[15px] tracking-tight text-[#081B3A] dark:text-white">
               Recent Documents
             </h4>
             
-            {/* INLINE FILTERS */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Status Dropdown */}
+              {/* Status Filter */}
               <div className="relative">
                 <button
                   onClick={(e) => toggleDropdown(e, 'status')}
@@ -464,7 +571,7 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Type Dropdown */}
+              {/* Type Filter */}
               <div className="relative">
                 <button
                   onClick={(e) => toggleDropdown(e, 'type')}
@@ -518,7 +625,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Dynamic Bulk Actions Bar */}
+            {/* Bulk Actions */}
             {selectedDocIds.size > 0 && (
               <div className="flex items-center gap-1.5 ml-3 pl-3 border-l border-[#E5E7EB] dark:border-white/10 animate-fade-in-up">
                 <span className="text-[11px] font-bold bg-[#0D6EFD]/10 text-[#0D6EFD] px-2 py-0.5 rounded">
@@ -550,12 +657,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Document Data Table */}
+        {/* Document Table */}
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-left border-collapse table-auto">
             <thead>
               <tr className="border-b border-[#E5E7EB] dark:border-white/5 text-[11px] font-bold text-[#6B7280] dark:text-slate-500 select-none uppercase tracking-wider">
-                {/* Header Checkbox */}
                 <th className="py-2.5 px-3 w-[40px]">
                   <button 
                     onClick={handleSelectAll}
@@ -564,7 +670,6 @@ export default function Dashboard() {
                     {isPageAllSelected ? <CheckSquare size={13} className="text-[#0D6EFD]" /> : <Square size={13} />}
                   </button>
                 </th>
-                {/* Sorting column triggers */}
                 <th className="py-2.5 px-3 cursor-pointer hover:text-[#081B3A] dark:hover:text-white transition-colors" onClick={() => handleSort('name')}>
                   <div className="inline-flex items-center gap-1">
                     <span>Name</span>
@@ -596,8 +701,26 @@ export default function Dashboard() {
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-white/5">
               {paginatedDocs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8]/60">
-                    No recent documents found matching criteria.
+                  <td colSpan={7} className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <FileText size={32} className="text-[#6B7280] dark:text-[#94A3B8]/40 mb-3" />
+                      <p className="text-sm font-semibold text-[#081B3A] dark:text-white">
+                        No documents match your filters
+                      </p>
+                      <p className="text-xs text-[#6B7280] dark:text-[#94A3B8]/60 mt-1">
+                        Try adjusting your search or filter criteria
+                      </p>
+                      <button
+                        onClick={() => {
+                          setStatusFilter('All');
+                          setDocTypeFilter('All');
+                          setSearchQuery('');
+                        }}
+                        className="mt-4 px-4 py-2 text-[#0D6EFD] text-sm font-semibold hover:bg-[#0D6EFD]/10 rounded-lg transition-colors"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -612,14 +735,12 @@ export default function Dashboard() {
                         ${isSelected ? 'bg-[#0D6EFD]/5 dark:bg-[#0D6EFD]/5' : ''}
                       `}
                     >
-                      {/* Checked column checkbox */}
                       <td className="px-3" onClick={(e) => handleSelectRow(e, doc._id)}>
                         <button className="text-[#6B7280] hover:text-[#0D6EFD] transition-colors">
                           {isSelected ? <CheckSquare size={13} className="text-[#0D6EFD]" /> : <Square size={13} />}
                         </button>
                       </td>
 
-                      {/* File Icon + Name */}
                       <td className="px-3 min-w-0">
                         <div className="flex items-center gap-3">
                           {renderTypeIcon(doc.fileType)}
@@ -634,20 +755,17 @@ export default function Dashboard() {
                         </div>
                       </td>
 
-                      {/* Date updated */}
                       <td className="px-3 text-[13px] text-[#6B7280] dark:text-[#94A3B8]/75 font-normal">
                         {new Date(doc.lastModified).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
 
-                      {/* Owner Name */}
                       <td className="px-3 text-[12.5px] text-[#6B7280] dark:text-[#94A3B8]/75 font-medium truncate max-w-[140px]">
-                        { user.fullName || doc.owner.name || user.fullName}
+                        {user?.fullName || doc.owner?.name || user?.fullName}
                       </td>
 
-                      {/* Collaborator Avatar Stack */}
                       <td className="px-3">
                         <div className="flex -space-x-1.5 overflow-hidden">
-                          {doc.users.slice(0, 3).map((collab, idx) => (
+                          {doc.users?.slice(0, 3).map((collab, idx) => (
                             <img
                               key={idx}
                               className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#070B14] object-cover"
@@ -656,26 +774,23 @@ export default function Dashboard() {
                               title={collab.name}
                             />
                           ))}
-                          {doc.users.length > 3 && (
+                          {doc.users?.length > 3 && (
                             <span className="flex items-center justify-center h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#070B14] bg-[#E5E7EB] dark:bg-slate-800 text-[9px] font-bold text-[#6B7280] dark:text-[#94A3B8]">
                               +{doc.users.length - 3}
                             </span>
                           )}
-                          {doc.users.length === 0 && (
+                          {!doc.users?.length && (
                             <span className="text-[13px] text-[#6B7280] dark:text-slate-500 font-normal italic">Private</span>
                           )}
                         </div>
                       </td>
 
-                      {/* Workflow status */}
                       <td className="px-3">
                         {renderStatusBadge(doc.status)}
                       </td>
 
-                      {/* Operations Menu */}
                       <td className="px-3 text-right shrink-0">
                         <div className="inline-flex items-center gap-1 relative">
-                          {/* Quick star flag */}
                           <button
                             onClick={(e) => handleToggleStar(e, doc.id, doc.starred)}
                             className="p-1 rounded-md text-[#6B7280] hover:text-amber-500 transition-colors"
@@ -683,7 +798,6 @@ export default function Dashboard() {
                             <Star size={13} fill={doc.starred ? 'currentColor' : 'none'} className={doc.starred ? 'text-amber-500' : ''} />
                           </button>
 
-                          {/* Operations Dropdown */}
                           <div className="relative">
                             <button
                               onClick={(e) => {
@@ -738,42 +852,56 @@ export default function Dashboard() {
           </table>
         </div>
 
-        {/* Dedicated minimal pagination footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#E5E7EB]/80 dark:border-white/5 mt-3 select-none text-[13px] text-[#6B7280] dark:text-[#94A3B8]/80 font-normal">
-          <div>
-            Showing {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} documents
-          </div>
-          
-          <div className="flex items-center gap-1 bg-[#F7FAFF] dark:bg-[#0F172A]/30 p-0.5 rounded-lg border border-[#E5E7EB] dark:border-white/5">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1e293b] disabled:opacity-40 transition-all cursor-pointer font-semibold text-[13px] w-6 h-6 flex items-center justify-center"
-            >
-              &lt;
-            </button>
-            {Array.from({ length: totalPages }).map((_, idx) => (
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t border-[#E5E7EB]/80 dark:border-white/5 mt-3 select-none text-[13px] text-[#6B7280] dark:text-[#94A3B8]/80 font-normal">
+            <div>
+              Showing {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} documents
+            </div>
+            
+            <div className="flex items-center gap-1 bg-[#F7FAFF] dark:bg-[#0F172A]/30 p-0.5 rounded-lg border border-[#E5E7EB] dark:border-white/5">
               <button
-                key={idx}
-                onClick={() => setCurrentPage(idx + 1)}
-                className={`h-6 w-6 text-[12px] font-semibold rounded-md transition-all ${currentPage === idx + 1 ? 'bg-[#0D6EFD] text-white shadow-sm' : 'text-[#6B7280] hover:bg-[#E5E7EB]/30 dark:hover:bg-[#0F172A]'}`}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1e293b] disabled:opacity-40 transition-all cursor-pointer font-semibold text-[13px] w-6 h-6 flex items-center justify-center"
               >
-                {idx + 1}
+                &lt;
               </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1e293b] disabled:opacity-40 transition-all cursor-pointer font-semibold text-[13px] w-6 h-6 flex items-center justify-center"
-            >
-              &gt;
-            </button>
+              {Array.from({ length: Math.min(totalPages, 5) }).map((_, idx) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = idx + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = idx + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + idx;
+                } else {
+                  pageNum = currentPage - 2 + idx;
+                }
+                
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`h-6 w-6 text-[12px] font-semibold rounded-md transition-all ${currentPage === pageNum ? 'bg-[#0D6EFD] text-white shadow-sm' : 'text-[#6B7280] hover:bg-[#E5E7EB]/30 dark:hover:bg-[#0F172A]'}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#1e293b] disabled:opacity-40 transition-all cursor-pointer font-semibold text-[13px] w-6 h-6 flex items-center justify-center"
+              >
+                &gt;
+              </button>
+            </div>
           </div>
-        </div>
-
+        )}
       </div>
 
-      {/* POPUPS & DIALOGS */}
+      {/* Modals */}
       {selectedDoc && (
         <ShareDocumentModal
           isOpen={shareOpen}

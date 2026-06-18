@@ -69,7 +69,7 @@ export const mountJoinDocumentEvent = (socket, io) => {
         `User ${socket.user.fullName} joined doc ${data.docId} as ${userRole}`
       );
 
-      socket.to(data.docId).emit(DOCUMENT_EVENT.USER_JOINED, {
+      socket.to(data.docId).emit(DOCUMENT_EVENT.NEW_USER_JOIN, {
         message: `${socket.user.fullName} joined the document`,
         user: {
           _id: socket.user._id,
@@ -215,9 +215,9 @@ export const mountDocumentRecivedOperation = (socket) => {
 };
 
 export const startDocumentFlushScheduler = () => {
-  console.log(
-    "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
-  );
+  // console.log(
+  //   "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
+  // );
   setInterval(async () => {
     try {
       const dirtyDocIds = await getDirtyDocument();

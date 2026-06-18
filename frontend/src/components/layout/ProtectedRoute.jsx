@@ -7,7 +7,6 @@ export default function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    console.log("loading", loading)
     return <Loader fullScreen text="Verifying session credentials..." />;
   }
 

@@ -10,11 +10,15 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
+  console.log("notification", notifications)
+
   if (!user) return null;
 
   return (
     <div className="relative">
       {/* Bell Button */}
+
+
       <button
         onClick={() => setOpen(!open)}
         className="relative w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer"

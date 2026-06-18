@@ -31,7 +31,7 @@ export default function NotificationItem({ notification, onRead }) {
   const getMessage = (n) => {
     switch (n.type) {
       case 'COLLAB_INVITED':
-        return `${n.inviter} invited you to collaborate on "${n.title}"`;
+        return `${n.inveterName} invited you to collaborate on "${n.documentTitle}"`;
       case 'COLLAB_ACCEPTED':
         return `${n.accepterName} accepted your invite for "${n.documentTitle}"`;
       case 'COLLAB_DECLINED':

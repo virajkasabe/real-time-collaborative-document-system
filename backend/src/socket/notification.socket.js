@@ -5,27 +5,49 @@ import {
   getPendingNotification,
   setDocument,
 } from "../redis/client.js";
-import { fetchDoc } from "../utils/helper.js";
+import ApiError from "../utils/ApiError.js";
+import { fetchDoc, secureUser } from "../utils/helper.js";
 import {
   COLLABORATION_EVENT,
   INVITATION_EVENT,
   NOTIFICATION_EVENT,
 } from "./socketEvents.js";
+import crypto from 'crypto'
 
 export const mountRecivedRealTimeNotification = (socket) => {
   socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
+
+    console.log("data",data)
+
     const user = await secureUser(socket.user._id);
+    const { docId,tokenId, accepterEmail } = data
+
     const hashedTokenID = crypto
       .createHash("sha256")
       .update(tokenId)
       .digest("hex");
-
-    const collabData = await getCollaboration(hashedTokenID);
+    const collabData = await getCollaboration(accepterEmail);
     if (!collabData) {
       throw new ApiError(400, "Token Expired or Invalid");
     }
 
-    const doc = await fetchDoc(collabData.docId);
+
+    /*
+        type: 'COLLAB_INVITED',
+        title: 'invitation for collaboration in new doc',
+        docId: '6a33093c4c650ae6c1f164cf',
+        tokenId: '26c8b9bb8e869ed722fa5f92a9a70e688333929c',
+        documentTitle: 'new doc',
+        inveterName: 'Anany Singh',
+        inveterEmail: 'ananya.singh46@gmail.com',
+        accepterEmail: '25032002shindelaxman@gmail.com',
+        createdAt: 1781744264005,
+        expiry: '6/18/2026, 6:47:44 AM',
+        id: 1781744264006.645,
+        read: false
+    */
+
+    const doc = await fetchDoc(docId);
 
     if (doc.ownerId.toString() === user._id.toString()) {
       throw new ApiError(400, "Owner can't add on Users");
@@ -82,6 +104,8 @@ export const mountRecivedRealTimeNotification = (socket) => {
       throw new ApiError(400, "Token Expired or Invalid");
     }
 
+
+
     const doc = await fetchDoc(collabData.docId);
 
     const declineCollabData = {
@@ -106,10 +130,10 @@ export const mountPendingNotification = async (socket) => {
      return  i.inviterEmail === socket.user.email
   })
 
-  console.log("userNotifications", userNotifications)
+  // console.log("userNotifications", userNotifications)
 
   if (payload?.length >= 0) {
-    console.log("userNotifications", userNotifications)
+    // console.log("userNotifications", userNotifications)
     socket.emit(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, userNotifications)
   }
 

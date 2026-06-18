@@ -41,51 +41,57 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     .update(unHashedToken)
     .digest("hex");
   const collabExpiry = 15 * 60;
-  const acceptCollabLink = `${ENV.BACKEND_URI}/collab/accept/email=${email}/join=${unHashedToken}`;
-  const declineCollabLink = `${ENV.BACKEND_URI}/collab/decline/email=${email}/join=${unHashedToken}`;
+  const acceptCollabLink = `${ENV.CLIENT_URL}/collab/accept/email=${email}/join=${unHashedToken}`;
+  const declineCollabLink = `${ENV.CLIENT_URL}/collab/decline/email=${email}/join=${unHashedToken}`;
   const registerationLink = `${ENV.CLIENT_URL}/register`;
   const loginLink = `${ENV.CLIENT_URL}/login`;
 
   const inviter = await secureUser(req.user._id);
+  const accepter = await User.findOne({ email });
   const document = await fetchDoc(docId);
 
-  const payload = {
-    docId,
-    email,
-    role,
-    token: unHashedToken,
-    inviterId: inviter._id.toString(),
-    inviterName: inviter.fullName,
-    docTitle: document.title,
-  };
 
-  const user = await User.findOne({ email });
-  await setCollaboration(hashedToken, payload, collabExpiry);
+  const onlineUserInvite = {}
+  const offlineUserInvite = {}
+  const notRegisterUserInvite = {}
 
-  if (!user) {
+  
+  
+
+  if (!accepter) {
     // Deferred/Delayed Notification or Pre-Registreation Invite Queue
-    const pendingNotificationData = {
-      title: `invitation for collaboration in ${document.title}`,
-      inviter: inviter.fullName,
-      tokenId: hashedToken,
-      time: Date.now().toLocaleString(),
-    };
+    const pendingInvite = {
+        type: "COLLAB_INVITED",
+        title :`invitation for collaboration in ${document.title}`,
+        docId,
+        tokenId: unHashedToken,
+        documentTitle : doc.title,
+        inveterName: inviter.fullName,
+        inveterEmail: inviter.email,
+        accepterEmail: accepter.email,
+        createdAt:  Date.now(),
+        expiry: new Date(Date.now() + 7 * 24 * 20 * 60 * 1000).toLocaleString()
+    }
 
-    await setPendingNotification(email, pendingNotificationData);
 
-    /*
+
+    await setPendingNotification(email, pendingInvite);
+    await setCollaboration(email, pendingInvite, pendingInvite.expiry);
+
+    /* 
     TODO : SERVICE FOR REGISTER AND JOIN COLLAB
+    // await registerAndJoinCollab(
+      //   document.title,
+      //   inviter.fullName,
+      //   acceptCollabLink,
+      //   declineCollabLink,
+      //   email,
+      //   inviter.email,
+      //   null,
+      //   registerationLink
+      // );
     */
-    await registerAndJoinCollab(
-      document.title,
-      inviter.fullName,
-      acceptCollabLink,
-      declineCollabLink,
-      email,
-      inviter.email,
-      null,
-      registerationLink
-    );
+
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -98,16 +104,31 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       )
     );
   }
+  
   // TODO : IF USER REGISTER
 
-  const userId = user._id.toString();
+  const userId = accepter._id.toString();
   const socketsInRoom = await io.in(userId).fetchSockets();
   const isOnline = socketsInRoom.length > 0;
   // console.log("isOnline", isOnline);
 
+
+   const realTimeNotificationData = {
+    type: "COLLAB_INVITED",
+    title :`invitation for collaboration in ${document.title}`,
+    docId,
+    tokenId: unHashedToken,
+    documentTitle : document.title,
+    inveterName: inviter.fullName,
+    inveterEmail: inviter.email,
+    accepterEmail: accepter.email,
+    createdAt:  Date.now(),
+    expiry: new Date(Date.now() + 20 * 60 * 1000).toLocaleString(),
+  };
+
   if (isOnline) {
-    await setrealtimeNotification(unHashedToken, payload);
-    io.to(userId).emit(NOTIFICATION_EVENT.SEND_REAL_TIME_NOTIFICATION, payload);
+    await setrealtimeNotification(accepter.email, realTimeNotificationData);
+    io.to(userId).emit(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, realTimeNotificationData);
     return res
       .status(200)
       .json(
@@ -132,16 +153,18 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
   };
 
   /*
-  await joinCollab(
-    document.title,
-    inviter.fullName,
-    acceptCollabLink,
-    declineCollabLink,
-    email,
-    inviter.email,
-    loginLink
-  );
-*/
+      TODO : SERVICE FOR LOGIN AND JOIN COLLAB
+      // await joinCollab(
+      //   document.title,
+      //   inviter.fullName,
+      //   acceptCollabLink,
+      //   declineCollabLink,
+      //   email,
+      //   inviter.email,
+      //   loginLink
+      // );
+  */
+ 
   await setPendingNotification(email, pendingNotificationData);
   return res
     .status(200)

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { deleteDocumet, setDocument } from "../../redis/client.js";
+import { deleteDocumet, getDocument, setDocument } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -9,12 +9,16 @@ import User from "../auth/auth.model.js";
 import { getDocumentRole, verifyDocumentAdmin } from "../../middleware/document.middleware.js";
 
 export const createDocument = asyncHandler(async (req, res) => {
-  const { title } = req.body;
+ 
 
   const docData = {
-    title: title || "Untitle Document",
+    title: "Untitle Document",
     ownerId: req.user._id,
   };
+
+  if(req.body?.title) {
+    docData.title = req.body.title
+  }
 
   const createDoc = await Doc.create(docData);
 
@@ -22,11 +26,11 @@ export const createDocument = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something wen't wrong");
   }
 
-  await setDocument(createDoc._id, createDoc);
+  const doc = await fetchDoc(createDoc._id)
 
   return res
     .status(201)
-    .json(new ApiResponse(201, {}, "Document created successfully"));
+    .json(new ApiResponse(201, { doc }, "Document created successfully"));
 });
 
 export const fetchDocument = asyncHandler(async (req, res) => {

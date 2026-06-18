@@ -1,69 +1,145 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { io } from 'socket.io-client'
+import { CONNECT_DISCONNET_EVENT } from '../utils/constants';
 const SocketContext = createContext();
+let socketInstance = null;
 
 export function SocketProvider({ children }) {
-  const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [socketReady, setSocketReady] = useState(false);
 
-  useEffect(() => {
-    const listeners = {};
-    const mockSocket = {
-      on: (event, cb) => {
-        if (!listeners[event]) listeners[event] = [];
-        listeners[event].push(cb);
-      },
-      off: (event, cb) => {
-        if (!listeners[event]) return;
-        listeners[event] = listeners[event].filter(l => l !== cb);
-      },
-      emitMockNotification: (data) => {
-        if (listeners['notification']) {
-          listeners['notification'].forEach(cb => cb(data));
-        }
+  const connectSocket = useCallback(()=>{
+
+    const token = localStorage.getItem("accessToken");
+    if(!token) {
+       console.log("🧑🏼‍🦯‍➡️ auth handsheck token not found")
+       return null;
+    }
+
+    if(socketInstance?.socket) {
+      console.log(`socket instance already connected: ${socketInstance.id}`)
+      return socketInstance;
+    }
+
+    if(socketInstance?.active) {
+      console.log(`Socket already connecting`)
+      return socketInstance;
+    }
+
+    console.log(`New Socket Connecting`)
+
+    socketInstance = io(
+      import.meta.env.VITE_SOCKET_URL || "http://localhost:5000",
+      {
+        auth : { token },
+        transports : ['websocket'],
+        withCredentials : true,
+        autoConnect : true,
+        reconnection : true,
+        reconnectionDelay : 500,
+        reconnectionAttempts : 5
       }
-    };
-    
-    setSocket(mockSocket);
+    )
 
-    // Periodic mock notification generator for demonstration
-    const interval = setInterval(() => {
-      const types = ['COLLAB_INVITED', 'COLLAB_ACCEPTED', 'COLLAB_DECLINED'];
-      const randomType = types[Math.floor(Math.random() * types.length)];
-      
-      let notification = {};
-      if (randomType === 'COLLAB_INVITED') {
-        notification = {
-          type: 'COLLAB_INVITED',
-          inviter: 'Marcus Aurelius',
-          title: 'Meditations Blueprint',
-          createdAt: new Date().toISOString()
-        };
-      } else if (randomType === 'COLLAB_ACCEPTED') {
-        notification = {
-          type: 'COLLAB_ACCEPTED',
-          accepterName: 'Seneca the Younger',
-          documentTitle: 'Letters from a Stoic',
-          createdAt: new Date().toISOString()
-        };
-      } else {
-        notification = {
-          type: 'COLLAB_DECLINED',
-          documentTitle: 'On the Shortness of Life',
-          createdAt: new Date().toISOString()
-        };
+    socketInstance.on(CONNECT_DISCONNET_EVENT.CONNECTION, ()=> {
+      console.log(`Socket connected : ${socketInstance.auth}`)
+      setIsConnected(true);
+      setSocketReady(true);
+    })
+
+
+    socketInstance.on(CONNECT_DISCONNET_EVENT.CONNECTED, ()=> {
+      console.log(`Socket connected : `,socketInstance.id)
+      setIsConnected(true);
+      setSocketReady(true);
+    })
+
+
+    socketInstance.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (resonse)=> {
+      console.log(`Socket ${CONNECT_DISCONNET_EVENT.DISCONNECT} : ${resonse}`)
+      setIsConnected(false);
+    })
+
+    socketInstance.on(CONNECT_DISCONNET_EVENT.SOCKET_ERROR, (error)=>{
+      console.log(`Socket Connect Error : ${error.message}`)
+      setIsConnected(false);
+      if(error.message === "Authentication error") {
+        localStorage.removeItem("accessToken");
+        window.location.href("/login")
       }
+    });
 
-      mockSocket.emitMockNotification(notification);
-    }, 20000); // 20-second interval
+    socketRef.current = socketInstance;
+    return socketInstance;
+  },[]);
 
-    return () => clearInterval(interval);
-  }, []);
+
+  const disconnecteSocket = useCallback(()=>{
+      if(socketInstance) {
+        console.log(`MANUAL DISCONNECTE`);
+        socketInstance.removeAllListeners();
+        socketInstance.disconnect();
+        socketInstance = null;
+        socketInstance.current = null;
+        setIsConnected(false);
+        setSocketReady(false);
+      }
+  },[]);
+
+
+
+  const initSocketWithToken = useCallback((token)=>{
+    localStorage.setItem("accessToken", token);
+    disconnecteSocket();
+    setTimeout(()=> connectSocket(),100)
+  },[connectSocket, disconnecteSocket])
+
+
+  const updateSocketToken = useCallback((newToken)=> {
+    if(!socketInstance) return;
+    localStorage.setItem("accessToken", newToken);
+    socketInstance.auth = {token : newToken};
+    if(!socketInstance.connected) {
+      socketInstance.connect();
+    }
+  },[])
+
+  useEffect(()=>{
+    const token = localStorage.getItem("accessToken");
+    console.log(`Token Mount :${token} ? Missing : missing`)
+
+    if(token && !socketInstance) {
+      connectSocket()
+    }
+
+    return () => {
+      console.log("SocketProvider unmounting - keeping socket alive");
+    }
+
+  },[connectSocket])
 
   return (
-    <SocketContext.Provider value={{ socket }}>
+    <SocketContext.Provider value={{ 
+      socket : socketInstance,
+      isConnected,
+      socketReady,
+      connectSocket,
+      disconnecteSocket,
+      initSocketWithToken,
+      updateSocketToken
+     }}>
       {children}
     </SocketContext.Provider>
   );
 }
 
-export const useSocket = () => useContext(SocketContext);
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  
+  if(!context) {
+      throw new Error("useSocket must be used inside SocketProvider");
+  }
+  return context;
+}
+

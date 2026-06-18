@@ -122,3 +122,24 @@ apiClient.interceptors.response.use(
     return Promise.reject(error.response.data);
   }
 );
+
+
+apiClient.interceptors.request.use((config) => {
+  const token = LocalStorage.get("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Extract workspace ID from current URL and send as header for role-based filtering
+  // const match = window.location.pathname.match(/\/workspace\/([a-f0-9]{24})/i);
+  // if (match) {
+  //   config.headers['x-workspace-id'] = match[1];
+  // }
+
+  // Let browser handle FormData content-type automatically
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+
+  return config;
+});

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
@@ -10,7 +10,10 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { documentService } from '../services/documentService';
-import { fetchDoc } from '../apis/api';
+import { fetchDoc, inviteCollab } from '../apis/api';
+import { useSocket } from '../context/SocketContext'
+import { DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
+import { useSocketHooks } from '../hooks/useSocketHook'
 
 export default function EditingPage() {
   const { id } = useParams();
@@ -19,12 +22,14 @@ export default function EditingPage() {
   const { theme, toggleTheme } = useTheme();
   const [doc, setDoc] = useState(null);
   const [docUserRole, setDocUserRole] = useState(null)
+  const { socket } = useSocket()
 
   // Fetch document details
   useEffect(() => {
 
     ;(async()=>{
         const fetched = await fetchDoc(id);
+        socket.emit(DOCUMENT_EVENT.USER_JOIN, { docId : fetched.data.data.document._id })
         triggerToast("document fetch Successfully", 'success')
         if (!fetched) {
           triggerToast('Document not found', 'warning');
@@ -34,7 +39,32 @@ export default function EditingPage() {
         setDocUserRole(fetched.data.data.role)
         setDoc(fetched.data.data);
     })()
-  }, [id]);
+
+      ;(()=>{
+          socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
+          (data)=>{
+            triggerToast(`${data.message}`)
+            data.user
+          })
+      })()
+    
+  }, [id, socket]);
+
+  
+  /*
+        // useCallback(()=> {
+        //   ;(()=>{
+        //   useSocketHooks({
+        //   [DOCUMENT_EVENT.NEW_USER_JOIN]: (data)=>{
+        //     triggerToast(`${data.message}`)
+        //     data.user
+        //     console.log("user", data.user)
+        //   }   
+        // })
+        // })()
+        // },[])
+  */
+
 
   const handleSave = (newTitle, newContent, words) => {
     const updated = documentService.update(id, { name: newTitle, content: newContent, wordCount: words });
@@ -43,6 +73,7 @@ export default function EditingPage() {
     }
   };
 
+ 
   const handleBack = () => {
     navigate('/dashboard');
   };
@@ -74,6 +105,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
   // Collapse sidebars by default to match Microsoft Word's paper focus
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true)
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true)
+  const { triggerToast } = useAuth();
   
   const [leftTab, setLeftTab] = useState('outline') // 'outline' | 'history'
   const [rightTab, setRightTab] = useState('chat') // 'chat' | 'comments'
@@ -167,13 +199,26 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
   // Share Modal State
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareEmail, setShareEmail] = useState('')
-  const [shareRole, setShareRole] = useState('editor')
+  const [shareRole, setShareRole] = useState(DOCUMENT_ROLES.VIEWER)
   const [copied, setCopied] = useState(false)
+  const { id } = useParams()
 
 
   const quillRef = useRef(null)
   const quillInstance = useRef(null)
   const chatBottomRef = useRef(null)
+
+   const handleSendCollabLink = async(e) => {
+      e.preventDefault()
+      try {
+          const res = await inviteCollab({docId : id, email : shareEmail, role : shareRole})
+          console.log("invite",res.data)
+          triggerToast(`${res.data.message}`,'success')
+      } catch (error) {
+        triggerToast(`${error.message}`,'Warning')
+      } 
+      
+  }
 
   // 1. Manage Immersive Layout Mode on mount/unmount
   useEffect(() => {
@@ -1126,18 +1171,14 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
                     value={shareRole}
                     onChange={(e) => setShareRole(e.target.value)}
                   >
-                    <option value="editor">Editor</option>
-                    <option value="viewer">Viewer</option>
+                    <option value={DOCUMENT_ROLES.OWNER}>{DOCUMENT_ROLES.OWNER}</option>
+                    <option value={DOCUMENT_ROLES.EDITOR}>{DOCUMENT_ROLES.EDITOR}</option>
+                    <option value={DOCUMENT_ROLES.VIEWER}>{DOCUMENT_ROLES.VIEWER}</option>
                   </select>
                   <button 
                     className="btn-primary"
                     style={{ padding: '0 16px' }}
-                    onClick={() => {
-                      if (shareEmail.trim()) {
-                        alert(`Invitation successfully sent to ${shareEmail} as ${shareRole}!`);
-                        setShareEmail('');
-                      }
-                    }}
+                    onClick={handleSendCollabLink}
                   >
                     Invite
                   </button>

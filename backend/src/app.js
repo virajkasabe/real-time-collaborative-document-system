@@ -24,7 +24,8 @@ const io = new Server(httpServer, {
       ENV.CLIENT_URL,
       "https://admin.socket.io"
     ],
-    credentials: true,
+    credentials : true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   },
 });
 
@@ -68,7 +69,12 @@ app.use(cors({
       ENV.CLIENT_URL,
       "https://admin.socket.io"
     ],
-    credentials : true
+    credentials : true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders : [
+      "Authorization",
+      "Content-Type"
+    ]
 }))
 
 // TODO : FIRST CHECK THE HEALTH ROUTE
@@ -101,6 +107,7 @@ app.use((err, req, res, next) => {
     errors: err.errors || [],
   });
 });
+
 
 initializeSocketIO(io);
 

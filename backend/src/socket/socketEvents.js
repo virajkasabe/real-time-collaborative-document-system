@@ -13,6 +13,7 @@ export const DOCUMENT_EVENT = Object.freeze({
   RECEIVE_OPERATION: "receiveOperation",
   VERSION_SAVED: "versionSaved",
   ACTIVE_USERS: "activeUser",
+  NEW_USER_JOIN : "newUserJoin"
 });
 
 export const COLLABORATION_EVENT = Object.freeze({

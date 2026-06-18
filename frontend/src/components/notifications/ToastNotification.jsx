@@ -39,7 +39,7 @@ export default function ToastNotification() {
   const getToastMessage = (toast) => {
     switch (toast.type) {
       case 'COLLAB_INVITED':
-        return `${toast.inviter} invited you to collaborate on "${toast.title}"`;
+        return `${toast.inveterName} invited you to collaborate on "${toast.documentTitle}"`;
       case 'COLLAB_ACCEPTED':
         return `${toast.accepterName} accepted your invite for "${toast.documentTitle}"`;
       case 'COLLAB_DECLINED':

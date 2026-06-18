@@ -58,7 +58,8 @@ export const userRefreshTokenRefreshed = (data) => {
 // collab invite, accept, declined 
 // ================= ---- =================
 
-export const inviteCollab = (docId,data) => {
+export const inviteCollab = ( { docId, ...data}) => {
+    console.log("docId", docId, "data", data)
     return apiClient.post(`/collab/send-collab/${docId}`,data)
 }
 
@@ -75,7 +76,8 @@ export const declinedCollab = (email,tokenId) => {
 // ================= ---- =================
 
 export const createDoc = (data) => {
-    return apiClient.post(`/doc/create-doc`, data)
+    console.log("data", data)
+    return apiClient.post("/doc/create-doc", data)
 }
 
 export const fetchDocumentFolder = () => {
