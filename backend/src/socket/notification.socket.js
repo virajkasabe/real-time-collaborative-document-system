@@ -17,35 +17,23 @@ import crypto from 'crypto'
 export const mountRecivedRealTimeNotification = (socket) => {
   socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
 
-    console.log("data",data)
+    const { collabId } = data
 
     const user = await secureUser(socket.user._id);
-    const { docId,tokenId, accepterEmail } = data
 
     const hashedTokenID = crypto
       .createHash("sha256")
-      .update(tokenId)
+      .update(collabId)
       .digest("hex");
-    const collabData = await getCollaboration(accepterEmail);
+
+    const collabData = await getCollaboration(collabId);
     if (!collabData) {
       throw new ApiError(400, "Token Expired or Invalid");
     }
 
+    const { docId,role, inviterId } = collabData
 
-    /*
-        type: 'COLLAB_INVITED',
-        title: 'invitation for collaboration in new doc',
-        docId: '6a33093c4c650ae6c1f164cf',
-        tokenId: '26c8b9bb8e869ed722fa5f92a9a70e688333929c',
-        documentTitle: 'new doc',
-        inveterName: 'Anany Singh',
-        inveterEmail: 'ananya.singh46@gmail.com',
-        accepterEmail: '25032002shindelaxman@gmail.com',
-        createdAt: 1781744264005,
-        expiry: '6/18/2026, 6:47:44 AM',
-        id: 1781744264006.645,
-        read: false
-    */
+    const inveter = await secureUser(inviterId)
 
     const doc = await fetchDoc(docId);
 
@@ -55,11 +43,11 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
     const userAlreadyExists = doc.users.some(
       (collaborator) =>
-        collaborator.userId.toString() === req.user._id.toString()
+        collaborator.userId.toString() === user._id.toString()
     );
 
     if (userAlreadyExists) {
-      await deleteCollaboration(hashedTokenID);
+      await deleteCollaboration(collabId);
       throw new ApiError(401, "User Already exist");
     }
 
@@ -69,7 +57,7 @@ export const mountRecivedRealTimeNotification = (socket) => {
         $push: {
           users: {
             userId: user._id,
-            role: collabData.role,
+            role: role,
           },
         },
       },
@@ -86,7 +74,7 @@ export const mountRecivedRealTimeNotification = (socket) => {
     };
 
     socket
-      .to(doc.inviterId)
+      .to(inveter._id)
       .emit(COLLABORATION_EVENT.ACCEPT_COLLABORATION, acceptCollabData);
     await deleteCollaboration(hashedTokenID);
     await setDocument(updateDocument._id, updateDocument);

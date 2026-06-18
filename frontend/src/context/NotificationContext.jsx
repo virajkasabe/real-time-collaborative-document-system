@@ -19,11 +19,9 @@ export function NotificationProvider({ children }) {
   const showToast = useCallback((data) => {
     const id = Date.now();
     setToasts(prev => [...prev, { ...data, id }]);
-    
-    // Auto dismiss after 4 seconds
     setTimeout(() => {
       dismissToast(id);
-    }, 4000);
+    }, 2000);
   }, [dismissToast]);
 
   const addNotification = useCallback((notification) => {
@@ -46,8 +44,12 @@ export function NotificationProvider({ children }) {
     };
 
     socket.on(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
+    socket.on(NOTIFICATION_EVENT.NOTIFICATION_RECIVED , handleNotification);
 
-    return () => socket.off('notification', handleNotification);
+    return () => {
+      socket.off(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
+      socket.off(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, handleNotification);
+    }
   }, [socket, addNotification, showToast]);
 
   const markAsRead = (id) => {

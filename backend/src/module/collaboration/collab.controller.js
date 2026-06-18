@@ -35,14 +35,16 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     throw new ApiError(401, "YOUR NOT AUTHORIZED FOR THIS ACTION");
   }
 
-  const unHashedToken = crypto.randomBytes(20).toString("hex");
+  const collabId = crypto.randomBytes(20).toString("hex");
   const hashedToken = crypto
     .createHash("sha256")
-    .update(unHashedToken)
+    .update(collabId)
     .digest("hex");
-  const collabExpiry = 15 * 60;
-  const acceptCollabLink = `${ENV.CLIENT_URL}/collab/accept/email=${email}/join=${unHashedToken}`;
-  const declineCollabLink = `${ENV.CLIENT_URL}/collab/decline/email=${email}/join=${unHashedToken}`;
+  const registeredUserExpiry = 15 * 60;
+  const inviteUserExpiry = 7 * 24 *  15 * 60;
+
+  const acceptCollabLink = `${ENV.CLIENT_URL}/collab/accept/email=${email}/join=${collabId}`;
+  const declineCollabLink = `${ENV.CLIENT_URL}/collab/decline/email=${email}/join=${collabId}`;
   const registerationLink = `${ENV.CLIENT_URL}/register`;
   const loginLink = `${ENV.CLIENT_URL}/login`;
 
@@ -50,33 +52,27 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
   const accepter = await User.findOne({ email });
   const document = await fetchDoc(docId);
 
+  const collabData = {
+    docId,
+    email,
+    role,
+    inviterId : inviter._id
+  }
 
-  const onlineUserInvite = {}
-  const offlineUserInvite = {}
-  const notRegisterUserInvite = {}
+  const notificationData = {
+    type :"COLLAB_INVITED",
+    docname : document.title,
+    inviterName : inviter.fullName,
+    collabId : collabId,
+  }
 
-  
-  
+
 
   if (!accepter) {
-    // Deferred/Delayed Notification or Pre-Registreation Invite Queue
-    const pendingInvite = {
-        type: "COLLAB_INVITED",
-        title :`invitation for collaboration in ${document.title}`,
-        docId,
-        tokenId: unHashedToken,
-        documentTitle : doc.title,
-        inveterName: inviter.fullName,
-        inveterEmail: inviter.email,
-        accepterEmail: accepter.email,
-        createdAt:  Date.now(),
-        expiry: new Date(Date.now() + 7 * 24 * 20 * 60 * 1000).toLocaleString()
-    }
+        notificationData.expiry = new Date(Date.now() + 7 * 24 * 20 * 60 * 1000).toLocaleString()
 
-
-
-    await setPendingNotification(email, pendingInvite);
-    await setCollaboration(email, pendingInvite, pendingInvite.expiry);
+    await setPendingNotification(email, notificationData, inviteUserExpiry);
+    await setCollaboration(collabId, collabData, inviteUserExpiry);
 
     /* 
     TODO : SERVICE FOR REGISTER AND JOIN COLLAB
@@ -105,30 +101,26 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     );
   }
   
-  // TODO : IF USER REGISTER
-
+  // TODO : IF USER ONLINE
   const userId = accepter._id.toString();
   const socketsInRoom = await io.in(userId).fetchSockets();
   const isOnline = socketsInRoom.length > 0;
-  // console.log("isOnline", isOnline);
 
+  const userAlreadyExists = document.users.some(
+    (collaborator) => document.ownerId.toString() === userId  || collaborator.userId.toString() === userId 
+  );
 
-   const realTimeNotificationData = {
-    type: "COLLAB_INVITED",
-    title :`invitation for collaboration in ${document.title}`,
-    docId,
-    tokenId: unHashedToken,
-    documentTitle : document.title,
-    inveterName: inviter.fullName,
-    inveterEmail: inviter.email,
-    accepterEmail: accepter.email,
-    createdAt:  Date.now(),
-    expiry: new Date(Date.now() + 20 * 60 * 1000).toLocaleString(),
-  };
+  if (userAlreadyExists ) {
+    throw new ApiError(401, "User Already exist");
+  }
 
   if (isOnline) {
-    await setrealtimeNotification(accepter.email, realTimeNotificationData);
-    io.to(userId).emit(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, realTimeNotificationData);
+
+    notificationData.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
+
+    await setrealtimeNotification(email, notificationData);
+    await setCollaboration(collabId, collabData, registeredUserExpiry);
+    io.to(userId).emit(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, notificationData);
     return res
       .status(200)
       .json(
@@ -144,14 +136,10 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       );
   }
 
-  const pendingNotificationData = {
-    title: `Invitation for collaboration in ${document.title}`,
-    inviter: inviter.fullName,
-    tokenId: hashedToken,
-    time: new Date(Date.now()).toLocaleString(),
-    expiry: new Date(Date.now() + 20 * 60 * 1000).toLocaleString(),
-  };
+  notificationData.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
 
+   await setPendingNotification(email, notificationData);
+   await setCollaboration(collabId, collabData, registeredUserExpiry)
   /*
       TODO : SERVICE FOR LOGIN AND JOIN COLLAB
       // await joinCollab(
@@ -165,7 +153,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       // );
   */
  
-  await setPendingNotification(email, pendingNotificationData);
+ 
   return res
     .status(200)
     .json(

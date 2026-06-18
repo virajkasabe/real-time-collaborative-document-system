@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client'
 import { CONNECT_DISCONNET_EVENT } from '../utils/constants';
+import { LocalStorage } from '../apis';
 const SocketContext = createContext();
 let socketInstance = null;
 
@@ -11,7 +12,7 @@ export function SocketProvider({ children }) {
 
   const connectSocket = useCallback(()=>{
 
-    const token = localStorage.getItem("accessToken");
+    const token = LocalStorage.get("accessToken")
     if(!token) {
        console.log("🧑🏼‍🦯‍➡️ auth handsheck token not found")
        return null;
