@@ -22,7 +22,7 @@ import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
-import { createDoc } from '../../apis/api';
+import { createDoc, fetchDocumentFolder } from '../../apis/api';
 
 export default function Documents() {
   const { user, triggerToast } = useAuth();
@@ -50,6 +50,7 @@ export default function Documents() {
   const [shareOpen, setShareOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
+  const [rawDocs, setRawDocs] = useState([])
 
   useEffect(() => {
     if (filter === 'starred') {
@@ -68,19 +69,36 @@ export default function Documents() {
 
   const triggerReload = () => setDbVer(prev => prev + 1);
 
-  const rawDocs = useMemo(() => {
-    let list = [];
-    if (filter === 'starred') {
-      list = documentService.getStarred();
-    } else if (filter === 'recent') {
-      list = documentService.getRecent();
-    } else if (filter === 'trash') {
-      list = documentService.getTrash();
-    } else {
-      list = documentService.getAll();
-    } 
-    return list;
-  }, [filter, dbVer]);
+  // const rawDocs = useMemo(() => {
+  //   let list = [];
+  //   if (filter === 'starred') {
+  //     list = documentService.getStarred();
+  //   } else if (filter === 'recent') {
+  //     list = documentService.getRecent();
+  //   } else if (filter === 'trash') {
+  //     list = documentService.getTrash();
+  //   } else {
+  //     list = documentService.getAll();
+  //   } 
+  //   return list;
+  // }, [filter, dbVer]);
+
+
+  useEffect(()=>{
+
+    if(user) {
+      fetDocuments()
+    }
+    },[user])
+    const fetDocuments = async() => {
+      try {
+          const res = await fetchDocumentFolder()
+          setRawDocs(res.data.data.document)
+        } catch (error) {
+          console.log("err",error.message)
+        }
+    }
+    
 
   // Enriched documents with consistent file types & statuses
   const enrichedDocs = useMemo(() => {

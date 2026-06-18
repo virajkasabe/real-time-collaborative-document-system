@@ -14,6 +14,7 @@ import { fetchDoc, inviteCollab } from '../apis/api';
 import { useSocket } from '../context/SocketContext'
 import { DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
 import { useSocketHooks } from '../hooks/useSocketHook'
+import { sendOTOperation } from '../socket/document.socket';
 
 export default function EditingPage() {
   const { id } = useParams();
@@ -22,7 +23,10 @@ export default function EditingPage() {
   const { theme, toggleTheme } = useTheme();
   const [doc, setDoc] = useState(null);
   const [docUserRole, setDocUserRole] = useState(null)
+  const [sendOtData , setSendOtData] = useState(null)
+  const [receivedOtData, setReceivedOtData] = useState(null)
   const { socket } = useSocket()
+
 
   // Fetch document details
   useEffect(() => {
@@ -47,6 +51,35 @@ export default function EditingPage() {
             data.user
           })
       })()
+
+      ;(()=>{
+          sendOTOperation("operation", DOCUMENT_EVENT.SEND_OPERATION, socket)
+      })()
+
+      socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
+          (data)=>{
+            triggerToast(`${data.message}`)
+            data.user
+          })
+
+
+      ;(()=>{
+          socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
+          (data)=>{
+            triggerToast(`${data.message}`)
+            data.user
+          })
+      })()
+
+
+
+      ;(()=>{
+        socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
+        socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
+        socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
+      })()
+
+
     
   }, [id, socket]);
 

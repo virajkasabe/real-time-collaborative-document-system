@@ -140,6 +140,20 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
     );
 });
 
+export const shareWithMeDocuments = asyncHandler(async(req,res)=>{
+
+  const shareWithMeDocs = await User.aggregate([
+    {
+      $match : {
+        
+      }
+    }
+  ])
+
+  return res.status(200).json(new ApiResponse(200, {} , "Share with documents fetch successfully"))
+})
+
+
 export const docMoveToTrash = asyncHandler(async(req,res)=>{
   
   const { docId } = req.params
