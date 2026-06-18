@@ -55,76 +55,134 @@ export const fetchDocument = asyncHandler(async (req, res) => {
 });
 
 export const fetchDocumentFolder = asyncHandler(async (req, res) => {
-  const userId = req.user._id.toString();
-    let documentFolder = null;
-    let documentOtherUser = null;
+  const userId = req.user._id;
 
-  const documentOwner = await User.aggregate([
+  const result = await User.aggregate([
     {
       $match: {
-            _id: new mongoose.Types.ObjectId(req.user._id)
+        _id: new mongoose.Types.ObjectId(userId)
       },
     },
     {
       $lookup: {
-            from: "documents",
-            localField: "_id",
-            foreignField: "ownerId",
-            as: "ownerDocs",
-             pipeline : [
+        from: "documents",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $or: [
+                  { $eq: ["$ownerId", "$$userId"] },
+                  { $in: ["$$userId", "$users.userId"] }
+                ]
+              }
+            }
+          },
+          {
+            $addFields: {
+              allUserIds: {
+                $cond: {
+                  if: { $isArray: "$users" },
+                  then: "$users.userId",
+                  else: []
+                }
+              }
+            }
+          },
+          {
+            $addFields: {
+              allUserIds: {
+                $concatArrays: [
+                  "$allUserIds",
+                  ["$ownerId"]
+                ]
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: "users",
+              let: { userIds: "$allUserIds" },
+              pipeline: [
                 {
-                    $project : {
-                        updatedAt : 0,
-                        createdAt : 0,
-                        isTrash : 0,
-                        isPublic : 0,
-                        ownerId : 0,
-                        __v : 0,
+                  $match: {
+                    $expr: {
+                      $in: ["$_id", "$$userIds"]
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    fullName: 1,
+                    email: 1,
+                    avatar: 1
+                  }
                 }
+              ],
+              as: "allUsers"
+            }
+          },
+          {
+            $addFields: {
+              allUsersWithRoles: {
+                $map: {
+                  input: "$allUsers",
+                  as: "user",
+                  in: {
+                    _id: "$$user._id",
+                    fullName: "$$user.fullName",
+                    email: "$$user.email",
+                    avatar: "$$user.avatar",
+                    role: {
+                      $cond: [
+                        { $eq: ["$$user._id", "$ownerId"] },
+                        "Owner",
+                        {
+                          $let: {
+                            vars: {
+                              userDoc: {
+                                $arrayElemAt: [
+                                  {
+                                    $filter: {
+                                      input: "$users",
+                                      as: "u",
+                                      cond: { $eq: ["$$u.userId", "$$user._id"] }
+                                    }
+                                  },
+                                  0
+                                ]
+                              }
+                            },
+                            in: "$$userDoc.role"
+                          }
+                        }
+                      ]
+                    }
+                  }
                 }
-            ]
-        }
-      },
-  ]);
-
-  if(documentOwner && documentOwner[0]?.ownerDocs?.length > 0) {
-      documentFolder = documentOwner[0].ownerDocs
-      documentOtherUser = documentFolder.map(i => i.users)
-  }
-
-  const usersDoc = await User.aggregate([
-    {
-      $match: {
-            _id: new mongoose.Types.ObjectId(req.user._id)
-      },
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              title: 1,
+              allUsers: "$allUsersWithRoles"
+            }
+          }
+        ],
+        as: "documents"
+      }
     },
     {
-      $lookup: {
-            from: "documents",
-            localField: "_id",
-            foreignField: "users.userId",
-            as: "users",
-            pipeline : [
-                {
-                    $project : {
-                        updatedAt : 0,
-                        createdAt : 0,
-                        isTrash : 0,
-                        isPublic : 0,
-                        ownerId : 0,
-                        __v : 0
-                }
-                }
-            ]
-        }
-      },
+      $project: {
+        documents: 1
+      }
+    }
   ]);
 
-    if(usersDoc && usersDoc[0]?.users?.length > 0) {
-      documentFolder = usersDoc[0].users
-      // documentOtherUser = usersDoc[0].users.users
-  }
-
+  const documentFolder = result[0]?.documents || [];
 
   return res
     .status(200)
@@ -132,27 +190,31 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          documentFolder,
-          // documentOtherUser
-         },
-        "fetch your documents successfully"
+          documentFolder
+        },
+        "Fetched your documents successfully"
       )
     );
 });
 
 export const shareWithMeDocuments = asyncHandler(async(req,res)=>{
 
-  const shareWithMeDocs = await User.aggregate([
+  const shareWithMeDocs = await Doc.aggregate([
     {
-      $match : {
-        
-      }
-    }
-  ])
+      $match: {
+            "users.userId": new mongoose.Types.ObjectId(req.user._id)
+      },
+    },
+  ]);
 
-  return res.status(200).json(new ApiResponse(200, {} , "Share with documents fetch successfully"))
+  const docId = shareWithMeDocs.map(s => s._id)
+
+  const docRole = await getDocumentRole(docId, req.user)
+
+  let roles = Array(docRole)
+
+  return res.status(200).json(new ApiResponse(200, { documents : shareWithMeDocs, role : roles } , "Share with documents fetch successfully"))
 })
-
 
 export const docMoveToTrash = asyncHandler(async(req,res)=>{
   

@@ -93,7 +93,8 @@ export default function Documents() {
     const fetDocuments = async() => {
       try {
           const res = await fetchDocumentFolder()
-          setRawDocs(res.data.data.document)
+          console.log("res", res.data.data.documentFolder)
+          setRawDocs(res.data.data.documentFolder)
         } catch (error) {
           console.log("err",error.message)
         }
@@ -111,9 +112,9 @@ export default function Documents() {
         const types = ['DOCX', 'XLSX', 'PDF', 'PPTX', 'TXT'];
         fileType = types[idx % types.length];
       }
-
+      
       let status = 'Active';
-      if (doc.trash) status = 'Archived';
+      if (doc.isTrash) status = 'Archived';
       else if (doc.starred) status = 'Review';
       else if (idx === 0) status = 'Active';
       else if (idx === 2) status = 'Draft';
@@ -558,26 +559,35 @@ export default function Documents() {
             <div className="space-y-2 select-none text-left bg-white dark:bg-[#0B0F19]/45 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-3.5 shadow-sm">
               {filteredDocs.map((doc) => (
                 <div
-                  key={doc.id}
-                  onClick={() => navigate(`/editor/${doc.id}`)}
+                  key={doc._id}
+                  onClick={() => navigate(`/editor/${doc._id}`)}
                   className="flex items-center justify-between h-14 px-3 bg-white dark:bg-[#0F172A]/20 border border-[#E5E7EB] dark:border-white/5 hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A]/50 hover:border-blue-500/30 dark:hover:border-blue-500/20 hover:scale-[1.003] hover:shadow-[0_6px_25px_rgba(13,110,253,0.02)] rounded-xl transition-all duration-200 cursor-pointer group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {renderTypeIcon(doc.fileType)}
                     <div className="min-w-0">
                       <span className="font-semibold text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] dark:group-hover:text-white transition-colors truncate block">
-                        {doc.name}
+                        {doc.title}
                       </span>
-                      <span className="text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 block mt-0.5 leading-none transition-colors">
-                        Owner: <span className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">{doc.owner.name}</span> • Updated {doc.updatedAt}
-                      </span>
+
+                        {
+                          doc.allUsers.map((i)=>(
+                            i.role.Owner && (
+                              <span key={i._id} className="text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 block mt-0.5 leading-none transition-colors">
+                                  Owner: <span key={i._id} className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">{i.owner.fullName}</span> • Updated {doc.updatedAt}
+                              </span>
+                            )
+                            
+                          ))
+                        }
+                      
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0 relative">
                     {filter === 'trash' ? (
                       <button
-                        onClick={(e) => handleRestore(e, doc.id)}
+                        onClick={(e) => handleRestore(e, doc._id)}
                         className="p-1 rounded text-[#6B7280] dark:text-[#94A3B8] hover:text-[#0D6EFD] transition-colors cursor-pointer"
                         title="Restore"
                       >
@@ -586,7 +596,7 @@ export default function Documents() {
                     ) : (
                       <>
                         <button
-                          onClick={(e) => handleToggleStar(e, doc.id, doc.starred)}
+                          onClick={(e) => handleToggleStar(e, doc._id, doc.starred)}
                           className="p-1 rounded text-[#6B7280] dark:text-[#94A3B8] hover:text-amber-500 transition-colors cursor-pointer"
                         >
                           <Star size={13} fill={doc.starred ? 'currentColor' : 'none'} className={doc.starred ? 'text-amber-500' : ''} />
@@ -595,14 +605,14 @@ export default function Documents() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActionMenuOpen(actionMenuOpen === doc.id ? null : doc.id);
+                              setActionMenuOpen(actionMenuOpen === doc._id ? null : doc._id);
                             }}
                             className="p-1 rounded text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-[#E5E7EB]/40 dark:hover:bg-[#0F172A] transition-colors cursor-pointer"
                           >
                             <MoreVertical size={14} />
                           </button>
 
-                          {actionMenuOpen === doc.id && (
+                          {actionMenuOpen === doc._id && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 shadow-lg p-1 z-50 rounded-lg text-xs font-semibold select-none text-left">
                               <button
                                 onClick={(e) => openRenameModal(e, doc)}
@@ -619,7 +629,7 @@ export default function Documents() {
                                 <span>Share</span>
                               </button>
                               <button
-                                onClick={(e) => handleMoveToTrash(e, doc.id)}
+                                onClick={(e) => handleMoveToTrash(e, doc._id)}
                                 className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 border-t border-[#E5E7EB] dark:border-white/10 mt-0.5"
                               >
                                 <Trash2 size={11} />
@@ -639,8 +649,8 @@ export default function Documents() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 select-none text-left">
               {filteredDocs.map((doc) => (
                 <div
-                  key={doc.id}
-                  onClick={() => navigate(`/editor/${doc.id}`)}
+                  key={doc._id}
+                  onClick={() => navigate(`/editor/${doc._id}`)}
                   className="glass-card p-4 border border-[#E5E7EB] dark:border-white/5 bg-white dark:bg-[#0F172A]/40 hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A] hover:border-[#E5E7EB] dark:hover:border-white/20 rounded-xl transition-all duration-300 cursor-pointer space-y-4 flex flex-col justify-between group shadow-sm hover:scale-[1.01]"
                 >
                   <div className="space-y-2.5">
@@ -648,7 +658,7 @@ export default function Documents() {
                       {renderTypeIcon(doc.fileType)}
                       {filter !== 'trash' && (
                         <button
-                          onClick={(e) => handleToggleStar(e, doc.id, doc.starred)}
+                          onClick={(e) => handleToggleStar(e, doc._id, doc.starred)}
                           className="p-1 rounded text-[#6B7280] dark:text-[#94A3B8] hover:text-amber-500 transition-colors cursor-pointer"
                         >
                           <Star size={12} fill={doc.starred ? 'currentColor' : 'none'} className={doc.starred ? 'text-amber-500' : ''} />
@@ -657,7 +667,7 @@ export default function Documents() {
                     </div>
                     <div className="space-y-0.5">
                       <h5 className="font-semibold text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] dark:group-hover:text-white transition-colors truncate">
-                        {doc.name}
+                        {doc.title}
                       </h5>
                       <p className="text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 leading-none mt-0.5">
                         {doc.fileType} • Owner: <span className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">{doc.owner.name}</span>
@@ -669,7 +679,7 @@ export default function Documents() {
                     <span>Updated {doc.updatedAt}</span>
                     {filter === 'trash' ? (
                       <button
-                        onClick={(e) => handleRestore(e, doc.id)}
+                        onClick={(e) => handleRestore(e, doc._id)}
                         className="text-[#0D6EFD] hover:underline flex items-center gap-0.5 cursor-pointer font-semibold"
                       >
                         <Undo size={11} />
@@ -677,7 +687,7 @@ export default function Documents() {
                       </button>
                     ) : (
                       <button
-                        onClick={(e) => handleMoveToTrash(e, doc.id)}
+                        onClick={(e) => handleMoveToTrash(e, doc._id)}
                         className="text-rose-500 hover:underline flex items-center gap-0.5 cursor-pointer font-semibold"
                       >
                         <Trash2 size={11} />

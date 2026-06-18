@@ -88,6 +88,12 @@ export const fetchDoc = (docId) => {
     return apiClient.get(`/doc/fetch-doc/${docId}`)
 }
 
+export const sharedWithMeDocs = () => {
+    return apiClient.get("/doc/shared-with-me-docs")
+}
+
+
+// !! DENGET ZONE
 export const docMoveToTrash = (docId) => {
     return apiClient.delete(`/doc/move-trash/${docId}`)
 }

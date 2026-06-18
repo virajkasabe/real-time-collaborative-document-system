@@ -5,7 +5,8 @@ import {
     deleteDoc, 
     docMoveToTrash, 
     fetchDocument, 
-    fetchDocumentFolder 
+    fetchDocumentFolder, 
+    shareWithMeDocuments
 } from './document.controller.js';
 
 const router = Router()
@@ -18,9 +19,12 @@ router.route("/fetch-doc/:docId").get(fetchDocument)
 
 router.route("/fetch-folder").get(fetchDocumentFolder)
 
+router.route("/shared-with-me-docs").get(shareWithMeDocuments)
+
 router.route("/move-trash/:docId").delete(docMoveToTrash)
 
 router.route("/delete/:docId").delete(deleteDoc)
+
 
 
 export default router;

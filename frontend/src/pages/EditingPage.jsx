@@ -250,7 +250,6 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       } catch (error) {
         triggerToast(`${error.message}`,'Warning')
       } 
-      
   }
 
   // 1. Manage Immersive Layout Mode on mount/unmount
@@ -286,6 +285,8 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
 
       // Initial outline extraction
       setTimeout(updateOutline, 100)  
+
+      console.log("quill", )
 
       // Handle editor content updates
       quillInstance.current.on('text-change', () => {
