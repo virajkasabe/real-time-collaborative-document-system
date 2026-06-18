@@ -17,21 +17,26 @@ export function NotificationProvider({ children }) {
   }, []);
 
   const showToast = useCallback((data) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { ...data, id }]);
-    setTimeout(() => {
-      dismissToast(id);
-    }, 2000);
+    if(data.length !== 0) {
+      const id = 'r'; // Date.now();
+      setToasts(prev => [...prev, { ...data, id }]);
+      setTimeout(() => {
+        dismissToast(id);
+      }, 2000);
+    }
   }, [dismissToast]);
 
   const addNotification = useCallback((notification) => {
-    const newNotif = {
-      ...notification,
-      id: Date.now() + Math.random(),
-      read: false
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-    setUnreadCount(prev => prev + 1);
+    if(notification.length !== 0) {
+
+      const newNotif = {
+        ...notification,
+        id: Date.now() + Math.random(),
+        read: false
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    }
   }, []);
 
   // Listen for real-time notifications via Socket.IO

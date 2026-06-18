@@ -12,7 +12,7 @@ export default function NotificationItem({ notification, onRead }) {
         return <FiUserX className="text-red-500 text-base" />;
       default:
         return <FiBell className="text-gray-400 text-base" />;
-    }
+    };
   };
 
   const getBg = (type) => {

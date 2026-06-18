@@ -48,6 +48,8 @@ export default function NotificationsPage() {
     }
   };
 
+
+
   const getEmptyStateMessage = () => {
     switch (activeTab) {
       case 'unread':

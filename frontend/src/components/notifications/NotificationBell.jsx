@@ -10,7 +10,6 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
-  console.log("notification", notifications)
 
   if (!user) return null;
 
