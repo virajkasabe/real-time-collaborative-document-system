@@ -63,6 +63,9 @@ export default function EditingPage() {
       ;(()=>{
           socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
           (data)=>{
+
+            // TODO : ADD HERE LIKE ONLY DOCUMENT TOAST LIKE DOCUMENT PERSONAL TOASTER
+            
             triggerToast(`${data.message}`)
             data.user
           })
@@ -88,7 +91,6 @@ export default function EditingPage() {
       })()
 
 
-
       ;(()=>{
         socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
         socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
@@ -98,21 +100,6 @@ export default function EditingPage() {
 
     
   }, [id, socket]);
-
-  
-  /*
-        // useCallback(()=> {
-        //   ;(()=>{
-        //   useSocketHooks({
-        //   [DOCUMENT_EVENT.NEW_USER_JOIN]: (data)=>{
-        //     triggerToast(`${data.message}`)
-        //     data.user
-        //     console.log("user", data.user)
-        //   }   
-        // })
-        // })()
-        // },[])
-  */
 
 
   const handleSave = (newTitle, newContent, words) => {
