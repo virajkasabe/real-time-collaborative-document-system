@@ -1,9 +1,9 @@
 
 import { apiClient } from "./index"
 
-// ================= ---- =================
+// =============================================
 // auth register, login , logout
-// ================= ---- =================
+// =============================================
 
 export const userRegister = (data) => {
     return apiClient.post("/auth/register",data)
@@ -54,9 +54,9 @@ export const userRefreshTokenRefreshed = (data) => {
 }
 
 
-// ================= ---- =================
+// =============================================
 // collab invite, accept, declined 
-// ================= ---- =================
+// =============================================
 
 export const inviteCollab = ( { docId, ...data}) => {
     console.log("docId", docId, "data", data)
@@ -71,9 +71,11 @@ export const declinedCollab = (email,tokenId) => {
     return apiClient.post(`collab/decline/email=${email}/join=${tokenId}`)
 }
 
-// ================= ---- =================
+
+
+// =============================================
 // docuement create, read, update, delete
-// ================= ---- =================
+// =============================================
 
 export const createDoc = (data) => {
     console.log("data", data)
@@ -97,7 +99,17 @@ export const restoreDoc = (docId) => {
 }
 
 
-// !! DENGET ZONE
+// !! =============================================
+// !!        DENGET ZONE
+// !! =============================================
+
+// !! user
+export const deleteUserAccount = (userId) => {
+    return apiClient.delete(`/auth/delete/${userId}` )
+}
+
+
+// !! docs
 export const docMoveToTrash = (docId) => {
     return apiClient.delete(`/doc/move-trash/${docId}`)
 }

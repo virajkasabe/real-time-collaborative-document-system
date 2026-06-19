@@ -129,14 +129,6 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
-  // Extract workspace ID from current URL and send as header for role-based filtering
-  // const match = window.location.pathname.match(/\/workspace\/([a-f0-9]{24})/i);
-  // if (match) {
-  //   config.headers['x-workspace-id'] = match[1];
-  // }
-
-  // Let browser handle FormData content-type automatically
   if (config.data instanceof FormData) {
     delete config.headers["Content-Type"];
   }

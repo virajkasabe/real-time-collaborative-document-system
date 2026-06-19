@@ -1,7 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
-// Pages imports
 import Landing from '../pages/landing/Landing';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
@@ -17,7 +15,7 @@ import Settings from '../pages/profile/Settings';
 import ResetPassword from '../pages/profile/ResetPassword';
 import NotificationsPage from '../pages/NotificationsPage';
 
-// Layout and Protected Route
+
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import ToastNotification from '../components/notifications/ToastNotification';
@@ -34,7 +32,6 @@ const DashboardLayout = ({ children }) => {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Pages */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -43,7 +40,6 @@ export default function AppRoutes() {
       <Route path="/set-new-password" element={<ResetPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* Secure Authenticated Pages wrapped in Layout */}
       <Route element={
         <ProtectedRoute>
           <DashboardLayout>
@@ -60,7 +56,7 @@ export default function AppRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
       </Route>
       
-      {/* Standalone Editor Route for immersive editing */}
+
       <Route path="/editor/:id" element={
         <ProtectedRoute>
           <DashboardLayout>
@@ -69,7 +65,6 @@ export default function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      {/* Fallback Catch-all redirects to Landing page */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

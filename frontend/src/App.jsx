@@ -14,11 +14,6 @@ export default function App() {
   return (
       <NotificationProvider>
         <AppRoutes />
-        {/* Routes list:
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-        */}
-
-        {/* Global Toast Notification */}
         {toast && (
           <div className="fixed bottom-4 right-4 z-[9999] flex items-center gap-2.5 px-3.5 py-2.5 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-xl shadow-md select-none animate-fade-in transition-all duration-300">
             <div className={`p-1 rounded-md ${

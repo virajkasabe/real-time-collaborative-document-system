@@ -93,14 +93,12 @@ export default function EmailVerificationPage() {
       
       if (result.success) {
         triggerToast("Verification code confirmed!", "success");
-        // Navigate to dashboard after successful verification
         navigate('/dashboard');
       } else {
-        // Handle verification failure
         const errorMsg = result.error || "Invalid verification code. Please try again.";
         setVerificationError(errorMsg);
         triggerToast(errorMsg, "error");
-        // Clear OTP for retry
+
         setOtp(["", "", "", "", "", ""]);
         if (inputRefs.current[0]) {
           inputRefs.current[0].focus();
@@ -135,13 +133,13 @@ export default function EmailVerificationPage() {
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#090D16] dark:to-[#04060B] transition-colors duration-300 font-sans select-none">
       
-      {/* MAIN CARD */}
+
       <div className="w-full max-w-6xl flex flex-col md:flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-[#0F172A]">
 
-        {/* LEFT PANEL */}
+
         <div className="hidden md:flex md:w-[48%] bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#161D2E] dark:to-[#1E2535] flex-col overflow-hidden p-8 transition-colors duration-300 relative self-stretch border-r border-slate-200/40 dark:border-r dark:border-gray-700/50">
           
-          {/* Decorative background grid pattern */}
+  
           <div 
             className="absolute top-4 right-4 w-20 h-20 opacity-20 pointer-events-none" 
             style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} 
@@ -151,7 +149,7 @@ export default function EmailVerificationPage() {
             style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} 
           />
 
-          {/* Logo */}
+
           <div className="flex flex-col text-left relative z-10 shrink-0 mb-2">
             <div className="flex items-center gap-3">
               <img 
@@ -168,24 +166,23 @@ export default function EmailVerificationPage() {
             <div className="w-8 h-[3px] bg-[#2563EB] mt-1.5 rounded-full" />
           </div>
 
-          {/* Headline */}
+
           <h1 className="text-2xl font-extrabold text-[#0F172A] dark:text-white mt-4 tracking-tight leading-snug text-left relative z-10 shrink-0">
             Verify Your Email Address
           </h1>
 
-          {/* Subtext */}
+
           <p className="text-sm text-[#475569] dark:text-gray-300 mt-2 leading-relaxed text-left relative z-10 shrink-0">
             Enter the 6-digit verification code to complete registration.
           </p>
 
-          {/* Illustration */}
           <div className="flex-1 flex items-center justify-center relative py-4 max-h-[200px] z-10">
             
-            {/* Cloud left */}
+
             <div className="absolute left-2 top-8 w-24 h-10 bg-white/60 dark:bg-white/5 rounded-full blur-sm"/>
             <div className="absolute left-8 top-4 w-16 h-8 bg-white/40 dark:bg-white/5 rounded-full blur-sm"/>
 
-            {/* Paper plane */}
+
             <div className="absolute top-2 right-16 z-20">
               <FiSend className="text-[#2563EB] text-3xl transform rotate-[30deg]"/>
               <svg className="absolute top-4 right-0 w-32 h-20 opacity-40" viewBox="0 0 100 60">
@@ -193,14 +190,13 @@ export default function EmailVerificationPage() {
               </svg>
             </div>
 
-            {/* Envelope */}
+
             <div className="relative z-10">
               <div className="w-48 h-36 relative">
                 
-                {/* Envelope body */}
+
                 <div className="w-full h-full bg-gradient-to-b from-[#4DA3FF] to-[#2563EB] rounded-2xl shadow-2xl shadow-blue-400/40 flex items-center justify-center">
                   
-                  {/* Shield with checkmark */}
                   <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center">
                     <div className="w-14 h-14 bg-gradient-to-br from-[#3B9EFF] to-[#2563EB] rounded-xl flex items-center justify-center">
                       <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -210,14 +206,14 @@ export default function EmailVerificationPage() {
                   </div>
                 </div>
 
-                {/* Envelope flap bottom */}
+
                 <div className="absolute -bottom-2 left-0 w-1/2 h-5 bg-[#1A54B8] rounded-bl-2xl transform skew-y-3"/>
                 <div className="absolute -bottom-2 right-0 w-1/2 h-5 bg-[#2563EB] rounded-br-2xl transform -skew-y-3"/>
               </div>
             </div>
           </div>
 
-          {/* Features Card */}
+
           <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/50 dark:border-gray-700/30 mt-auto relative z-10 shrink-0 text-left">
             <div className="grid grid-cols-2 gap-3">
               {features.map((feat, idx) => (
