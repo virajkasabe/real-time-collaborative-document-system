@@ -34,12 +34,36 @@ export function AuthProvider({ children }) {
   }, []);
 
    const register = async (email, name, password) => {
-    const res = await userRegister({email, fullName : name , password})
-    return res.data
+    try {
+     const res = await userRegister({email, fullName : name , password})
+      return res.data
+    } catch (error) {
+        console.error("error",error.message)
+        setError(error.message)      
+    }
   };
 
-  const verifyEmail = async() => {
-    const res = await verifyUserEmail()
+  const verifyEmail = async(email, otp) => {
+    console.log("otp", otp)
+    console.log("email", email)
+    try {
+      const res = await verifyUserEmail(otp, email)
+      return res.data
+    } catch (error) {
+        console.error("error",error.message)
+        setError(error.message)      
+    }
+  }
+
+  const verifyEmailRequest = async(email) => {
+    console.log("email", email)
+    try {
+      const res = await verifyUserEmailRequest(email)
+      return res.data
+    } catch (error) {
+        console.error("error",error.message)
+        setError(error.message)      
+    }
   }
 
 
@@ -89,6 +113,8 @@ export function AuthProvider({ children }) {
       register,
       toast,
       logout,
+      verifyEmail,
+      verifyEmailRequest,
       error,
       // forgotPassword,
       resetPassword,

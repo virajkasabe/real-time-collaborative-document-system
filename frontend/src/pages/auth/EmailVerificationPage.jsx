@@ -8,7 +8,7 @@ import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
 
 export default function EmailVerificationPage() {
-  const { triggerToast, verifyEmail } = useAuth();
+  const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -16,15 +16,19 @@ export default function EmailVerificationPage() {
   const email = location.state?.email || '';
   const token = location.state?.token || '';
 
-  console.log("token", token)
-
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [verificationError, setVerificationError] = useState(null);
   const inputRefs = useRef([]);
 
   useEffect(() => {
     if (!email) navigate('/forgot-password');
   }, [email, navigate]);
+
+  // Clear error when OTP changes
+  useEffect(() => {
+    setVerificationError(null);
+  }, [otp]);
 
   const handleChange = (element, index) => {
     const val = element.value.replace(/[^0-9a-zA-Z]/g, "");
@@ -68,11 +72,11 @@ export default function EmailVerificationPage() {
       setOtp(newOtp);
       inputRefs.current[5].focus();
     } else {
-      triggerToast("Please paste a 6-digit number code", "warning");
+      triggerToast("Please paste a 6-digit verification code", "warning");
     }
   };
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
     const code = otp.join("");
 
@@ -82,18 +86,40 @@ export default function EmailVerificationPage() {
     }
 
     setLoading(true);
-    // Simulate short network delay for verification
-    setTimeout(() => {
+    setVerificationError(null);
+
+    try {
+      const result = await verifyEmail(email, code);
+      
+      if (result.success) {
+        triggerToast("Verification code confirmed!", "success");
+        // Navigate to dashboard after successful verification
+        navigate('/dashboard');
+      } else {
+        // Handle verification failure
+        const errorMsg = result.error || "Invalid verification code. Please try again.";
+        setVerificationError(errorMsg);
+        triggerToast(errorMsg, "error");
+        // Clear OTP for retry
+        setOtp(["", "", "", "", "", ""]);
+        if (inputRefs.current[0]) {
+          inputRefs.current[0].focus();
+        }
+      }
+    } catch (err) {
+      const errorMsg = err.message || "Verification failed. Please try again.";
+      setVerificationError(errorMsg);
+      triggerToast(errorMsg, "error");
+    } finally {
       setLoading(false);
-      triggerToast("Verification code confirmed!", "success");
-      // Navigate to dashboard flow
-      navigate('/dashboard');
-    }, 600);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async() => {
+    await verifyEmailRequest(email)
     triggerToast("A new 6-digit code has been sent to " + email, "success");
     setOtp(["", "", "", "", "", ""]);
+    setVerificationError(null);
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
     }
@@ -230,6 +256,15 @@ export default function EmailVerificationPage() {
               Email Verification
             </h2>
 
+            {/* Error Display */}
+            {(verificationError || error) && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400 text-center">
+                  {verificationError || error || error?.message}
+                </p>
+              </div>
+            )}
+
             {/* Subtext */}
             <p className="text-sm text-[#64748B] dark:text-gray-400 text-center mt-2 mb-4 leading-relaxed shrink-0">
               Enter the 6-digit verification code
@@ -251,7 +286,8 @@ export default function EmailVerificationPage() {
                     onChange={(e) => handleChange(e.target, index)}
                     onKeyDown={(e) => handleKeyDown(e, index)}
                     onPaste={handlePaste}
-                    className="w-11 h-11 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-center text-lg font-bold bg-white dark:bg-[#2D3748] text-[#0F172A] dark:text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+                    className="w-11 h-11 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-center text-lg font-bold bg-white dark:bg-[#2D3748] text-[#0F172A] dark:text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 transition-colors"
+                    disabled={loading}
                   />
                 ))}
               </div>
@@ -260,9 +296,17 @@ export default function EmailVerificationPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-10 rounded-xl bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm transition-all duration-200 cursor-pointer flex items-center justify-center shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
+                className="w-full h-10 rounded-xl bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all duration-200 cursor-pointer flex items-center justify-center shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
               >
-                {loading ? "Verifying..." : "Verify Code"}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verifying...
+                  </>
+                ) : "Verify Code"}
               </button>
             </form>
 
@@ -281,7 +325,8 @@ export default function EmailVerificationPage() {
               <button
                 type="button"
                 onClick={handleResend}
-                className="text-[#2563EB] dark:text-blue-400 font-bold hover:underline focus:outline-none cursor-pointer"
+                disabled={loading}
+                className="text-[#2563EB] dark:text-blue-400 font-bold hover:underline focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Resend Code
               </button>

@@ -38,7 +38,7 @@ router.route("/update-profile").put(verifyJWT, updateAccountDetails);
 
 router.route("/update-current-password").put(verifyJWT, changeCurrentPassword);
 
-router.route("/verify-email/:unHashedToken").post(verifyEmail);
+router.route("/verify-email").post(verifyEmail);
 
 router.route("/verify-email-request").post(verifyEmailRequest);
 

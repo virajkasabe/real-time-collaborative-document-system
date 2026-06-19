@@ -1,20 +1,35 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
-import { 
-  ChevronLeft, Cloud, Users, Share2, Send, Plus, 
-  Trash2, MessageSquare, History, List, X, Copy, Check, Sun, Moon, 
-  BookOpen, Search, Undo, Redo, RefreshCw, FileText
-} from 'lucide-react';
+
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
+import Quill from 'quill';
+import {
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
+
+import {
+  fetchDoc,
+  inviteCollab,
+} from '../apis/api';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { documentService } from '../services/documentService';
-import { fetchDoc, inviteCollab } from '../apis/api';
-import { useSocket } from '../context/SocketContext'
-import { DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
-import { useSocketHooks } from '../hooks/useSocketHook'
 import { sendOTOperation } from '../socket/document.socket';
+import {
+  CURSOR_EVENT,
+  DOCUMENT_EVENT,
+  DOCUMENT_ROLES,
+} from '../utils/constants';
+import { FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaCopy, FaHistory, FaList, FaMoon, FaPlus, FaRedo, FaSearch, FaSun, FaUndo, FaUsers, FaUserSecret } from "react-icons/fa";
+import { LuCheck, LuMessageSquare, LuRefreshCw, LuSend, LuShare2, LuX } from "react-icons/lu";
+import { getRandomColor } from '../utils/helpers';
+
 
 export default function EditingPage() {
   const { id } = useParams();
@@ -26,7 +41,7 @@ export default function EditingPage() {
   const [sendOtData , setSendOtData] = useState(null)
   const [receivedOtData, setReceivedOtData] = useState(null)
   const { socket } = useSocket()
-
+  
 
   // Fetch document details
   useEffect(() => {
@@ -134,6 +149,8 @@ export default function EditingPage() {
 function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave, docUserRole }) {
   const [title, setTitle] = useState(doc.title || doc.name || 'Untitled Document')
   const [isSyncing, setIsSyncing] = useState(false)
+  const { socket } = useSocket()
+  const { user } = useAuth()
   
   // Collapse sidebars by default to match Microsoft Word's paper focus
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true)
@@ -236,6 +253,8 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
   const [copied, setCopied] = useState(false)
   const { id } = useParams()
 
+  // Remote Cursors State
+  const [remoteCursors, setRemoteCursors] = useState({});
 
   const quillRef = useRef(null)
   const quillInstance = useRef(null)
@@ -245,7 +264,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       e.preventDefault()
       try {
           const res = await inviteCollab({docId : id, email : shareEmail, role : shareRole})
-          console.log("invite",res.data)
+          // console.log("invite",res.data)
           triggerToast(`${res.data.message}`,'success')
       } catch (error) {
         triggerToast(`${error.message}`,'Warning')
@@ -261,53 +280,645 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     }
   }, [])
 
-  // 2. Initialize Quill Editor
   useEffect(() => {
-    if (quillRef.current && !quillInstance.current) {
-      quillInstance.current = new Quill(quillRef.current, {
-        theme: 'snow',
-        modules: {
-          toolbar: '#word-ribbon-toolbar' // Bind custom Microsoft Word Ribbon container!
-        },
-        placeholder: 'Start writing your document here...'
-      })
+    // Skip if already initialized or ref is missing
+    if (!quillRef.current || quillInstance.current) return;
 
-      // Set initial content
-      const initialContent = doc.content || `
-        <h1>📝 ${doc.name || 'Untitled CollabDocs Sheet'}</h1>
-        <p>Welcome to your new paged real-time document workspace. This document is fully synchronized with our cloud network.</p>
-        <h2>🔥 Custom Rich Text Features</h2>
-        <p>You can format this document using the custom Calibri typography ribbon, adjust paragraph shading, paint styles, and launch inline checklists.</p>
-        <h2>👥 Real-Time Collaboration Mock</h2>
-        <p>Online team members like Sarah Connor and Dave Grohl can comment and view edits instantaneously.</p>
-      `
-      quillInstance.current.clipboard.dangerouslyPasteHTML(initialContent)
+    // Initialize Quill instance
+    const quill = new Quill(quillRef.current, {
+      theme: 'snow',
+      modules: {
+        toolbar: '#word-ribbon-toolbar'
+      },
+      placeholder: 'Start writing your document here...'
+    });
 
-      // Initial outline extraction
-      setTimeout(updateOutline, 100)  
+    quillInstance.current = quill;
 
-      console.log("quill", )
+    // Set initial content
+    const initialContent = doc.content;
+    
+    quill.clipboard.dangerouslyPasteHTML(initialContent);
 
-      // Handle editor content updates
-      quillInstance.current.on('text-change', () => {
-        setIsSyncing(true)
-        updateOutline()
+    // ===== STATE TRACKING =====
+    let previousText = quill.getText();
+    let saveTimeoutId = null;
+    let operationBatch = [];
+    let isSendingOperation = false;
+    let cursorTimeoutId = null;
 
-        const html = quillInstance.current.root.innerHTML
-        const text = quillInstance.current.getText()
-        const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length
-        setWordCount(words)
+    // ===== GET CLICK POSITION FUNCTION =====
+    const getClickPosition = (event) => {
+      try {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return null;
+        
+        const range = selection.getRangeAt(0);
+        const node = range.startContainer;
+        const offset = range.startOffset;
+        
+        const quillSelection = quill.getSelection();
+        if (quillSelection) {
+          return quillSelection.index;
+        }
+        
+        const editorRoot = quill.root;
+        const walker = document.createTreeWalker(
+          editorRoot,
+          NodeFilter.SHOW_TEXT,
+          null,
+          false
+        );
+        
+        let currentNode = walker.nextNode();
+        let currentOffset = 0;
+        
+        while (currentNode) {
+          const text = currentNode.textContent || '';
+          if (currentNode === node) {
+            return currentOffset + offset;
+          }
+          currentOffset += text.length;
+          currentNode = walker.nextNode();
+        }
+        
+        return quill.getText().length;
+      } catch (error) {
+        return quill.getSelection()?.index || 0;
+      }
+    };
 
-        // Fire auto-save after short delay to simulate cloud sync
-        const timeoutId = setTimeout(() => {
-          onSave(title, html, words)
-          setIsSyncing(false)
-        }, 800)
+    // ===== GET CHARACTER AT POSITION =====
+    const getCharAtPosition = (position) => {
+      const text = quill.getText();
+      return position < text.length ? text[position] : 'EOF';
+    };
 
-        return () => clearTimeout(timeoutId)
-      })
+    // ===== GET WORD AT POSITION =====
+    const getWordAtPosition = (position) => {
+      const text = quill.getText();
+      if (position >= text.length) return { word: '', start: 0, end: 0 };
+      
+      let start = position;
+      let end = position;
+      
+      while (start > 0 && /\S/.test(text[start - 1])) start--;
+      while (end < text.length && /\S/.test(text[end])) end++;
+      
+      return {
+        word: text.substring(start, end),
+        start: start,
+        end: end
+      };
+    };
+
+    // ===== GET LINE AND COLUMN =====
+    const getLineAndColumn = (position) => {
+      const text = quill.getText();
+      const beforeText = text.substring(0, position);
+      const lines = beforeText.split('\n');
+      const line = lines.length;
+      const column = lines[lines.length - 1].length + 1;
+      return { line, column };
+    };
+
+    // ===== CONVERT QUILL DELTA TO OPERATIONS =====
+    const convertDeltaToOperations = (delta, oldContent) => {
+      const operations = [];
+      let position = 0;
+      
+      delta.ops.forEach(op => {
+        if (op.insert) {
+          // Insert operation
+          if (typeof op.insert === 'string') {
+            operations.push({
+              type: 'insert',
+              position: position,
+              text: op.insert,
+              attributes: op.attributes || {}
+            });
+            position += op.insert.length;
+          } else if (typeof op.insert === 'object') {
+            // Handle embeds (images, etc.)
+            operations.push({
+              type: 'insert',
+              position: position,
+              text: JSON.stringify(op.insert),
+              attributes: op.attributes || {},
+              isEmbed: true
+            });
+            position += 1;
+          }
+        } else if (op.delete) {
+          // Delete operation
+          operations.push({
+            type: 'delete',
+            position: position,
+            length: op.delete
+          });
+          // position stays the same
+        } else if (op.retain) {
+          // Retain (formatting changes)
+          if (op.attributes && Object.keys(op.attributes).length > 0) {
+            operations.push({
+              type: 'format',
+              position: position,
+              length: op.retain || 0,
+              attributes: op.attributes
+            });
+          }
+          position += op.retain || 0;
+        }
+      });
+      
+      return operations;
+    };
+
+    // ===== SEND OPERATION TO SERVER =====
+    const sendOperations = (operations) => {
+      if (isSendingOperation || operations.length === 0) return;
+      
+      isSendingOperation = true;
+      
+      const operationData = {
+        docId: doc._id,
+        actions: operations,
+        version: doc.version || 0,
+        userId: user?._id || 'anonymous',
+        timestamp: Date.now()
+      };
+      
+      // console.log('📤 Sending operations:', operationData);
+      
+      socket.emit(DOCUMENT_EVENT.SEND_OPERATION, operationData);
+      
+      // Reset after sending
+      setTimeout(() => {
+        isSendingOperation = false;
+      }, 100);
+    };
+
+    // ===== SEND CURSOR DATA =====
+    const sendCursorData = (position, selection) => {
+      if (!user) return;
+      
+      const cursorData = {
+        docId: doc._id,
+        userId: user.id,
+        userName: user.fullName || 'Anonymous',
+        avatar : user.avatar || "" ,
+        position: position,
+        selection: selection || { index: position, length: 0 },
+        color: getRandomColor(),
+        timestamp: Date.now()
+      };
+      
+      // console.log('🖱️ Sending cursor data:', cursorData);
+      socket.emit(CURSOR_EVENT.CURSOR_CHANGE, cursorData);
+    };
+
+    // ===== APPLY RECEIVED OPERATION =====
+    const applyReceivedOperation = (operationData) => {
+      // console.log('📥 Received operation:', operationData);
+      
+      // Apply operations to local document
+      const { actions, version } = operationData;
+      
+      // Update document version
+      doc.version = version;
+      
+      // Apply operations using Quill's built-in OT
+      actions.forEach(action => {
+        if (action.type === 'insert') {
+          const selection = quill.getSelection();
+          // Insert text at position
+          quill.insertText(action.position, action.text, Quill.sources.SILENT);
+        } else if (action.type === 'delete') {
+          quill.deleteText(action.position, action.length, Quill.sources.SILENT);
+        } else if (action.type === 'format') {
+          quill.formatText(
+            action.position,
+            action.length,
+            action.attributes,
+            Quill.sources.SILENT
+          );
+        }
+      });
+      
+      // Update word count
+      const text = quill.getText();
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      setWordCount(words);
+    };
+
+    // ===== RENDER REMOTE CURSOR =====
+    const renderRemoteCursor = (cursorData) => {
+      const { userId, userName, position, color, avatar } = cursorData;
+      
+      const editor = quillInstance.current;
+      if (!editor) return;
+      
+      // Remove existing cursor for this user
+      const existingCursor = document.getElementById(`cursor-${userId}`);
+      if (existingCursor) {
+        existingCursor.remove();
+      }
+      
+      // Get the bounds of the position in the editor
+      const bounds = editor.getBounds(position);
+      if (!bounds) return;
+      
+      // Create cursor element
+      const cursorElement = document.createElement('div');
+      cursorElement.id = `cursor-${userId}`;
+      cursorElement.className = 'remote-cursor';
+      cursorElement.style.cssText = `
+        position: absolute;
+        top: ${bounds.top}px;
+        left: ${bounds.left}px;
+        height: ${bounds.height}px;
+        width: 2px;
+        background-color: ${color || '#FF6B6B'};
+        pointer-events: none;
+        z-index: 1000;
+        transition: all 0.05s ease;
+      `;
+      
+      // Add cursor flag with avatar and name
+      const flag = document.createElement('div');
+      flag.className = 'remote-cursor-flag';
+      flag.style.cssText = `
+        position: absolute;
+        top: -22px;
+        left: -10px;
+        background-color: ${color || '#FF6B6B'};
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      `;
+      
+      if (avatar) {
+        flag.innerHTML = `
+          <img src="${avatar}" alt="${userName}" style="
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            object-fit: cover;
+          ">
+          ${userName || 'User'}
+        `;
+      } else {
+        flag.textContent = userName || 'User';
+      }
+      
+      cursorElement.appendChild(flag);
+      
+      // Add to editor container
+      const editorContainer = editor.container;
+      editorContainer.style.position = 'relative';
+      editorContainer.appendChild(cursorElement);
+    };
+
+    // ===== HANDLE REMOTE CURSOR UPDATE =====
+    const handleCursorUpdate = (cursorData) => {
+      // console.log('🖱️ Received cursor update:', cursorData);
+      renderRemoteCursor(cursorData);
+      
+      // Update remote cursors state
+      setRemoteCursors(prev => ({
+        ...prev,
+        [cursorData.userId]: cursorData
+      }));
+      
+      // Auto-remove cursor after 30 seconds of inactivity
+      if (window.cursorTimeouts && window.cursorTimeouts[cursorData.userId]) {
+        clearTimeout(window.cursorTimeouts[cursorData.userId]);
+      }
+      
+      window.cursorTimeouts = window.cursorTimeouts || {};
+      window.cursorTimeouts[cursorData.userId] = setTimeout(() => {
+        const cursorElement = document.getElementById(`cursor-${cursorData.userId}`);
+        if (cursorElement) {
+          cursorElement.remove();
+        }
+        setRemoteCursors(prev => {
+          const newCursors = { ...prev };
+          delete newCursors[cursorData.userId];
+          return newCursors;
+        });
+      }, 5000);
+    };
+
+    // ===== CHARACTER TRACKING FUNCTION =====
+    const trackCharacters = (quill, previousText, eventType = 'text-change', clickEvent = null) => {
+      const text = quill.getText();
+      const selection = quill.getSelection();
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      const html = quill.root.innerHTML;
+      
+      let clickPosition = null;
+      let charAtClick = null;
+      let wordAtClick = null;
+      let lineColumnAtClick = null;
+      
+      if (eventType === 'click' && clickEvent) {
+        clickPosition = getClickPosition(clickEvent);
+        charAtClick = getCharAtPosition(clickPosition);
+        wordAtClick = getWordAtPosition(clickPosition);
+        lineColumnAtClick = getLineAndColumn(clickPosition);
+      }
+      
+      return {
+        eventType,
+        timestamp: new Date().toISOString(),
+        text: text,
+        charCount: text.length,
+        wordCount: words,
+        cursorPosition: selection?.index || 0,
+        selectionLength: selection?.length || 0,
+        selectedText: selection && selection.length > 0 ? 
+          text.substring(selection.index, selection.index + selection.length) : '',
+        
+        ...(eventType === 'click' && {
+          clickPosition: clickPosition,
+          charAtClick: charAtClick || 'N/A',
+          charCodeAtClick: charAtClick ? charAtClick.charCodeAt(0) : null,
+          isWhitespace: charAtClick ? /\s/.test(charAtClick) : null,
+          isLetter: charAtClick ? /[a-zA-Z]/.test(charAtClick) : null,
+          isNumber: charAtClick ? /[0-9]/.test(charAtClick) : null,
+          isSpecial: charAtClick ? /[^a-zA-Z0-9\s]/.test(charAtClick) : null,
+          wordAtClick: wordAtClick?.word || 'N/A',
+          wordStart: wordAtClick?.start || 0,
+          wordEnd: wordAtClick?.end || 0,
+          lineAtClick: lineColumnAtClick?.line || 0,
+          columnAtClick: lineColumnAtClick?.column || 0,
+          charBefore: clickPosition > 0 ? text[clickPosition - 1] : 'START',
+          charAfter: clickPosition < text.length - 1 ? text[clickPosition + 1] : 'END',
+        }),
+        
+        letters: (text.match(/[a-zA-Z]/g) || []).length,
+        numbers: (text.match(/[0-9]/g) || []).length,
+        spaces: (text.match(/\s/g) || []).length,
+        specialChars: (text.match(/[^a-zA-Z0-9\s]/g) || []).length,
+        paragraphs: text.split('\n').filter(p => p.trim()).length,
+        lines: text.split('\n').length,
+        
+        ...(eventType === 'text-change' && {
+          prevLength: previousText.length,
+          diff: text.length - previousText.length,
+          added: text.length > previousText.length ? 
+            text.slice(previousText.length) : 'N/A',
+          removed: previousText.length > text.length ?
+            previousText.slice(text.length) : 'N/A',
+          changePosition: text.length > previousText.length ? previousText.length : text.length,
+        }),
+        
+        firstChar: text.charAt(0) || 'N/A',
+        lastChar: text.slice(-1) || 'N/A',
+        last10Chars: text.slice(-10),
+        first10Chars: text.slice(0, 10),
+        isEmpty: text.trim().length === 0,
+        hasContent: text.trim().length > 0,
+        contentForOT: { text },
+        delta: quill.getContents(),
+        html: html,
+        length: text.length
+      };
+    };
+
+    // ===== TEXT CHANGE HANDLER =====
+    const handleTextChange = (delta, oldDelta, source) => {
+      // Ignore changes from server (SILENT source)
+      if (source === 'silent') return;
+      
+      // Update outline
+      updateOutline();
+
+      const text = quill.getText();
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      setWordCount(words);
+
+      // Track character changes
+      const charData = trackCharacters(quill, previousText, 'text-change');
+      console.log('✏️ Text Change:', charData);
+
+      // Convert delta to operations for OT
+      const operations = convertDeltaToOperations(delta, previousText);
+      console.log('📝 Operations from delta:', operations);
+
+      // Send operations if there are any
+      if (operations.length > 0) {
+        sendOperations(operations);
+      }
+
+      // Update previous text
+      previousText = text;
+
+      // Trigger syncing state
+      setIsSyncing(true);
+
+      // Clear existing timeout
+      if (saveTimeoutId) {
+        clearTimeout(saveTimeoutId);
+      }
+
+      // Debounced auto-save
+      saveTimeoutId = setTimeout(() => {
+        const html = quill.root.innerHTML;
+        onSave(title, html, words);
+        setIsSyncing(false);
+        saveTimeoutId = null;
+      }, 100);
+    };
+
+    // ===== SELECTION CHANGE HANDLER =====
+    const handleSelectionChange = (range, oldRange, source) => {
+      if (source === 'silent') return;
+      
+      if (range) {
+        const position = range.index;
+        const selection = range;
+        
+        // Send cursor data with debounce
+        if (cursorTimeoutId) {
+          clearTimeout(cursorTimeoutId);
+        }
+        
+        cursorTimeoutId = setTimeout(() => {
+          sendCursorData(position, selection);
+          cursorTimeoutId = null;
+        }, 80);
+      }
+    };
+
+    // ===== CLICK HANDLER =====
+   const handleClick = (event) => {
+    const text = quill.getText();
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    setWordCount(words);
+    
+    const charData = trackCharacters(quill, previousText, 'click', event);
+    console.log('🖱️ Click Event:', charData);
+    
+    const clickPosition = getClickPosition(event);
+    console.log('🖱️ Click Position:', {
+      absoluteIndex: clickPosition,
+      character: clickPosition !== null ? quill.getText()[clickPosition] : 'N/A',
+      wordAtPosition: getWordAtPosition(clickPosition || 0),
+      lineAndColumn: getLineAndColumn(clickPosition || 0)
+    });
+
+  // EMIT CLICK EVENT THROUGH SOCKET
+    if (clickPosition !== null && user) {
+      const clickData = {
+        docId: doc._id,
+        userId: user.id,
+        userName: user.fullName || 'Anonymous',
+        avatar: user.avatar || "",
+        position: clickPosition,
+        character: clickPosition !== null ? quill.getText()[clickPosition] : 'N/A',
+        wordAtPosition: getWordAtPosition(clickPosition || 0),
+        lineAndColumn: getLineAndColumn(clickPosition || 0),
+        charData: charData,
+        timestamp: Date.now(),
+        eventType: 'click'
+      };
+      
+    // Emit the click event
+      socket.emit(CURSOR_EVENT.CURSOR_CHANGE, clickData);
+      // Or if you want to use your existing CURSOR_EVENT constant
+      // socket.emit(CURSOR_EVENT.CURSOR_CLICK, clickData);
     }
-  }, [])
+  };
+
+    // ===== MOUSE UP HANDLER =====
+    const handleMouseUp = () => {
+      const selection = quill.getSelection();
+      if (selection && selection.length > 0) {
+        const text = quill.getText();
+        const selectedText = text.substring(selection.index, selection.index + selection.length);
+        console.log('🖱️ Selection Change:', {
+          selectedText: selectedText.slice(0, 50),
+          selectionLength: selection.length,
+          startIndex: selection.index,
+          endIndex: selection.index + selection.length
+        });
+      }
+    };
+
+    // ===== KEYBOARD HANDLER =====
+    const handleKeyDown = (event) => {
+      console.log('⌨️ Key Pressed:', {
+        key: event.key,
+        code: event.code,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        charCount: quill.getText().length,
+        cursorPosition: quill.getSelection()?.index || 0
+      });
+    };
+
+    // ===== SOCKET EVENT LISTENERS =====
+    // Listen for operations from other users
+    socket.on(DOCUMENT_EVENT.RECEIVE_OPERATION, applyReceivedOperation);
+    
+    // Listen for cursor updates from other users
+    socket.on(CURSOR_EVENT.CURSOR_UPDATE, handleCursorUpdate);
+
+    // Listen for user left event to remove cursor
+    socket.on(DOCUMENT_EVENT.USER_LEFT, (data) => {
+      const { userId } = data;
+      const cursorElement = document.getElementById(`cursor-${userId}`);
+      if (cursorElement) {
+        cursorElement.remove();
+      }
+      setRemoteCursors(prev => {
+        const newCursors = { ...prev };
+        delete newCursors[userId];
+        return newCursors;
+      });
+    });
+
+    // Register Quill event listeners
+    quill.on('text-change', handleTextChange);
+    quill.on('selection-change', handleSelectionChange);
+
+    // DOM event listeners
+    const editorRoot = quill.root;
+    editorRoot.addEventListener('click', handleClick);
+    editorRoot.addEventListener('mouseup', handleMouseUp);
+    editorRoot.addEventListener('keydown', handleKeyDown);
+
+    const container = quill.container;
+    container.addEventListener('click', handleClick);
+
+    // Initial outline extraction
+    const initTimeout = setTimeout(updateOutline, 100);
+
+    // ===== CLEANUP =====
+    return () => {
+      // Clear timeouts
+      if (saveTimeoutId) clearTimeout(saveTimeoutId);
+      if (initTimeout) clearTimeout(initTimeout);
+      if (cursorTimeoutId) clearTimeout(cursorTimeoutId);
+
+      // Remove socket listeners
+      socket.off(DOCUMENT_EVENT.RECEIVE_OPERATION, applyReceivedOperation);
+      socket.off(CURSOR_EVENT.CURSOR_UPDATE, handleCursorUpdate);
+      socket.off(DOCUMENT_EVENT.USER_LEFT);
+
+      // Remove Quill event listeners
+      if (quillInstance.current) {
+        quillInstance.current.off('text-change', handleTextChange);
+        quillInstance.current.off('selection-change', handleSelectionChange);
+      }
+
+      // Remove DOM event listeners
+      if (quillInstance.current) {
+        const editorRoot = quillInstance.current.root;
+        const container = quillInstance.current.container;
+        
+        editorRoot.removeEventListener('click', handleClick);
+        editorRoot.removeEventListener('mouseup', handleMouseUp);
+        editorRoot.removeEventListener('keydown', handleKeyDown);
+        container.removeEventListener('click', handleClick);
+      }
+
+      // Clean up remote cursors
+      Object.keys(remoteCursors).forEach(userId => {
+        const cursorElement = document.getElementById(`cursor-${userId}`);
+        if (cursorElement) {
+          cursorElement.remove();
+        }
+      });
+
+      // Clear cursor timeouts
+      if (window.cursorTimeouts) {
+        Object.values(window.cursorTimeouts).forEach(timeout => {
+          clearTimeout(timeout);
+        });
+        window.cursorTimeouts = {};
+      }
+
+      // Clean up Quill instance
+      if (quillInstance.current) {
+        quillInstance.current.emitter.off();
+        if (quillInstance.current.container) {
+          quillInstance.current.container.innerHTML = '';
+        }
+        quillInstance.current = null;
+      }
+    };
+  }, []);
 
   // 3. Keep Title Updates Auto-Saved
   const handleTitleChange = (newTitle) => {
@@ -367,6 +978,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
   // 7. Format Painter selection hooks
   useEffect(() => {
     if (quillInstance.current) {
+      console.log(quillInstance.current)
       const handleSelectionChange = (range, oldRange, source) => {
         if (range && range.index !== null) {
           // If Format Painter is active and user selected a new block of text, apply styles
@@ -380,6 +992,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       };
 
       quillInstance.current.on('selection-change', handleSelectionChange);
+
       return () => {
         if (quillInstance.current) {
           quillInstance.current.off('selection-change', handleSelectionChange);
@@ -558,7 +1171,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       <header className="editor-header">
         <div className="editor-header-left">
           <button className="sidebar-toggle-btn" onClick={onBack} title="Back to Dashboard">
-            <ChevronLeft size={20} />
+            <FaChevronLeft size={20} />
           </button>
 
           {/* Quick Access Toolbar Icons */}
@@ -568,14 +1181,16 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
               onClick={() => setAutoSaveActive(!autoSaveActive)}
               title={`AutoSave is ${autoSaveActive ? 'ON' : 'OFF'}`}
             >
-              <RefreshCw size={14} className={autoSaveActive ? 'rotating-slow' : ''} />
+              
+
+              <LuRefreshCw size={14} className={autoSaveActive ? 'rotating-slow' : ''} />
               <span className="autosave-label">AutoSave</span>
             </button>
             <button onClick={() => quillInstance.current?.history.undo()} title="Undo (Ctrl+Z)">
-              <Undo size={14} />
+              <FaUndo size={14} />
             </button>
             <button onClick={() => quillInstance.current?.history.redo()} title="Redo (Ctrl+Y)">
-              <Redo size={14} />
+              <FaRedo size={14} />
             </button>
           </div>
           
@@ -590,7 +1205,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
             />
             <span className="word-file-extension" style={{ display: 'inline-flex', alignItems: 'center', height: '32px' }}>- Word</span>
             <span className="word-title-cloud-status" title="Saved to Cloud" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '6px', height: '32px' }}>
-              <Cloud size={14} style={{ color: 'var(--accent)' }} />
+              <FaCloud size={14} style={{ color: 'var(--accent)' }} />
             </span>
             <span className="text-center text-[14px] text-yellow-400">{docUserRole}</span>
           </div>
@@ -598,7 +1213,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
 
         <div className="editor-header-center">
           <div className="word-header-search">
-            <Search size={14} className="search-glass-icon" />
+            <FaSearch size={14} className="search-glass-icon" />
             <input type="text" placeholder="Search (Alt+Q)" disabled title="Microsoft Search features" />
           </div>
         </div>
@@ -612,11 +1227,11 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
           </div>
 
           <button className="theme-toggle-btn" onClick={toggleTheme} title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"} style={{ marginRight: '8px' }}>
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? <FaSun size={18} /> : <FaMoon size={18} />}
           </button>
 
           <button className="btn-primary" onClick={() => setShowShareModal(true)}>
-            <Share2 size={16} /> Share
+            <LuShare2 size={16} /> Share
           </button>
         </div>
       </header>
@@ -876,13 +1491,13 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
                 <button type="button" className="ribbon-custom-btn" onClick={() => {
                   alert(`Proofing Statistics:\n- Total Words: ${wordCount}\n- Estimated Reading Time: ${Math.ceil(wordCount / 200)} min\n- Characters: ${(quillInstance.current ? quillInstance.current.getText() : '').length} chars`);
                 }} title="Proofing Statistics">
-                  <BookOpen size={16} style={{ marginRight: '6px' }} />
+                  <FaBookOpen size={16} style={{ marginRight: '6px' }} />
                   <span>Word Count Details</span>
                 </button>
                 <button type="button" className="ribbon-custom-btn" onClick={() => {
                   alert("Spelling & Grammar Check completed!\nNo spelling or grammatical issues were found.");
                 }} title="Spelling Check">
-                  <Check size={16} style={{ marginRight: '6px' }} />
+                  <FaCheck size={16} style={{ marginRight: '6px' }} />
                   <span>Spelling & Grammar</span>
                 </button>
               </div>
@@ -897,11 +1512,11 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
             <div className="ribbon-controls-container">
               <div className="ribbon-buttons-row">
                 <button type="button" className={`ribbon-custom-btn ${!leftSidebarCollapsed ? 'active' : ''}`} onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}>
-                  <List size={16} style={{ marginRight: '6px' }} />
+                  <FaList size={16} style={{ marginRight: '6px' }} />
                   <span>Navigation Outline</span>
                 </button>
                 <button type="button" className={`ribbon-custom-btn ${!rightSidebarCollapsed ? 'active' : ''}`} onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}>
-                  <Users size={16} style={{ marginRight: '6px' }} />
+                  <FaUserSecret size={16} style={{ marginRight: '6px' }} />
                   <span>Collaborations Pane</span>
                 </button>
               </div>
@@ -961,7 +1576,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
             style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
             title={leftSidebarCollapsed ? 'Expand Navigation Sidebar' : 'Collapse Navigation Sidebar'}
           >
-            {leftSidebarCollapsed ? <Plus size={16} /> : <X size={16} />}
+            {leftSidebarCollapsed ? <FaPlus size={16} /> : <LuX size={16} />}
           </button>
         </div>
 
@@ -976,13 +1591,13 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
               className={`sidebar-tab ${leftTab === 'outline' ? 'active' : ''}`}
               onClick={() => setLeftTab('outline')}
             >
-              <List size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Outline
+              <FaList size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Outline
             </button>
             <button 
               className={`sidebar-tab ${leftTab === 'history' ? 'active' : ''}`}
               onClick={() => setLeftTab('history')}
             >
-              <History size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> History
+              <FaHistory size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> History
             </button>
           </div>
 
@@ -1043,7 +1658,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
             style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
             title={rightSidebarCollapsed ? 'Expand Collaborations Sidebar' : 'Collapse Collaborations Sidebar'}
           >
-            {rightSidebarCollapsed ? <Users size={16} /> : <X size={16} />}
+            {rightSidebarCollapsed ? <FaUsers size={16} /> : <LuX size={16} />}
           </button>
         </div>
 
@@ -1058,13 +1673,13 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
               className={`sidebar-tab ${rightTab === 'chat' ? 'active' : ''}`}
               onClick={() => setRightTab('chat')}
             >
-              <MessageSquare size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Team Chat
+              <LuMessageSquare size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Team Chat
             </button>
             <button 
               className={`sidebar-tab ${rightTab === 'comments' ? 'active' : ''}`}
               onClick={() => setRightTab('comments')}
             >
-              <Users size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Comments
+              <FaUsers size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Comments
             </button>
           </div>
 
@@ -1093,7 +1708,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
                     placeholder="Type a team message..."
                   />
                   <button type="submit" className="chat-send-btn" title="Send message">
-                    <Send size={14} />
+                    <LuSend size={14} />
                   </button>
                 </form>
               </div>
@@ -1138,7 +1753,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
           <span>{wordCount} words</span>
           <span className="status-bar-separator">|</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="Proofing status check">
-            <Check size={12} style={{ color: '#10b981' }} /> Spelling: Checked
+            <LuCheck size={12} style={{ color: '#10b981' }} /> Spelling: Checked
           </span>
           <span className="status-bar-separator">|</span>
           <span>English (India)</span>
@@ -1185,7 +1800,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
             <div className="modal-header">
               <h3 className="modal-title">Share Workspace</h3>
               <button className="modal-close" onClick={() => setShowShareModal(false)}>
-                <X size={18} />
+                <LuX size={18} />
               </button>
             </div>
             
@@ -1231,11 +1846,11 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
                   <button className="btn-copy" onClick={handleCopyLink}>
                     {copied ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Check size={14} /> Copied!
+                        <FaCheck size={14} /> Copied!
                       </span>
                     ) : (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Copy size={14} /> Copy Link
+                        <FaCopy size={14} /> Copy Link
                       </span>
                     )}
                   </button>

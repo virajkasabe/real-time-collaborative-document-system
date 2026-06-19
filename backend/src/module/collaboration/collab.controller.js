@@ -63,6 +63,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     type :"COLLAB_INVITED",
     docname : document.title,
     inviterName : inviter.fullName,
+    inviterEmail : email,
     collabId : collabId,
   }
 

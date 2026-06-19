@@ -1,15 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Search, Plus, Menu } from 'lucide-react';
-import ThemeToggle from '../common/ThemeToggle';
-import { useAuth } from '../../context/AuthContext';
-import { documentService } from '../../services/documentService';
-import Button from '../common/Button';
-import NotificationBell from '../notifications/NotificationBell';
-import athenuraLogo from '../../assets/athenura-logo.png';
-import { useTheme } from '../../context/ThemeContext';
-import { FiUser, FiSettings, FiLogOut } from 'react-icons/fi';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
+import {
+  Menu,
+  Plus,
+  Search,
+} from 'lucide-react';
+import {
+  FiLogOut,
+  FiSettings,
+  FiUser,
+} from 'react-icons/fi';
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom';
+
 import { createDoc } from '../../apis/api';
+import athenuraLogo from '../../assets/athenura-logo.png';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import Button from '../common/Button';
+import ThemeToggle from '../common/ThemeToggle';
+import NotificationBell from '../notifications/NotificationBell';
 
 export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) {
   const { user, logout, triggerToast } = useAuth();
@@ -130,7 +145,16 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
           >
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center ring-2 ring-blue-500/30 hover:ring-blue-500/60 transition-all duration-200 flex-shrink-0">
               <span className="text-white text-sm font-extrabold uppercase">
-                {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                {
+                    user.avatar === "" ? 
+                    (
+                        user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'
+                    ) 
+                    : 
+                    (
+                       <img src={user.avatar} alt="" className='rounded-full w-20 h-8 object-cover' />
+                    )
+                }
               </span>
             </div>
           </button>

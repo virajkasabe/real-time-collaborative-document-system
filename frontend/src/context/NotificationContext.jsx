@@ -27,16 +27,31 @@ export function NotificationProvider({ children }) {
   }, [dismissToast]);
 
   const addNotification = useCallback((notification) => {
-    if(notification.length !== 0) {
 
-      const newNotif = {
-        ...notification,
-        id: Date.now() + Math.random(),
-        read: false
-      };
-      setNotifications(prev => [newNotif, ...prev]);
-      setUnreadCount(prev => prev + 1);
-    }
+    if (!notification) return;
+    
+    // Convert to array if single notification
+    const notificationsArray = Array.isArray(notification) 
+      ? notification 
+      : [notification];
+    
+    // Filter out empty notifications
+    const validNotifications = notificationsArray.filter(n => 
+      n && Object.keys(n).length > 0
+    );
+    
+    if (validNotifications.length === 0) return;
+    
+    // Create new notifications with IDs
+    const newNotifications = validNotifications.map(n => ({
+      ...n,
+      id: Date.now() + Math.random() + Math.random(),
+      read: false
+    }));
+    
+    // Update state
+      setNotifications(prev => [...newNotifications, ...prev]);
+      setUnreadCount(prev => prev + newNotifications.length);
   }, []);
 
   // Listen for real-time notifications via Socket.IO
@@ -50,6 +65,7 @@ export function NotificationProvider({ children }) {
 
     socket.on(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
     socket.on(NOTIFICATION_EVENT.NOTIFICATION_RECIVED , handleNotification);
+
 
     return () => {
       socket.off(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);

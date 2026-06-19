@@ -1,11 +1,12 @@
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
+
 import { ENV } from "../config/ENV.js";
 import ApiError from "../utils/ApiError.js";
 import { secureUser } from "../utils/helper.js";
+import { mountCursorChangeOperation } from "./cursor.socket.js";
 import {
   mountDocumentRecivedOperation,
-  // mountDocumentSendOperation,
   mountJoinDocumentEvent,
   startDocumentFlushScheduler,
 } from "./document.socket.js";
@@ -13,7 +14,10 @@ import {
   mountPendingNotification,
   mountRecivedRealTimeNotification,
 } from "./notification.socket.js";
-import { CONNECT_DISCONNET_EVENT, DOCUMENT_EVENT } from "./socketEvents.js";
+import {
+  CONNECT_DISCONNET_EVENT,
+  DOCUMENT_EVENT,
+} from "./socketEvents.js";
 
 export const initializeSocketIO = (io) => {
   startDocumentFlushScheduler()
@@ -55,10 +59,11 @@ export const initializeSocketIO = (io) => {
       console.log(`🤝 USER CONNECTED | USER : ${socket.user.fullName}`);
 
       // event mounted here
-       mountPendingNotification(socket);
+      mountPendingNotification(socket, io);
       mountJoinDocumentEvent(socket, io);
-      mountDocumentRecivedOperation(socket);
+      mountDocumentRecivedOperation(socket, io);
       mountRecivedRealTimeNotification(socket);
+      mountCursorChangeOperation(socket)
 
       // mountDocumentSendOperation(socket);
       // mountNotificationEvent(socket);
@@ -66,7 +71,7 @@ export const initializeSocketIO = (io) => {
       // mountNotificationEvent()
 
       socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
-        console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER : ", user.fullName);
+        console.log("🚨 USER DISS-CONNECTED USER : ", user.fullName);
         if (socket.docId) {
           socket.to(socket.docId).emit(DOCUMENT_EVENT.USER_LEFT, {
             messag: `${socket.user.fullName} was offine`,

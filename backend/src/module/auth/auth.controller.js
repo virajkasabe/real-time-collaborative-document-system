@@ -430,21 +430,23 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { otp, email } = req.body;
+  console.log("otp",email)
+  console.log("otp", req.body)
 
-  const findUser = await User.findOne({email})
+  const findUser = await User.findOne({ email });
 
   const redisOTPData = await getOTP(findUser._id)
 
-  console.log("unHashedToken",redisOtpData.tokenId)
+  console.log("unHashedToken",redisOTPData.emailToken)
   console.log("otp",otp)
 
-  if (!redisOtpData.tokenId) {
+  if (!redisOTPData.emailToken) {
     throw new ApiError(400, "Email verification token missing");
   }
 
   const hashedToken = crypto
     .createHash("sha256")
-    .update(redisOtpData.tokenId)
+    .update(redisOTPData.emailToken)
     .digest("hex");
 
   const user = await User.findOne({
@@ -454,12 +456,13 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
+  console.log("user", user)
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired verification token");
   }
 
-  if (redisOtpData.otp !== otp) {
+  if (redisOTPData.otp !== otp) {
     throw new ApiError(401, "OTP INVALID");
   }
 

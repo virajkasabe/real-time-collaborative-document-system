@@ -109,11 +109,11 @@ export default function NotificationsPage() {
   const getMessage = (n) => {
     switch (n.type) {
       case 'COLLAB_INVITED':
-       return `${n.inveterName} invited you to collaborate on "${n.documentTitle}"`;
+        return `${n.inviterName} invited you to collaborate on "${n.docname}"`;
       case 'COLLAB_ACCEPTED':
-        return `${n.accepterName} accepted your invite for "${n.documentTitle}"`;
+        return `${n.accepterName} accepted your invite for "${n.docname}"`;
       case 'COLLAB_DECLINED':
-        return `Invite for "${n.documentTitle}" was declined`;
+        return `Invite for "${n.docname}" was declined`;
       default:
         return 'New notification';
     }

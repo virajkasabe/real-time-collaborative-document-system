@@ -31,6 +31,10 @@ const documentSchema = new mongoose.Schema(
           type : mongoose.Schema.Types.Mixed,
           default : {}
       },
+      version : {
+        type : Number,
+        default : 0
+      },
       isPublic : {
         type : Boolean,
         default : false

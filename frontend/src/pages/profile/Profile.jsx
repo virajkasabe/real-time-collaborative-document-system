@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
-import { User, FileText, Users, Star, Check, X, Lock } from 'lucide-react';
+
+import {
+  Check,
+  FileText,
+  Lock,
+  Star,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
+import {
+  useNavigate,
+  useOutletContext,
+} from 'react-router-dom';
+
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
@@ -83,7 +96,9 @@ export default function Profile() {
             <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-6 shadow-sm flex flex-col items-center text-center space-y-4 transition-all duration-300">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center mx-auto shadow-xl ring-4 ring-blue-500/30">
                 <span className="text-white text-4xl font-extrabold uppercase">
-                  {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                {
+                  user.avatar === "" ? (  user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U' ) : ( <img src={user.avatar} alt="" className="rounded-full w-25 h-25 object-cover"  /> )
+                }
                 </span>
               </div>
 
