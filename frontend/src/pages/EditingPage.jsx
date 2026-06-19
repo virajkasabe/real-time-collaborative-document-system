@@ -467,8 +467,19 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
 
     // ===== APPLY RECEIVED OPERATION =====
     const applyReceivedOperation = (operationData) => {
-      // console.log('📥 Received operation:', operationData);
+      console.log('📥 Received operation:', operationData);
       
+           /*
+                {
+                 docId: '6a35009b9a0f9ee57abf1128', actions: Array(1), version: 8}
+                    actions: Array(1) 0 : attributes : {} position :  1
+                    text: "d" type: "insert"[[Prototype]] : Object length  :  1
+                    [[Prototype]] :  Array(0) docId: "6a35009b9a0f9ee57abf1128"
+                    version :  8
+                }
+
+           */
+
       // Apply operations to local document
       const { actions, version } = operationData;
       

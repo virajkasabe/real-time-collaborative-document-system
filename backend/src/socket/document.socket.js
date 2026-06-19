@@ -188,6 +188,8 @@ export const mountDocumentRecivedOperation = (socket, io) => {
           transformedActions
         );
 
+        
+
         document.content = { text: updateText };
         document.version = (document.version || 0) + 1;
  
@@ -203,12 +205,29 @@ export const mountDocumentRecivedOperation = (socket, io) => {
 
         // console.log("transformOperations", transformOperations)
 
-        // console.log("docum", document)
+        // console.log("docum", document.content)
+
+        // console.log("documen",actions[0])
+
+        // documen [ { type: 'insert', position: 2, text: 's', attributes: {} } ]
+
+        // posistion
+        // attribute
+        // text
+
+        const { position, attributes, text } = actions[0]
+        console.log("posistion", position )
+        console.log("attribute", attributes)
+        console.log("text", text)
+
+
+        
+
 
         
             socket.to(docId).emit(DOCUMENT_EVENT.RECEIVE_OPERATION, {
               docId,
-              actions: transformedActions,
+              actions: actions,
               version: document.version,
             });
 
@@ -226,51 +245,53 @@ export const mountDocumentRecivedOperation = (socket, io) => {
   });
 };
 
+
+// TODO : FUNCTION WILL FULL COMMENT 
 export const startDocumentFlushScheduler = () => {
-  console.log(
-    "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
-  );
-  setInterval(async () => {
-    try {
-      const dirtyDocIds = await getDirtyDocument();
-      if (!dirtyDocIds || dirtyDocIds.length === 0) {
-        return;
-      }
-      // const removed = 1;
-      for (const docId of dirtyDocIds) {
-        console.log("trigged the document", "docId", docId)
-        const removed = await removeDirtyDocument(docId);
-        console.log("trigged the removed", "removed", removed)
-        if(removed) {
-          const document = await getDocument(docId);
-          console.log("doc", document.content)
-          if (document) {
-            console.log("document", document)
-            try {
-              await Doc.findByIdAndUpdate(
-                docId,
-                {
-                  $set: {
-                    content: document.content,
-                    version: document.version,
-                    title: document.title,
-                  },
-                },
-                {
-                  new: true,
-                  runValidators: true,
-                }
-              );
-              console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`);
-            } catch (dbError) {
-              console.error("failed to save in mongodb", dbError.message);
-              await markDocumentDirty(docId);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message);
-    }
-  }, 10000);
+  // console.log(
+  //   "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
+  // );
+  // setInterval(async () => {
+  //   try {
+  //     const dirtyDocIds = await getDirtyDocument();
+  //     if (!dirtyDocIds || dirtyDocIds.length === 0) {
+  //       return;
+  //     }
+  //     // const removed = 1;
+  //     for (const docId of dirtyDocIds) {
+  //       console.log("trigged the document", "docId", docId)
+  //       const removed = await removeDirtyDocument(docId);
+  //       console.log("trigged the removed", "removed", removed)
+  //       if(removed) {
+  //         const document = await getDocument(docId);
+  //         console.log("doc", document.content)
+  //         if (document) {
+  //           console.log("document", document)
+  //           try {
+  //             await Doc.findByIdAndUpdate(
+  //               docId,
+  //               {
+  //                 $set: {
+  //                   content: document.content,
+  //                   version: document.version,
+  //                   title: document.title,
+  //                 },
+  //               },
+  //               {
+  //                 new: true,
+  //                 runValidators: true,
+  //               }
+  //             );
+  //             console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`);
+  //           } catch (dbError) {
+  //             console.error("failed to save in mongodb", dbError.message);
+  //             await markDocumentDirty(docId);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message);
+  //   }
+  // }, 10000);
 };
