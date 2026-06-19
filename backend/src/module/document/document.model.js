@@ -28,8 +28,7 @@ const documentSchema = new mongoose.Schema(
           },
       ],
       content : {
-          type : mongoose.Schema.Types.Mixed,
-          default : {}
+          type : mongoose.Schema.Types.Mixed
       },
       version : {
         type : Number,

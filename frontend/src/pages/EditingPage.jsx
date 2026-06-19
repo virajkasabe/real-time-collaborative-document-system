@@ -45,6 +45,7 @@ export default function EditingPage() {
 
   // Fetch document details
   useEffect(() => {
+    if(!socket) return
 
     ;(async()=>{
         const fetched = await fetchDoc(id);
@@ -455,7 +456,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       // Reset after sending
       setTimeout(() => {
         isSendingOperation = false;
-      }, 100);
+      }, 50);
     };
 
     // ===== SEND CURSOR DATA =====
@@ -615,7 +616,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
           delete newCursors[cursorData.userId];
           return newCursors;
         });
-      }, 5000);
+      }, 1000);
     };
 
     // ===== CHARACTER TRACKING FUNCTION =====
@@ -737,7 +738,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         onSave(title, html, words);
         setIsSyncing(false);
         saveTimeoutId = null;
-      }, 100);
+      }, 50);
     };
 
     // ===== SELECTION CHANGE HANDLER =====
@@ -862,7 +863,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     container.addEventListener('click', handleClick);
 
     // Initial outline extraction
-    const initTimeout = setTimeout(updateOutline, 100);
+    const initTimeout = setTimeout(updateOutline, 50);
 
     // ===== CLEANUP =====
     return () => {
@@ -932,7 +933,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     setTimeout(() => {
       onSave(newTitle, html, words)
       setIsSyncing(false)
-    }, 800)
+    }, 750)
   }
 
   // 4. Auto-scroll to bottom of chat list
@@ -971,7 +972,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       el.style.backgroundColor = 'var(--accent-bg)'
       setTimeout(() => {
         el.style.backgroundColor = 'transparent'
-      }, 800)
+      }, 750)
     }
   }
 
@@ -1132,7 +1133,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         }
       ])
       setIsSyncing(false)
-    }, 1500)
+    }, 100)
   }
 
   // Simulated Comments Handlers

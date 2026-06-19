@@ -45,7 +45,7 @@ export const mountJoinDocumentEvent = (socket, io) => {
       const currentUserId = socket.user._id.toString();
       const document = await fetchDoc(data.docId);
 
-      NotificationBell("user JOIN REQUEST OF DOCUMENT ⚓, DOC ID:", data.docId);
+      console.log("user JOIN REQUEST OF DOCUMENT ⚓, DOC ID:", data.docId);
 
       const isOwner = document.ownerId.toString() === currentUserId;
 
@@ -64,23 +64,10 @@ export const mountJoinDocumentEvent = (socket, io) => {
 
       socket.join(data.docId);
       socket.roomId = data.docId;
-      const userRole = isOwner ? "owner" : userInDoc?.role || "viewer";
-
-      // console.log(`User ${socket.user.fullName} joined doc ${data.docId} as ${userRole}`);
-
-      // socket.to(data.docId).emit(DOCUMENT_EVENT.NEW_USER_JOIN, {
-      //   message: `${socket.user.fullName} joined the document`,
-      //   user: {
-      //     _id: socket.user._id,
-      //     fullName: socket.user.fullName,
-      //     avatar: socket.user.avatar || "",
-      //     role: userRole,
-      //   },
-      //   timestamp: new Date().toISOString(),
-      // });
+      const userRole = isOwner ? "Owner" : userInDoc?.role || "Viewer";
 
 
-       document.users.map((u)=>{
+      //  document.users.map((u)=>{
             socket.to(data.docId).emit(DOCUMENT_EVENT.NEW_USER_JOIN, {
               message: `${socket.user.fullName} joined the document`,
               user: {
@@ -91,7 +78,7 @@ export const mountJoinDocumentEvent = (socket, io) => {
               },
               timestamp: new Date().toISOString(),
             });
-        })
+        // })
 
       const socketsInRoom = await io.in(data.docId).fetchSockets();
       const activeUsers = socketsInRoom.map((s) => ({
@@ -203,8 +190,12 @@ export const mountDocumentRecivedOperation = (socket, io) => {
 
         document.content = { text: updateText };
         document.version = (document.version || 0) + 1;
-
-        await setDocument(docId, document); // client
+ 
+        // console.log("first", document.content)
+        
+        await setDocument(docId, document.content); 
+        
+        const getDoc = await getDocument(docId)
 
         await appendDocHistory(docId, document.version, transformedActions); // client
 
@@ -214,14 +205,16 @@ export const mountDocumentRecivedOperation = (socket, io) => {
 
         // console.log("docum", document)
 
-        document.users.map((u)=>{
-          // console.log(u.userId)
+        
             socket.to(docId).emit(DOCUMENT_EVENT.RECEIVE_OPERATION, {
               docId,
               actions: transformedActions,
               version: document.version,
             });
-        })
+
+
+
+        
         // console.log(`Document ${docId} version update to ${document.version}`);
       } catch (error) {
         console.error("SEND OPERATION", error.message);
@@ -234,20 +227,25 @@ export const mountDocumentRecivedOperation = (socket, io) => {
 };
 
 export const startDocumentFlushScheduler = () => {
-  // // console.log(
-  //   "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
-  // );
+  console.log(
+    "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
+  );
   setInterval(async () => {
     try {
       const dirtyDocIds = await getDirtyDocument();
       if (!dirtyDocIds || dirtyDocIds.length === 0) {
         return;
       }
+      // const removed = 1;
       for (const docId of dirtyDocIds) {
+        console.log("trigged the document", "docId", docId)
         const removed = await removeDirtyDocument(docId);
-        if (removed) {
+        console.log("trigged the removed", "removed", removed)
+        if(removed) {
           const document = await getDocument(docId);
+          console.log("doc", document.content)
           if (document) {
+            console.log("document", document)
             try {
               await Doc.findByIdAndUpdate(
                 docId,
@@ -263,7 +261,7 @@ export const startDocumentFlushScheduler = () => {
                   runValidators: true,
                 }
               );
-              // console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`);
+              console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`);
             } catch (dbError) {
               console.error("failed to save in mongodb", dbError.message);
               await markDocumentDirty(docId);

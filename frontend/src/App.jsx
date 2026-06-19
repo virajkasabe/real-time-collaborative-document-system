@@ -12,7 +12,6 @@ export default function App() {
   const { toast } = useAuth();
 
   return (
-    <SocketProvider>
       <NotificationProvider>
         <AppRoutes />
         {/* Routes list:
@@ -39,6 +38,5 @@ export default function App() {
           </div>
         )}
       </NotificationProvider>
-    </SocketProvider>
   );
 }

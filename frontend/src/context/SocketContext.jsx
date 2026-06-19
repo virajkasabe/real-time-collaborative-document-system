@@ -66,7 +66,7 @@ export function SocketProvider({ children }) {
       console.log(`Socket Connect Error : ${error.message}`)
       setIsConnected(false);
       if(error.message === "Authentication error") {
-        localStorage.removeItem("accessToken");
+        LocalStorage.remove("accessToken");
         window.location.href("/login")
       }
     });
@@ -77,8 +77,8 @@ export function SocketProvider({ children }) {
 
 
   const disconnecteSocket = useCallback(()=>{
+    console.log(`MANUAL DISCONNECTE`);
       if(socketInstance) {
-        console.log(`MANUAL DISCONNECTE`);
         socketInstance.removeAllListeners();
         socketInstance.disconnect();
         socketInstance = null;
@@ -91,15 +91,15 @@ export function SocketProvider({ children }) {
 
 
   const initSocketWithToken = useCallback((token)=>{
-    localStorage.setItem("accessToken", token);
+    LocalStorage.set("accessToken", token);
     disconnecteSocket();
-    setTimeout(()=> connectSocket(),100)
+    setTimeout(()=> connectSocket(),80)
   },[connectSocket, disconnecteSocket])
 
 
   const updateSocketToken = useCallback((newToken)=> {
     if(!socketInstance) return;
-    localStorage.setItem("accessToken", newToken);
+    LocalStorage.set("accessToken", newToken);
     socketInstance.auth = {token : newToken};
     if(!socketInstance.connected) {
       socketInstance.connect();
@@ -107,7 +107,7 @@ export function SocketProvider({ children }) {
   },[])
 
   useEffect(()=>{
-    const token = localStorage.getItem("accessToken");
+    const token = LocalStorage.get("accessToken");
     console.log(`Token Mount :${token} ? Missing : missing`)
 
     if(token && !socketInstance) {
