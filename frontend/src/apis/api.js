@@ -92,6 +92,10 @@ export const sharedWithMeDocs = () => {
     return apiClient.get("/doc/shared-with-me-docs")
 }
 
+export const restoreDoc = (docId) => {
+    return apiClient.put(`/doc/restore-doc/${docId}`)
+}
+
 
 // !! DENGET ZONE
 export const docMoveToTrash = (docId) => {

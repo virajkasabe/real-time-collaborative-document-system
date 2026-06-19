@@ -61,11 +61,7 @@ export default function Dashboard() {
   }, []);
 
   // Fetch documents
-  useEffect(() => {
-    if (user) {
-      fetchDocuments();
-    }
-  }, [user, dbVer]);
+  
 
   const fetchDocuments = async () => {
     try {
@@ -81,6 +77,12 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user, dbVer]);
 
   const triggerReload = () => {
     setDbVer(prev => prev + 1);
@@ -155,9 +157,9 @@ export default function Dashboard() {
       let valA = a[sortColumn];
       let valB = b[sortColumn];
 
-      if (sortColumn === 'owner') {
-        valA = a.owner?.name || '';
-        valB = b.owner?.name || '';
+      if (sortColumn === 'Owner') {
+        valA = a.Owner?.fullName || '';
+        valB = b.Owner?.fullName || '';
       }
 
       if (sortColumn === 'lastModified') {
@@ -235,7 +237,7 @@ export default function Dashboard() {
 
   const handleDuplicate = async (e, doc) => {
     e.stopPropagation();
-    const newDoc = await createDoc(`Copy of ${doc.title}`, doc.category, user?.email, user?.name);
+    const newDoc = await createDoc(`Copy of ${doc.title}`, doc.category, user?.email, user?.fulllName);
     if (newDoc) {
       triggerToast(`Duplicated: ${doc.title}`, 'success');
       setRowMenuOpen(null);
@@ -282,7 +284,7 @@ export default function Dashboard() {
   };
 
   const createDocumentWithType = async (name, type, cat) => {
-    const doc = await createDoc(name, cat, user?.email, user?.name);
+    const doc = await createDoc(name, cat, user?.email, user?.fullName);
     if (doc) {
       triggerToast(`Created new ${type} Document`, 'success');
       navigate(`/editor/${doc._id}`);
@@ -682,7 +684,7 @@ export default function Dashboard() {
                     <ArrowUpDown size={10} className="text-[#6B7280]/60 shrink-0" />
                   </div>
                 </th>
-                <th className="py-2.5 px-3 cursor-pointer hover:text-[#081B3A] dark:hover:text-white transition-colors w-[140px]" onClick={() => handleSort('owner')}>
+                <th className="py-2.5 px-3 cursor-pointer hover:text-[#081B3A] dark:hover:text-white transition-colors w-[140px]" onClick={() => handleSort('Owner')}>
                   <div className="inline-flex items-center gap-1">
                     <span>Owner</span>
                     <ArrowUpDown size={10} className="text-[#6B7280]/60 shrink-0" />
@@ -752,34 +754,34 @@ export default function Dashboard() {
                               {doc.fileType}
                             </span>
                           </div>
-                        </div>
+                        </div>  
                       </td>
 
                       <td className="px-3 text-[13px] text-[#6B7280] dark:text-[#94A3B8]/75 font-normal">
-                        {new Date(doc.lastModified).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {new Date(doc.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
 
                       <td className="px-3 text-[12.5px] text-[#6B7280] dark:text-[#94A3B8]/75 font-medium truncate max-w-[140px]">
-                        {user?.fullName || doc.owner?.name || user?.fullName}
+                        {doc.allUsers.find(u => u.role === "Owner")?.fullName || "No owner"}
                       </td>
 
                       <td className="px-3">
                         <div className="flex -space-x-1.5 overflow-hidden">
-                          {doc.users?.slice(0, 3).map((collab, idx) => (
+                          {doc.allUsers?.slice(0, 3).map((collab, idx) => (
                             <img
                               key={idx}
                               className="inline-block h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#070B14] object-cover"
-                              src={collab.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256'}
+                              src={collab.avatar || 'https://i.pinimg.com/1200x/f7/d9/0b/f7d90bc65acb8f6e72acd02bb7ad1ce0.jpg'}
                               alt={collab.name}
                               title={collab.name}
                             />
                           ))}
-                          {doc.users?.length > 3 && (
+                          {doc.allUsers?.length > 3 && (
                             <span className="flex items-center justify-center h-5 w-5 rounded-full ring-2 ring-white dark:ring-[#070B14] bg-[#E5E7EB] dark:bg-slate-800 text-[9px] font-bold text-[#6B7280] dark:text-[#94A3B8]">
-                              +{doc.users.length - 3}
+                              +{doc.allUsers.length - 3}
                             </span>
                           )}
-                          {!doc.users?.length && (
+                          {!doc.allUsers?.length && (
                             <span className="text-[13px] text-[#6B7280] dark:text-slate-500 font-normal italic">Private</span>
                           )}
                         </div>

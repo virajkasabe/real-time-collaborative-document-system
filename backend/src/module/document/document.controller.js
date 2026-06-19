@@ -168,6 +168,7 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
             $project: {
               _id: 1,
               title: 1,
+              updatedAt : 1,
               allUsers: "$allUsersWithRoles"
             }
           }
@@ -197,24 +198,103 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
     );
 });
 
-export const shareWithMeDocuments = asyncHandler(async(req,res)=>{
+export const shareWithMeDocuments = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    return res.status(401).json(new ApiResponse(401, null, "User not authenticated"));
+  }
+
+  const objectId = new mongoose.Types.ObjectId(userId);
 
   const shareWithMeDocs = await Doc.aggregate([
     {
       $match: {
-            "users.userId": new mongoose.Types.ObjectId(req.user._id)
-      },
+        "users.userId": objectId,
+        isTrash: false 
+      }
     },
+    {
+      $lookup: {
+        from: "users",
+        localField: "ownerId",
+        foreignField: "_id",
+        as: "owner"
+      }
+    },
+    {
+      $addFields: {
+        ownerDetails: {
+          $arrayElemAt: ["$ownerDetails", 0]
+        },
+        me: {
+          $arrayElemAt: [
+            {
+              $filter: {
+                input: "$users",
+                as: "user",
+                cond: { $eq: ["$$user.userId", objectId] }
+              }
+            },
+            0
+          ]
+        },
+        otherUsers: {
+          $filter: {
+            input: "$users",
+            as: "user",
+            cond: { 
+              $and: [
+                { $ne: ["$$user.userId", objectId] },
+                { $ne: ["$$user.userId", "$ownerId"] }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        title: 1,
+        ownerId: 1,
+        isPublic: 1,
+        isTrash: 1,
+        version: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        owner: {
+          _id: 1,
+          fullName: 1,
+          email: 1,
+        },
+        me: {
+          userId: 1,
+          role: 1,
+          _id: 1
+        },
+        otherUsers: {
+          userId: 1,
+          role: 1,
+          _id: 1
+        }
+      }
+    },
+    {
+      $sort: { updatedAt: -1 }
+    }
   ]);
 
-  const docId = shareWithMeDocs.map(s => s._id)
-
-  const docRole = await getDocumentRole(docId, req.user)
-
-  let roles = Array(docRole)
-
-  return res.status(200).json(new ApiResponse(200, { documents : shareWithMeDocs, role : roles } , "Share with documents fetch successfully"))
-})
+  return res.status(200).json(
+    new ApiResponse(
+      200, 
+      { 
+        documents: shareWithMeDocs,
+        count: shareWithMeDocs.length
+      }, 
+      "Shared documents fetched successfully"
+    )
+  );
+});
 
 export const docMoveToTrash = asyncHandler(async(req,res)=>{
   
@@ -255,4 +335,23 @@ export const deleteDoc = asyncHandler(async(req,res)=>{
 
 
   return res.status(204).json(new ApiResponse(204, {} , "your document deleted successfully"))
+})
+
+export const restoreDoc = asyncHandler(async(req,res)=>{
+  const { docId } = req.params
+
+  verifyDocumentAdmin(docId, req.user)
+
+  requiredField([docId])
+
+
+  const document = await Doc.findByIdAndUpdate( docId, {
+    $set : {
+      isTrash : false
+    }
+  }, { new : true } )
+
+  await setDocument(docId, document)
+
+  return res.status(204).json(new ApiResponse(204, {} , "your document restore successfully"))
 })

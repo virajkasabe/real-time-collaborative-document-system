@@ -22,7 +22,7 @@ import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
-import { createDoc, fetchDocumentFolder } from '../../apis/api';
+import { createDoc, fetchDocumentFolder, restoreDoc, docMoveToTrash } from '../../apis/api';
 
 export default function Documents() {
   const { user, triggerToast } = useAuth();
@@ -158,9 +158,9 @@ export default function Documents() {
       if (ownerFilter === 'Mine') {
         list = list.filter(d => d.owner.email === user?.email);
       } else if (ownerFilter === 'Shared') {
-        list = list.filter(d => d.sharedUsers.some(u => u.email === user?.email));
+        list = list.filter(d => d.allUsers.some(u => u.email === user?.email));
       } else if (ownerFilter === 'Team') {
-        list = list.filter(d => d.sharedUsers.length > 0);
+        list = list.filter(d => d.allUsers.length > 0);
       }
     }
 
@@ -168,7 +168,7 @@ export default function Documents() {
     if (dateFilter !== 'All') {
       const now = new Date();
       list = list.filter(d => {
-        const modDate = new Date(d.lastModified);
+        const modDate = new Date(d.updatedAt);
         const diffTime = Math.abs(now - modDate);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
@@ -229,23 +229,33 @@ export default function Documents() {
     triggerReload();
   };
 
-  const handleMoveToTrash = (e, docId) => {
+  const handleMoveToTrash = async(e, docId) => {
     e.stopPropagation();
-    documentService.delete(docId);
+     try {
+       const res = await docMoveToTrash(docId);
+        triggerToast(res.data.message, 'success');
+     } catch (error) {
+       triggerToast(error.message, 'warning');
+     }
     setActionMenuOpen(null);
-    triggerToast('Moved to Trash', 'info');
     triggerReload();
   };
 
-  const handleRestore = (e, docId) => {
+  const handleRestore = async(e, docId) => {
     e.stopPropagation();
-    documentService.restore(docId);
+    try {
+       const res = await restoreDoc(docId);
+       console.log("res",res.data.message)
+        triggerToast(res.data.data.message, 'success');
+     } catch (error) {
+       triggerToast(error.message, 'warning');
+     }
     triggerToast('Document restored', 'success');
     triggerReload();
   };
 
   const handleCreateDocument = async() => {
-    const newDoc = await createDoc('New Document', 'blank', user?.email, user?.name);
+    const newDoc = await createDoc('New Document', 'blank', user?.email, user?.fullName);
     if (newDoc.data.doc) {
       triggerToast('Document created successfully!', 'success');
       navigate(`/editor/${newDoc.data.doc._id}`);
@@ -572,9 +582,10 @@ export default function Documents() {
 
                         {
                           doc.allUsers.map((i)=>(
-                            i.role.Owner && (
+                            
+                            i.role === "Owner" && (
                               <span key={i._id} className="text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 block mt-0.5 leading-none transition-colors">
-                                  Owner: <span key={i._id} className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">{i.owner.fullName}</span> • Updated {doc.updatedAt}
+                                  Owner: <span key={i._id} className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">{i.fullName}</span> • Updated {doc.updatedAt}
                               </span>
                             )
                             
@@ -670,7 +681,7 @@ export default function Documents() {
                         {doc.title}
                       </h5>
                       <p className="text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 leading-none mt-0.5">
-                        {doc.fileType} • Owner: <span className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">{doc.owner.name}</span>
+                        {doc.fileType} • Owner: <span className="text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200"> {doc.allUsers.find(u => u.role === "Owner")?.fullName || "No owner"}</span>
                       </p>
                     </div>
                   </div>
