@@ -26,6 +26,10 @@ export const NOTIFICATION_EVENT = Object.freeze({
   NOTIFICATION_RECIVED: "notificationRecived",
   SEND_REAL_TIME_NOTIFICATION: "sendRealTimeNotification",
   RECIVED_REAL_TIME_NOTIFICATION: "recivedRealTimeNotification",
+  NOTIFICATION_RECEIVED: 'notification:received',
+  COLLAB_INVITE: 'collab:invite',
+  INVITE_ACCEPTED: 'invite:accepted',
+  INVITE_REJECTED: 'invite:rejected',
 });
 
 export const INVITATION_EVENT = Object.freeze({

@@ -3,6 +3,7 @@ import {
   deleteCollaboration,
   getCollaboration,
   getPendingNotification,
+  deletePendingNotification,
   setDocument,
 } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
@@ -15,7 +16,10 @@ import {
 import crypto from 'crypto'
 
 export const mountRecivedRealTimeNotification = (socket) => {
+  // Real-time invites and responses are now handled via HTTP API in collab.controller.js
+  // and delivered via socket rooms, so we keep these as placeholders or no-ops.
   socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
+
 
     const { collabId } = data
 
@@ -124,5 +128,27 @@ export const mountPendingNotification = async (socket, io) => {
   if (payload?.length >= 0) {
     // console.log("userNotifications", userNotifications)
     io.to(socket.user._id).emit(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, userNotifications)
+
+    console.log("Accept invitation via socket received:", data);
+  });
+
+  socket.on(INVITATION_EVENT.DECLINE_INVITATION, async (data) => {
+    console.log("Decline invitation via socket received:", data);
+  });
+};
+
+export const mountPendingNotification = async (socket) => {
+  try {
+    const payload = await getPendingNotification(socket.user.email);
+    if (payload && payload.length > 0) {
+      payload.forEach((notif) => {
+        socket.emit(NOTIFICATION_EVENT.NOTIFICATION_RECEIVED, notif);
+      });
+      // Clear pending queue from Redis now that they have been dispatched
+      await deletePendingNotification(socket.user.email);
+    }
+  } catch (error) {
+    console.error("Error mounting pending notifications:", error);
+
   }
 };

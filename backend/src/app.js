@@ -10,11 +10,25 @@ import { rateLimit } from 'express-rate-limit'
 import ApiError from "./utils/ApiError.js";
 import requestIp from 'request-ip'
 import { instrument } from "@socket.io/admin-ui";
+
 import ApiResponse from "./utils/ApiResponse.js";
+
+import passport from "passport";
+import "./passport/index.js";
+
 
 const app = express();
 const httpServer = createServer(app);
 
+// Apply CORS middleware before all routes and other middleware
+app.use(cors({
+  origin: [
+    ENV.CORS_ORIGIN,
+    ENV.CLIENT_URL,
+    "https://admin.socket.io"
+  ].filter(Boolean),
+  credentials: true
+}));
 
 const io = new Server(httpServer, {
   pingTimeout: 60000,
@@ -23,9 +37,14 @@ const io = new Server(httpServer, {
       ENV.CORS_ORIGIN,
       ENV.CLIENT_URL,
       "https://admin.socket.io"
+d
     ],
     credentials : true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+
+    ].filter(Boolean),
+    credentials: true,
+
   },
 });
 
@@ -63,6 +82,7 @@ app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 
 app.use(cookieParser());
 app.use(helmet());
+
 app.use(cors({
     origin : [
       ENV.CORS_ORIGIN,
@@ -76,6 +96,9 @@ app.use(cors({
       "Content-Type"
     ]
 }))
+
+app.use(passport.initialize());
+
 
 // TODO : FIRST CHECK THE HEALTH ROUTE
 
@@ -100,6 +123,7 @@ app.use("/", (req,res)=>{
     res.status(200).json(new ApiResponse(400, { success : false}, "PAGE NOT FOUND"))
 })
 
+
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
     success: false,
@@ -108,6 +132,24 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+
+// Global error handler middleware (Always returns JSON)
+app.use((err, req, res, next) => {
+  // Catch MongoDB duplicate key error (code 11000)
+  if (err.code === 11000) {
+    return res.status(400).json({
+      success: false,
+      message: "Email already registered. Please login."
+    });
+  }
+
+  const statusCode = err.statusCode || err.status || 500;
+  return res.status(statusCode).json({
+    success: false,
+    message: err.message || "Internal Server Error"
+  });
+});
 
 initializeSocketIO(io);
 

@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, Plus, Menu } from 'lucide-react';
 import ThemeToggle from './common/ThemeToggle';
 import { useAuth } from '../context/AuthContext';
+
+import { documentService } from '../utils/documentService';
+
 import Button from './common/Button';
 import NotificationBell from './notifications/NotificationBell';
 import athenuraLogo from '../assets/athenura-logo.png';

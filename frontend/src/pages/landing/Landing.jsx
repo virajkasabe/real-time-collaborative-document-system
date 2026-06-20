@@ -279,6 +279,12 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link to="/about" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
+              About Us
+            </Link>
+            <Link to="/help" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
+              Help
+            </Link>
             <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
               Sign In
             </Link>

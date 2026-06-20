@@ -193,7 +193,7 @@ export const getPendingNotification = async (pendingKey) => {
 export const deletePendingNotification = async (pendingKey) => {
   if (!client || !isConnected) return null;
   const key = `pending:${pendingKey}`;
-  await client.del();
+  await client.del(key);
 };
 
 // ?? ====== DIRTY DOCUMENT SET ======

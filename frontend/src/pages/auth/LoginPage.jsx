@@ -11,7 +11,11 @@ import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 
 export default function LoginPage() {
+
   const { login, triggerToast, error } = useAuth();
+
+  const { login, loading, error } = useAuth();
+
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -19,7 +23,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
@@ -38,6 +41,7 @@ export default function LoginPage() {
       return;
     }
 
+
     setLoading(true);
     const res = await login(email.trim(), password);
     console.log("success", res)
@@ -50,17 +54,20 @@ export default function LoginPage() {
 
     if (res.success) {
       navigate('/dashboard');
+
+    try {
+      const result = await login({ email: email.trim(), password });
+      if (result) {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      // Handled by context error state
+
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    const success = await login('google.user@company.com', 'password');
-    setLoading(false);
-    if (success) {
-      triggerToast('Signed in with Google (Simulated)', 'success');
-      navigate('/dashboard');
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://localhost:5000/api/v1/rtcds/auth/google';
   };
 
   return (
@@ -313,6 +320,21 @@ export default function LoginPage() {
                 <FcGoogle size={18} />
                 Continue with Google
               </button>
+
+              {error && (
+                <div style={{
+                  background: '#ffe0e0',
+                  border: '1px solid #ff4444',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  marginTop: '10px',
+                  color: '#cc0000',
+                  fontSize: '13px',
+                  textAlign: 'center'
+                }}>
+                  ⚠️ {error}
+                </div>
+              )}
 
               {/* Register Link */}
               <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium">
