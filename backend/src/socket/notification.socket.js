@@ -6,17 +6,129 @@ import {
   deletePendingNotification,
   setDocument,
 } from "../redis/client.js";
-import { fetchDoc } from "../utils/helper.js";
+import ApiError from "../utils/ApiError.js";
+import { fetchDoc, secureUser } from "../utils/helper.js";
 import {
   COLLABORATION_EVENT,
   INVITATION_EVENT,
   NOTIFICATION_EVENT,
 } from "./socketEvents.js";
+import crypto from 'crypto'
 
 export const mountRecivedRealTimeNotification = (socket) => {
   // Real-time invites and responses are now handled via HTTP API in collab.controller.js
   // and delivered via socket rooms, so we keep these as placeholders or no-ops.
   socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
+
+
+    const { collabId } = data
+
+    const user = await secureUser(socket.user._id);
+
+    const hashedTokenID = crypto
+      .createHash("sha256")
+      .update(collabId)
+      .digest("hex");
+
+    const collabData = await getCollaboration(collabId);
+    if (!collabData) {
+      throw new ApiError(400, "Token Expired or Invalid");
+    }
+
+    const { docId,role, inviterId } = collabData
+
+    const inveter = await secureUser(inviterId)
+
+    const doc = await fetchDoc(docId);
+
+    if (doc.ownerId.toString() === user._id.toString()) {
+      throw new ApiError(400, "Owner can't add on Users");
+    }
+
+    const userAlreadyExists = doc.users.some(
+      (collaborator) =>
+        collaborator.userId.toString() === user._id.toString()
+    );
+
+    if (userAlreadyExists) {
+      await deleteCollaboration(collabId);
+      throw new ApiError(401, "User Already exist");
+    }
+
+    const updateDocument = await Doc.findByIdAndUpdate(
+      collabData.docId,
+      {
+        $push: {
+          users: {
+            userId: user._id,
+            role: role,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    const acceptCollabData = {
+      type: "COLLAB_ACCEPTED",
+      accepterName: socket.user.fullName,
+      documentId: doc._id,
+      documentName: doc.title,
+      message: `${socket.user.fullName} accepted your collaboration on "${doc.title}"`,
+      time: new Date().toISOString(),
+    };
+
+    socket
+      .to(inveter._id)
+      .emit(COLLABORATION_EVENT.ACCEPT_COLLABORATION, acceptCollabData);
+    await deleteCollaboration(hashedTokenID);
+    await setDocument(updateDocument._id, updateDocument);
+  });
+
+  socket.on(INVITATION_EVENT.DECLINE_INVITATION, async (data) => {
+    const user = await secureUser(socket.user._id);
+    const hashedTokenID = crypto
+      .createHash("sha256")
+      .update(tokenId)
+      .digest("hex");
+
+    const collabData = await getCollaboration(hashedTokenID);
+    if (!collabData) {
+      throw new ApiError(400, "Token Expired or Invalid");
+    }
+
+
+
+    const doc = await fetchDoc(collabData.docId);
+
+    const declineCollabData = {
+      type: "COLLAB_DECLINED",
+      declineUserName: socket.user.fullName,
+      documentId: doc._id,
+      documentName: doc.title,
+      message: `${socket.user.fullName} decline your collaboration on "${doc.title}"`,
+      time: new Date().toISOString(),
+    };
+
+    socket
+      .to(doc.inviterId)
+      .emit(COLLABORATION_EVENT.DECLINE_COLLABORATION, acceptCollabData);
+  });
+};
+
+export const mountPendingNotification = async (socket, io) => {
+  const payload = await getPendingNotification(socket.user.email);
+  // console.log(payload)
+
+  const userNotifications = payload.filter((i)=>{
+     return  i.inviterEmail === socket.user.email
+  })
+
+  // console.log("userNotifications", userNotifications)
+
+  if (payload?.length >= 0) {
+    // console.log("userNotifications", userNotifications)
+    io.to(socket.user._id).emit(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, userNotifications)
+
     console.log("Accept invitation via socket received:", data);
   });
 
@@ -37,5 +149,6 @@ export const mountPendingNotification = async (socket) => {
     }
   } catch (error) {
     console.error("Error mounting pending notifications:", error);
+
   }
 };

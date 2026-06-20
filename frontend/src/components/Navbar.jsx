@@ -3,12 +3,15 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, Plus, Menu } from 'lucide-react';
 import ThemeToggle from './common/ThemeToggle';
 import { useAuth } from '../context/AuthContext';
+
 import { documentService } from '../utils/documentService';
+
 import Button from './common/Button';
 import NotificationBell from './notifications/NotificationBell';
 import athenuraLogo from '../assets/athenura-logo.png';
 import { useTheme } from '../context/ThemeContext';
 import { FiUser, FiSettings, FiLogOut } from 'react-icons/fi';
+import { createDoc } from '../apis/api';
 
 export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) {
   const { user, logout, triggerToast } = useAuth();
@@ -40,11 +43,12 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
     }
   };
 
-  const handleCreateDocument = () => {
-    const newDoc = documentService.create('Untitled Document', 'blank', user?.email, user?.name);
-    if (newDoc) {
+  const handleCreateDocument = async() => {
+    let title = "new doc";
+    const newDoc = await createDoc(title);
+    if (newDoc.data.doc) {
       triggerToast('Document created successfully!', 'success');
-      navigate(`/editor/${newDoc.id}`);
+      navigate(`/editor/${newDoc.data.doc._id}`);
     }
   };
 

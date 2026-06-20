@@ -6,6 +6,7 @@ import {
   getDocHistory,
   getDocument,
   markDocumentDirty,
+  removeDirtyDocument,
   setDocument,
 } from "../redis/client.js";
 import { subscribeToDocument } from "../redis/subClient.js";
@@ -63,22 +64,21 @@ export const mountJoinDocumentEvent = (socket, io) => {
 
       socket.join(data.docId);
       socket.roomId = data.docId;
-      const userRole = isOwner ? "owner" : userInDoc?.role || "viewer";
+      const userRole = isOwner ? "Owner" : userInDoc?.role || "Viewer";
 
-      console.log(
-        `User ${socket.user.fullName} joined doc ${data.docId} as ${userRole}`
-      );
 
-      socket.to(data.docId).emit(DOCUMENT_EVENT.USER_JOINED, {
-        message: `${socket.user.fullName} joined the document`,
-        user: {
-          _id: socket.user._id,
-          fullName: socket.user.fullName,
-          avatar: socket.user.avatar || "",
-          role: userRole,
-        },
-        timestamp: new Date().toISOString(),
-      });
+      //  document.users.map((u)=>{
+            socket.to(data.docId).emit(DOCUMENT_EVENT.NEW_USER_JOIN, {
+              message: `${socket.user.fullName} joined the document`,
+              user: {
+                _id: socket.user._id,
+                fullName: socket.user.fullName,
+                avatar: socket.user.avatar || "",
+                role: userRole,
+              },
+              timestamp: new Date().toISOString(),
+            });
+        // })
 
       const socketsInRoom = await io.in(data.docId).fetchSockets();
       const activeUsers = socketsInRoom.map((s) => ({
@@ -111,11 +111,13 @@ export const mountJoinDocumentEvent = (socket, io) => {
   });
 };
 
-export const mountDocumentRecivedOperation = (socket) => {
+export const mountDocumentRecivedOperation = (socket, io) => {
   socket.on(DOCUMENT_EVENT.SEND_OPERATION, async (data) => {
     // const { docId, delta } = message;
 
     const payload = data.data || data;
+
+    // console.log("payload", payload)
 
     const { docId, actions, version } = payload;
 
@@ -148,16 +150,14 @@ export const mountDocumentRecivedOperation = (socket) => {
     // apply queueDocumentOperation
     queueDocumentOperation(docId, async () => {
       try {
-        const document = fetchDoc(docId);
-        documentVersion = document.version || 0;
+        const document = await fetchDoc(docId);
+        let documentVersion = document.version || 0;
 
         let clientVersion = version;
         let transformedActions = [...actions];
 
         if (clientVersion < document.version) {
-          console.log(
-            `[OT Conflict] client version ${clientVersion} < Server Version ${document.version}. Tranforming.....`
-          );
+          // console.log( `[OT Conflict] client version ${clientVersion} < Server Version ${document.version}. Tranforming.....`);
 
           const history = await getDocHistory(docId); // from client
           const concurrentOts = history.filter(
@@ -188,22 +188,53 @@ export const mountDocumentRecivedOperation = (socket) => {
           transformedActions
         );
 
+        
+
         document.content = { text: updateText };
         document.version = (document.version || 0) + 1;
-
-        await setDocument(docId, document); // client
+ 
+        // console.log("first", document.content)
+        
+        await setDocument(docId, document.content); 
+        
+        const getDoc = await getDocument(docId)
 
         await appendDocHistory(docId, document.version, transformedActions); // client
 
         await markDocumentDirty(docId); // client
 
-        socket.io(docId).emit(DOCUMENT_EVENT.RECEIVE_OPERATION, {
-          docId,
-          actions: transformedActions,
-          version: document.version,
-        });
+        // console.log("transformOperations", transformOperations)
 
-        console.log(`Document ${docId} version update to ${document.version}`);
+        // console.log("docum", document.content)
+
+        // console.log("documen",actions[0])
+
+        // documen [ { type: 'insert', position: 2, text: 's', attributes: {} } ]
+
+        // posistion
+        // attribute
+        // text
+
+        const { position, attributes, text } = actions[0]
+        console.log("posistion", position )
+        console.log("attribute", attributes)
+        console.log("text", text)
+
+
+        
+
+
+        
+            socket.to(docId).emit(DOCUMENT_EVENT.RECEIVE_OPERATION, {
+              docId,
+              actions: actions,
+              version: document.version,
+            });
+
+
+
+        
+        // console.log(`Document ${docId} version update to ${document.version}`);
       } catch (error) {
         console.error("SEND OPERATION", error.message);
         socket.emit(SOCKET_EVENT.ERROR, {
@@ -214,48 +245,53 @@ export const mountDocumentRecivedOperation = (socket) => {
   });
 };
 
+
+// TODO : FUNCTION WILL FULL COMMENT 
 export const startDocumentFlushScheduler = () => {
-  console.log(
-    "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
-  );
-  setInterval(async () => {
-    try {
-      const dirtyDocIds = await getDirtyDocument();
-      if (!dirtyDocIds || dirtyDocIds.length === 0) {
-        return;
-      }
-      for (const docId of dirtyDocIds) {
-        const removed = await removeDirtyDocument(docId);
-        if (removed) {
-          const document = await getDocument(docId);
-          if (document) {
-            try {
-              await Doc.findByIdAndUpdate(
-                docId,
-                {
-                  $set: {
-                    content: document.content,
-                    version: document.version,
-                    title: document.title,
-                  },
-                },
-                {
-                  new: true,
-                  runValidators: true,
-                }
-              );
-              console.log(
-                `flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`
-              );
-            } catch (dbError) {
-              console.error("failed to save in mongodb", dbError.message);
-              await markDocumentDirty(docId);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message);
-    }
-  }, 10000);
+  // console.log(
+  //   "Your changes are automatically synced and saved to MongoDB every 10 seconds : ⚡💾"
+  // );
+  // setInterval(async () => {
+  //   try {
+  //     const dirtyDocIds = await getDirtyDocument();
+  //     if (!dirtyDocIds || dirtyDocIds.length === 0) {
+  //       return;
+  //     }
+  //     // const removed = 1;
+  //     for (const docId of dirtyDocIds) {
+  //       console.log("trigged the document", "docId", docId)
+  //       const removed = await removeDirtyDocument(docId);
+  //       console.log("trigged the removed", "removed", removed)
+  //       if(removed) {
+  //         const document = await getDocument(docId);
+  //         console.log("doc", document.content)
+  //         if (document) {
+  //           console.log("document", document)
+  //           try {
+  //             await Doc.findByIdAndUpdate(
+  //               docId,
+  //               {
+  //                 $set: {
+  //                   content: document.content,
+  //                   version: document.version,
+  //                   title: document.title,
+  //                 },
+  //               },
+  //               {
+  //                 new: true,
+  //                 runValidators: true,
+  //               }
+  //             );
+  //             console.log(`flush on mongodb ${docId} [ version of document : ${document.version} ⚓ ]`);
+  //           } catch (dbError) {
+  //             console.error("failed to save in mongodb", dbError.message);
+  //             await markDocumentDirty(docId);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("ERROR ON RUNING FLUSH DOCUMENT ", error.message);
+  //   }
+  // }, 10000);
 };

@@ -29,3 +29,22 @@ export const formatRelativeTime = (timeString) => {
   if (!timeString) return 'recently';
   return timeString; // Return standard format for simulated database dates
 };
+
+export const getRandomColor = () => {
+  const COLORS = [
+    '#4ECDC4', 
+    '#FF6B6B', 
+    '#45B7D1', 
+    '#96CEB4', 
+    '#FFEAA7', 
+    '#DDA0DD', 
+    '#FF8A5C', 
+    '#A29BFE', 
+    '#74B9FF', 
+    '#FD79A8', 
+    '#00B894', 
+    '#E17055',
+  ];
+  
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
+};

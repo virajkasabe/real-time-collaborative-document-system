@@ -60,6 +60,19 @@ export default function RegisterPage() {
       return;
     }
 
+
+    setLoading(true);
+    // Call register(email, name, password) matching AuthContext signature
+    const res = await register(email.trim(), fullName.trim(), password);
+    
+    const { token } = res.data
+
+    console.log("success", res.success)
+    setLoading(false);
+
+    if (res.success === true) {
+      navigate('/verify-email', { state: { email: email, token } });
+
     try {
       const result = await register({ fullName: fullName.trim(), email: email.trim(), password });
       if (result && result.success) {
@@ -72,6 +85,7 @@ export default function RegisterPage() {
       }
     } catch (err) {
       // Handled by context error state
+
     }
   };
 

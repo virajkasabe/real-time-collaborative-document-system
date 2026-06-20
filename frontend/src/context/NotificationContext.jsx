@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
+import { NOTIFICATION_EVENT } from '../utils/constants';
 
 const NotificationContext = createContext();
 
@@ -16,23 +17,41 @@ export function NotificationProvider({ children }) {
   }, []);
 
   const showToast = useCallback((data) => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { ...data, id }]);
-    
-    // Auto dismiss after 4 seconds
-    setTimeout(() => {
-      dismissToast(id);
-    }, 4000);
+    if(data.length !== 0) {
+      const id = 'r'; // Date.now();
+      setToasts(prev => [...prev, { ...data, id }]);
+      setTimeout(() => {
+        dismissToast(id);
+      }, 2000);
+    }
   }, [dismissToast]);
 
   const addNotification = useCallback((notification) => {
-    const newNotif = {
-      ...notification,
-      id: Date.now() + Math.random(),
+
+    if (!notification) return;
+    
+    // Convert to array if single notification
+    const notificationsArray = Array.isArray(notification) 
+      ? notification 
+      : [notification];
+    
+    // Filter out empty notifications
+    const validNotifications = notificationsArray.filter(n => 
+      n && Object.keys(n).length > 0
+    );
+    
+    if (validNotifications.length === 0) return;
+    
+    // Create new notifications with IDs
+    const newNotifications = validNotifications.map(n => ({
+      ...n,
+      id: Date.now() + Math.random() + Math.random(),
       read: false
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-    setUnreadCount(prev => prev + 1);
+    }));
+    
+    // Update state
+      setNotifications(prev => [...newNotifications, ...prev]);
+      setUnreadCount(prev => prev + newNotifications.length);
   }, []);
 
   // Listen for real-time notifications via Socket.IO
@@ -44,9 +63,14 @@ export function NotificationProvider({ children }) {
       showToast(data);
     };
 
-    socket.on('notification', handleNotification);
+    socket.on(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
+    socket.on(NOTIFICATION_EVENT.NOTIFICATION_RECIVED , handleNotification);
 
-    return () => socket.off('notification', handleNotification);
+
+    return () => {
+      socket.off(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
+      socket.off(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, handleNotification);
+    }
   }, [socket, addNotification, showToast]);
 
   const markAsRead = (id) => {

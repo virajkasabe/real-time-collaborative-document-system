@@ -213,7 +213,7 @@ export const removeDirtyDocument = async (docId) => {
 };
 
 // ?? ======= DOCUMENT VERSION HISTORY =======
-export const appendDocHistory = async(docId, version, actions, expiry = 3600) => {
+export const appendDocHistory = async(docId, version, actions, expiry = 930) => {
   if(!client || !isConnected) return null;
   const key = `doc:${docId}:history`
   const payload = JSON.stringify({version, actions})
@@ -222,9 +222,28 @@ export const appendDocHistory = async(docId, version, actions, expiry = 3600) =>
   return await client.expire(key, expiry)
 }
 
+
 export const getDocHistory= async(docId) => {
   if(!client || !isConnected) {
     const key = `doc:${docId}:history`
+    const list = await client.lrange(key,0,-1)
+    return list ? list.map((item)=> JSON.parse(item)) : []
+  }
+}
+
+// ?? ======= DOCUMENT CHATS =======
+export const appendChats = async(docId, data, expiry = 3600) => {
+  if(!client || !isConnected) return null;
+  const key = `chats:${docId}:history`
+  const payload = JSON.stringify({data})
+  await client.rpush(key, payload)
+  await client.ltrim(key, -200, -1)
+  return await client.expire(key, expiry)
+}
+
+export const getChats = async(docId) => {
+  if(!client || !isConnected) {
+    const key = `chats:${docId}:history`
     const list = await client.lrange(key,0,-1)
     return list ? list.map((item)=> JSON.parse(item)) : []
   }
