@@ -45,6 +45,7 @@ export default function NotificationBell() {
     }
   });
 
+
   if (!user) return null;
 
   const handleMarkAsRead = (id) => {
@@ -130,6 +131,8 @@ export default function NotificationBell() {
   return (
     <div className="relative">
       {/* Bell Button */}
+
+
       <button
         onClick={() => setOpen(!open)}
         className="relative w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer"

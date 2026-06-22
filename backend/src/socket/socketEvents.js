@@ -13,6 +13,7 @@ export const DOCUMENT_EVENT = Object.freeze({
   RECEIVE_OPERATION: "receiveOperation",
   VERSION_SAVED: "versionSaved",
   ACTIVE_USERS: "activeUser",
+  NEW_USER_JOIN : "newUserJoin"
 });
 
 export const COLLABORATION_EVENT = Object.freeze({
@@ -50,4 +51,9 @@ export const CURSOR_EVENT = Object.freeze({
 
 export const ROLE_CHANGE = Object.freeze({
   ROLE_UPDATE: "roleUpdate",
+});
+
+export const CHATS_EVENT = Object.freeze({
+  SEND_CHAT: "sendChat",
+  RECIVED_CHAT : "recivedChat"
 });

@@ -31,24 +31,61 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     throw new ApiError(401, "YOUR NOT AUTHORIZED FOR THIS ACTION");
   }
 
-  const unHashedToken = crypto.randomBytes(20).toString("hex");
+  const collabId = crypto.randomBytes(20).toString("hex");
   const hashedToken = crypto
     .createHash("sha256")
-    .update(unHashedToken)
+    .update(collabId)
     .digest("hex");
-  const collabExpiry = 15 * 60;
-  const acceptCollabLink = `${ENV.BACKEND_URI}/collab/accept/email=${email}/join=${unHashedToken}`;
-  const declineCollabLink = `${ENV.BACKEND_URI}/collab/decline/email=${email}/join=${unHashedToken}`;
+  const registeredUserExpiry = 15 * 60;
+  const inviteUserExpiry = 7 * 24 *  15 * 60;
+
+  const acceptCollabLink = `${ENV.CLIENT_URL}/collab/accept/email=${email}/join=${collabId}`;
+  const declineCollabLink = `${ENV.CLIENT_URL}/collab/decline/email=${email}/join=${collabId}`;
   const registerationLink = `${ENV.CLIENT_URL}/register`;
   const loginLink = `${ENV.CLIENT_URL}/login`;
 
   const inviter = await secureUser(req.user._id);
+  const accepter = await User.findOne({ email });
   const document = await fetchDoc(docId);
 
-  const payload = {
+  const collabData = {
     docId,
     email,
     role,
+
+    inviterId : inviter._id
+  }
+
+  const notificationData = {
+    type :"COLLAB_INVITED",
+    docname : document.title,
+    inviterName : inviter.fullName,
+    inviterEmail : email,
+    collabId : collabId,
+  }
+
+
+
+  if (!accepter) {
+        notificationData.expiry = new Date(Date.now() + 7 * 24 * 20 * 60 * 1000).toLocaleString()
+
+    await setPendingNotification(email, notificationData, inviteUserExpiry);
+    await setCollaboration(collabId, collabData, inviteUserExpiry);
+
+    /* 
+    TODO : SERVICE FOR REGISTER AND JOIN COLLAB
+    // await registerAndJoinCollab(
+      //   document.title,
+      //   inviter.fullName,
+      //   acceptCollabLink,
+      //   declineCollabLink,
+      //   email,
+      //   inviter.email,
+      //   null,
+      //   registerationLink
+      // );
+    */
+
     token: unHashedToken,
     inviterId: inviter._id.toString(),
     inviterName: inviter.fullName,
@@ -77,6 +114,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
     await setPendingNotification(email, notificationData);
 
+
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -89,6 +127,29 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       )
     );
   }
+
+  
+  // TODO : IF USER ONLINE
+  const userId = accepter._id.toString();
+  const socketsInRoom = await io.in(userId).fetchSockets();
+  const isOnline = socketsInRoom.length > 0;
+
+  const userAlreadyExists = document.users.some(
+    (collaborator) => document.ownerId.toString() === userId  || collaborator.userId.toString() === userId 
+  );
+
+  if (userAlreadyExists ) {
+    throw new ApiError(401, "User Already exist");
+  }
+
+  if (isOnline) {
+
+    notificationData.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
+
+    await setrealtimeNotification(email, notificationData);
+    await setCollaboration(collabId, collabData, registeredUserExpiry);
+    io.to(userId).emit(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, notificationData);
+
 
   const userId = user._id.toString();
   const socketsInRoom = await io.in(userId).fetchSockets();
@@ -115,6 +176,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
       notificationData
     );
+
     return res
       .status(200)
       .json(
@@ -130,7 +192,28 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       );
   }
 
+
+  notificationData.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
+
+   await setPendingNotification(email, notificationData);
+   await setCollaboration(collabId, collabData, registeredUserExpiry)
+  /*
+      TODO : SERVICE FOR LOGIN AND JOIN COLLAB
+      // await joinCollab(
+      //   document.title,
+      //   inviter.fullName,
+      //   acceptCollabLink,
+      //   declineCollabLink,
+      //   email,
+      //   inviter.email,
+      //   loginLink
+      // );
+  */
+ 
+ 
+
   await setPendingNotification(email, notificationData);
+
   return res
     .status(200)
     .json(

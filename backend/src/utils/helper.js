@@ -10,12 +10,6 @@ export const secureUser = async (userId) => {
        user = await User.findById(userId).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
       );
-      const refreshToken = user.refreshToken
-      if(refreshToken === "") {
-
-        throw new ApiError(401, "LOGIN FIRST")
-      }
-      console.log("refreshToken", refreshToken);
       if(user) {
             await setUser(userId, user)
       }
@@ -26,10 +20,8 @@ export const secureUser = async (userId) => {
 export const fetchDoc = async (docId) => {
   let document = null;
   document = await getDocument(docId);
-  console.log("docuemt", document)
   if (!document) {
     document = await Doc.findById(docId);
-    console.log("docuemt", document)
     if (document) {
       await setDocument(docId, document);
     }

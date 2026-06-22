@@ -10,15 +10,12 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
-    console.log("ThemeContext: useEffect triggered. Setting theme in storage and classes to:", theme);
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
       document.body.classList.add('dark');
-      console.log("ThemeContext: added class 'dark' to documentElement and body. Current classes:", document.documentElement.classList.toString());
     } else {
       document.documentElement.classList.remove('dark');
       document.body.classList.remove('dark');
-      console.log("ThemeContext: removed class 'dark' from documentElement and body. Current classes:", document.documentElement.classList.toString());
     }
   }, [theme]);
 

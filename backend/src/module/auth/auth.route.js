@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
 import {
+  accessTokenRefreshed,
   changeCurrentPassword,
   currentUser,
   deleteUser,
@@ -28,6 +29,8 @@ router.route("/logout").post(verifyJWT, logout);
 
 router.route("/refresh-token-refreshed").post(refreshTokenHandler);
 
+router.route("/access-token-refreshed").post(accessTokenRefreshed);
+
 router.route("/getme").get(verifyJWT, currentUser);
 
 // router
@@ -38,7 +41,7 @@ router.route("/update-profile").put(verifyJWT, updateAccountDetails);
 
 router.route("/update-current-password").put(verifyJWT, changeCurrentPassword);
 
-router.route("/verify-email/:unHashedToken").post(verifyEmail);
+router.route("/verify-email").post(verifyEmail);
 
 router.route("/verify-email-request").post(verifyEmailRequest);
 

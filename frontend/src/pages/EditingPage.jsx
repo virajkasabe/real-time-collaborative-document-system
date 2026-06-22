@@ -1,3 +1,23 @@
+
+import 'quill/dist/quill.snow.css';
+
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
+import Quill from 'quill';
+import {
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
+
+import {
+  fetchDoc,
+  inviteCollab,
+} from '../apis/api';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -12,27 +32,96 @@ import {
   FiSave, FiRotateCcw, FiRotateCw, FiShare2, FiSun, FiMoon, 
   FiZoomIn, FiZoomOut 
 } from 'react-icons/fi';
+
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
+
+import { documentService } from '../services/documentService';
+import { sendOTOperation } from '../socket/document.socket';
+import {
+  CURSOR_EVENT,
+  DOCUMENT_EVENT,
+  DOCUMENT_ROLES,
+} from '../utils/constants';
+import { FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaCopy, FaHistory, FaList, FaMoon, FaPlus, FaRedo, FaSearch, FaSun, FaUndo, FaUsers, FaUserSecret } from "react-icons/fa";
+import { LuCheck, LuMessageSquare, LuRefreshCw, LuSend, LuShare2, LuX } from "react-icons/lu";
+import { getRandomColor } from '../utils/helpers';
+
+
 import { documentService } from '../utils/documentService';
 import '../editor.css';
+
 
 export default function EditingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { triggerToast } = useAuth();
   const [doc, setDoc] = useState(null);
+  const [docUserRole, setDocUserRole] = useState(null)
+  const [sendOtData , setSendOtData] = useState(null)
+  const [receivedOtData, setReceivedOtData] = useState(null)
+  const { socket } = useSocket()
+  
 
   // Fetch document details on mount/id change
   useEffect(() => {
-    const fetched = documentService.getById(id);
-    if (!fetched) {
-      triggerToast('Document not found', 'warning');
-      navigate('/dashboard');
-      return;
-    }
-    setDoc(fetched);
-  }, [id, navigate, triggerToast]);
+    if(!socket) return
+
+    ;(async()=>{
+        const fetched = await fetchDoc(id);
+        socket.emit(DOCUMENT_EVENT.USER_JOIN, { docId : fetched.data.data.document._id })
+        triggerToast("document fetch Successfully", 'success')
+        if (!fetched) {
+          triggerToast('Document not found', 'warning');
+          navigate('/dashboard');
+          return;
+        }
+        setDocUserRole(fetched.data.data.role)
+        setDoc(fetched.data.data);
+    })()
+
+      ;(()=>{
+          socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
+          (data)=>{
+
+            // TODO : ADD HERE LIKE ONLY DOCUMENT TOAST LIKE DOCUMENT PERSONAL TOASTER
+            
+            triggerToast(`${data.message}`)
+            data.user
+          })
+      })()
+
+      ;(()=>{
+          sendOTOperation("operation", DOCUMENT_EVENT.SEND_OPERATION, socket)
+      })()
+
+      socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
+          (data)=>{
+            triggerToast(`${data.message}`)
+            data.user
+          })
+
+
+      ;(()=>{
+          socket.on(DOCUMENT_EVENT.NEW_USER_JOIN,
+          (data)=>{
+            triggerToast(`${data.message}`)
+            data.user
+          })
+      })()
+
+
+      ;(()=>{
+        socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
+        socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
+        socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, ((data) => (data)))
+      })()
+
+
+    
+  }, [id, socket]);
+
 
   const handleSave = (newTitle, newContent, words) => {
     const updated = documentService.update(id, { name: newTitle, content: newContent, wordCount: words });
@@ -41,6 +130,7 @@ export default function EditingPage() {
     }
   };
 
+ 
   const handleBack = () => {
     navigate('/dashboard');
   };
@@ -55,12 +145,31 @@ export default function EditingPage() {
 
   return (
     <EditingPageContent
+
+      document={doc.document}
+      theme={theme}
+      toggleTheme={toggleTheme}
+
       document={doc}
+
       onBack={handleBack}
       onSave={handleSave}
+      docUserRole={docUserRole}
     />
   );
 }
+
+
+function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave, docUserRole }) {
+  const [title, setTitle] = useState(doc.title || doc.name || 'Untitled Document')
+  const [isSyncing, setIsSyncing] = useState(false)
+  const { socket } = useSocket()
+  const { user } = useAuth()
+  
+  // Collapse sidebars by default to match Microsoft Word's paper focus
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true)
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true)
+  const { triggerToast } = useAuth();
 
 function EditingPageContent({ document: doc, onBack, onSave }) {
   const { id } = useParams();
@@ -68,6 +177,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
   const { triggerToast } = useAuth();
   
   const isDarkMode = theme === 'dark' || document.documentElement.classList.contains('dark');
+
   
   const [title, setTitle] = useState(doc.name || 'Untitled Document');
   const [autosaveState, setAutosaveState] = useState('saved'); // 'saved' | 'saving'
@@ -113,17 +223,90 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
     fontSize: '3'
   });
 
+
+  // Comments State
+  const [comments, setComments] = useState(() => {
+    if (doc.comments && doc.comments.length > 0) {
+      return doc.comments.map(c => ({
+        id: c.id,
+        author: c.user,
+        text: c.text,
+        time: c.time
+      }));
+    }
+    return [
+      { 
+        id: 1, 
+        author: 'Lisa Chen', 
+        text: 'This introductory paragraph looks very solid. Should we add a link to the project roadmap?', 
+        time: '10m ago' 
+      },
+      { 
+        id: 2, 
+        author: 'Alex Johnson', 
+        text: 'Love the syntax highlighting in the pre blocks! Let’s add a section for Node setup as well.', 
+        time: '2m ago' 
+      }
+    ];
+  });
+  const [newCommentText, setNewCommentText] = useState('')
+
+  // Chat State
+  const [chatMessages, setChatMessages] = useState([
+    { 
+      id: 1, 
+      sender: 'Alex Johnson', 
+      text: 'Hey! I am checking out the new editor outline view. It looks super fast.', 
+      time: '10:05 AM', 
+      type: 'received' 
+    },
+    { 
+      id: 2, 
+      sender: 'Lisa Chen', 
+      text: 'Yes, the heading synchronization is incredibly smooth!', 
+      time: '10:06 AM', 
+      type: 'received' 
+    }
+  ])
+  const [chatInputText, setChatInputText] = useState('')
+
+  // Share Modal State
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareEmail, setShareEmail] = useState('')
+  const [shareRole, setShareRole] = useState(DOCUMENT_ROLES.VIEWER)
+  const [copied, setCopied] = useState(false)
+  const { id } = useParams()
+
+  // Remote Cursors State
+  const [remoteCursors, setRemoteCursors] = useState({});
+
   const stripInitialHeading = (contentHTML) => {
     if (!contentHTML) return '<p>Start typing here...</p>';
     const headingRegex = /^\s*<(h1|h2|h3)[^>]*>[\s\S]*?<\/\1>\s*/i;
     return contentHTML.replace(headingRegex, '');
   };
 
+
   const editorRef = useRef(null);
   const autosaveTimeoutRef = useRef(null);
   const hasInitializedContent = useRef(false);
 
+
+   const handleSendCollabLink = async(e) => {
+      e.preventDefault()
+      try {
+          const res = await inviteCollab({docId : id, email : shareEmail, role : shareRole})
+          // console.log("invite",res.data)
+          triggerToast(`${res.data.message}`,'success')
+      } catch (error) {
+        triggerToast(`${error.message}`,'Warning')
+      } 
+  }
+
+  // 1. Manage Immersive Layout Mode on mount/unmount
+
   // Initialize editor content once
+
   useEffect(() => {
     if (editorRef.current && !hasInitializedContent.current) {
       editorRef.current.innerHTML = stripInitialHeading(doc.content);
@@ -131,6 +314,658 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
       handleSelectionChange();
     }
   }, [doc]);
+
+
+  useEffect(() => {
+    // Skip if already initialized or ref is missing
+    if (!quillRef.current || quillInstance.current) return;
+
+    // Initialize Quill instance
+    const quill = new Quill(quillRef.current, {
+      theme: 'snow',
+      modules: {
+        toolbar: '#word-ribbon-toolbar'
+      },
+      placeholder: 'Start writing your document here...'
+    });
+
+    quillInstance.current = quill;
+
+    // Set initial content
+    const initialContent = doc.content;
+    
+    quill.clipboard.dangerouslyPasteHTML(initialContent);
+
+    // ===== STATE TRACKING =====
+    let previousText = quill.getText();
+    let saveTimeoutId = null;
+    let operationBatch = [];
+    let isSendingOperation = false;
+    let cursorTimeoutId = null;
+
+    // ===== GET CLICK POSITION FUNCTION =====
+    const getClickPosition = (event) => {
+      try {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return null;
+        
+        const range = selection.getRangeAt(0);
+        const node = range.startContainer;
+        const offset = range.startOffset;
+        
+        const quillSelection = quill.getSelection();
+        if (quillSelection) {
+          return quillSelection.index;
+        }
+        
+        const editorRoot = quill.root;
+        const walker = document.createTreeWalker(
+          editorRoot,
+          NodeFilter.SHOW_TEXT,
+          null,
+          false
+        );
+        
+        let currentNode = walker.nextNode();
+        let currentOffset = 0;
+        
+        while (currentNode) {
+          const text = currentNode.textContent || '';
+          if (currentNode === node) {
+            return currentOffset + offset;
+          }
+          currentOffset += text.length;
+          currentNode = walker.nextNode();
+        }
+        
+        return quill.getText().length;
+      } catch (error) {
+        return quill.getSelection()?.index || 0;
+      }
+    };
+
+    // ===== GET CHARACTER AT POSITION =====
+    const getCharAtPosition = (position) => {
+      const text = quill.getText();
+      return position < text.length ? text[position] : 'EOF';
+    };
+
+    // ===== GET WORD AT POSITION =====
+    const getWordAtPosition = (position) => {
+      const text = quill.getText();
+      if (position >= text.length) return { word: '', start: 0, end: 0 };
+      
+      let start = position;
+      let end = position;
+      
+      while (start > 0 && /\S/.test(text[start - 1])) start--;
+      while (end < text.length && /\S/.test(text[end])) end++;
+      
+      return {
+        word: text.substring(start, end),
+        start: start,
+        end: end
+      };
+    };
+
+    // ===== GET LINE AND COLUMN =====
+    const getLineAndColumn = (position) => {
+      const text = quill.getText();
+      const beforeText = text.substring(0, position);
+      const lines = beforeText.split('\n');
+      const line = lines.length;
+      const column = lines[lines.length - 1].length + 1;
+      return { line, column };
+    };
+
+    // ===== CONVERT QUILL DELTA TO OPERATIONS =====
+    const convertDeltaToOperations = (delta, oldContent) => {
+      const operations = [];
+      let position = 0;
+      
+      delta.ops.forEach(op => {
+        if (op.insert) {
+          // Insert operation
+          if (typeof op.insert === 'string') {
+            operations.push({
+              type: 'insert',
+              position: position,
+              text: op.insert,
+              attributes: op.attributes || {}
+            });
+            position += op.insert.length;
+          } else if (typeof op.insert === 'object') {
+            // Handle embeds (images, etc.)
+            operations.push({
+              type: 'insert',
+              position: position,
+              text: JSON.stringify(op.insert),
+              attributes: op.attributes || {},
+              isEmbed: true
+            });
+            position += 1;
+          }
+        } else if (op.delete) {
+          // Delete operation
+          operations.push({
+            type: 'delete',
+            position: position,
+            length: op.delete
+          });
+          // position stays the same
+        } else if (op.retain) {
+          // Retain (formatting changes)
+          if (op.attributes && Object.keys(op.attributes).length > 0) {
+            operations.push({
+              type: 'format',
+              position: position,
+              length: op.retain || 0,
+              attributes: op.attributes
+            });
+          }
+          position += op.retain || 0;
+        }
+      });
+      
+      return operations;
+    };
+
+    // ===== SEND OPERATION TO SERVER =====
+    const sendOperations = (operations) => {
+      if (isSendingOperation || operations.length === 0) return;
+      
+      isSendingOperation = true;
+      
+      const operationData = {
+        docId: doc._id,
+        actions: operations,
+        version: doc.version || 0,
+        userId: user?._id || 'anonymous',
+        timestamp: Date.now()
+      };
+      
+      // console.log('📤 Sending operations:', operationData);
+      
+      socket.emit(DOCUMENT_EVENT.SEND_OPERATION, operationData);
+      
+      // Reset after sending
+      setTimeout(() => {
+        isSendingOperation = false;
+      }, 50);
+    };
+
+    // ===== SEND CURSOR DATA =====
+    const sendCursorData = (position, selection) => {
+      if (!user) return;
+      
+      const cursorData = {
+        docId: doc._id,
+        userId: user.id,
+        userName: user.fullName || 'Anonymous',
+        avatar : user.avatar || "" ,
+        position: position,
+        selection: selection || { index: position, length: 0 },
+        color: getRandomColor(),
+        timestamp: Date.now()
+      };
+      
+      // console.log('🖱️ Sending cursor data:', cursorData);
+      socket.emit(CURSOR_EVENT.CURSOR_CHANGE, cursorData);
+    };
+
+    // ===== APPLY RECEIVED OPERATION =====
+    const applyReceivedOperation = (operationData) => {
+      console.log('📥 Received operation:', operationData);
+      
+           /*
+                {
+                 docId: '6a35009b9a0f9ee57abf1128', actions: Array(1), version: 8}
+                    actions: Array(1) 0 : attributes : {} position :  1
+                    text: "d" type: "insert"[[Prototype]] : Object length  :  1
+                    [[Prototype]] :  Array(0) docId: "6a35009b9a0f9ee57abf1128"
+                    version :  8
+                }
+
+           */
+
+      // Apply operations to local document
+      const { actions, version } = operationData;
+      
+      // Update document version
+      doc.version = version;
+      
+      // Apply operations using Quill's built-in OT
+      actions.forEach(action => {
+        if (action.type === 'insert') {
+          const selection = quill.getSelection();
+          // Insert text at position
+          quill.insertText(action.position, action.text, Quill.sources.SILENT);
+        } else if (action.type === 'delete') {
+          quill.deleteText(action.position, action.length, Quill.sources.SILENT);
+        } else if (action.type === 'format') {
+          quill.formatText(
+            action.position,
+            action.length,
+            action.attributes,
+            Quill.sources.SILENT
+          );
+        }
+      });
+      
+      // Update word count
+      const text = quill.getText();
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      setWordCount(words);
+    };
+
+    // ===== RENDER REMOTE CURSOR =====
+    const renderRemoteCursor = (cursorData) => {
+      const { userId, userName, position, color, avatar } = cursorData;
+      
+      const editor = quillInstance.current;
+      if (!editor) return;
+      
+      // Remove existing cursor for this user
+      const existingCursor = document.getElementById(`cursor-${userId}`);
+      if (existingCursor) {
+        existingCursor.remove();
+      }
+      
+      // Get the bounds of the position in the editor
+      const bounds = editor.getBounds(position);
+      if (!bounds) return;
+      
+      // Create cursor element
+      const cursorElement = document.createElement('div');
+      cursorElement.id = `cursor-${userId}`;
+      cursorElement.className = 'remote-cursor';
+      cursorElement.style.cssText = `
+        position: absolute;
+        top: ${bounds.top}px;
+        left: ${bounds.left}px;
+        height: ${bounds.height}px;
+        width: 2px;
+        background-color: ${color || '#FF6B6B'};
+        pointer-events: none;
+        z-index: 1000;
+        transition: all 0.05s ease;
+      `;
+      
+      // Add cursor flag with avatar and name
+      const flag = document.createElement('div');
+      flag.className = 'remote-cursor-flag';
+      flag.style.cssText = `
+        position: absolute;
+        top: -22px;
+        left: -10px;
+        background-color: ${color || '#FF6B6B'};
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      `;
+      
+      if (avatar) {
+        flag.innerHTML = `
+          <img src="${avatar}" alt="${userName}" style="
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            object-fit: cover;
+          ">
+          ${userName || 'User'}
+        `;
+      } else {
+        flag.textContent = userName || 'User';
+      }
+      
+      cursorElement.appendChild(flag);
+      
+      // Add to editor container
+      const editorContainer = editor.container;
+      editorContainer.style.position = 'relative';
+      editorContainer.appendChild(cursorElement);
+    };
+
+    // ===== HANDLE REMOTE CURSOR UPDATE =====
+    const handleCursorUpdate = (cursorData) => {
+      // console.log('🖱️ Received cursor update:', cursorData);
+      renderRemoteCursor(cursorData);
+      
+      // Update remote cursors state
+      setRemoteCursors(prev => ({
+        ...prev,
+        [cursorData.userId]: cursorData
+      }));
+      
+      // Auto-remove cursor after 30 seconds of inactivity
+      if (window.cursorTimeouts && window.cursorTimeouts[cursorData.userId]) {
+        clearTimeout(window.cursorTimeouts[cursorData.userId]);
+      }
+      
+      window.cursorTimeouts = window.cursorTimeouts || {};
+      window.cursorTimeouts[cursorData.userId] = setTimeout(() => {
+        const cursorElement = document.getElementById(`cursor-${cursorData.userId}`);
+        if (cursorElement) {
+          cursorElement.remove();
+        }
+        setRemoteCursors(prev => {
+          const newCursors = { ...prev };
+          delete newCursors[cursorData.userId];
+          return newCursors;
+        });
+      }, 1000);
+    };
+
+    // ===== CHARACTER TRACKING FUNCTION =====
+    const trackCharacters = (quill, previousText, eventType = 'text-change', clickEvent = null) => {
+      const text = quill.getText();
+      const selection = quill.getSelection();
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      const html = quill.root.innerHTML;
+      
+      let clickPosition = null;
+      let charAtClick = null;
+      let wordAtClick = null;
+      let lineColumnAtClick = null;
+      
+      if (eventType === 'click' && clickEvent) {
+        clickPosition = getClickPosition(clickEvent);
+        charAtClick = getCharAtPosition(clickPosition);
+        wordAtClick = getWordAtPosition(clickPosition);
+        lineColumnAtClick = getLineAndColumn(clickPosition);
+      }
+      
+      return {
+        eventType,
+        timestamp: new Date().toISOString(),
+        text: text,
+        charCount: text.length,
+        wordCount: words,
+        cursorPosition: selection?.index || 0,
+        selectionLength: selection?.length || 0,
+        selectedText: selection && selection.length > 0 ? 
+          text.substring(selection.index, selection.index + selection.length) : '',
+        
+        ...(eventType === 'click' && {
+          clickPosition: clickPosition,
+          charAtClick: charAtClick || 'N/A',
+          charCodeAtClick: charAtClick ? charAtClick.charCodeAt(0) : null,
+          isWhitespace: charAtClick ? /\s/.test(charAtClick) : null,
+          isLetter: charAtClick ? /[a-zA-Z]/.test(charAtClick) : null,
+          isNumber: charAtClick ? /[0-9]/.test(charAtClick) : null,
+          isSpecial: charAtClick ? /[^a-zA-Z0-9\s]/.test(charAtClick) : null,
+          wordAtClick: wordAtClick?.word || 'N/A',
+          wordStart: wordAtClick?.start || 0,
+          wordEnd: wordAtClick?.end || 0,
+          lineAtClick: lineColumnAtClick?.line || 0,
+          columnAtClick: lineColumnAtClick?.column || 0,
+          charBefore: clickPosition > 0 ? text[clickPosition - 1] : 'START',
+          charAfter: clickPosition < text.length - 1 ? text[clickPosition + 1] : 'END',
+        }),
+        
+        letters: (text.match(/[a-zA-Z]/g) || []).length,
+        numbers: (text.match(/[0-9]/g) || []).length,
+        spaces: (text.match(/\s/g) || []).length,
+        specialChars: (text.match(/[^a-zA-Z0-9\s]/g) || []).length,
+        paragraphs: text.split('\n').filter(p => p.trim()).length,
+        lines: text.split('\n').length,
+        
+        ...(eventType === 'text-change' && {
+          prevLength: previousText.length,
+          diff: text.length - previousText.length,
+          added: text.length > previousText.length ? 
+            text.slice(previousText.length) : 'N/A',
+          removed: previousText.length > text.length ?
+            previousText.slice(text.length) : 'N/A',
+          changePosition: text.length > previousText.length ? previousText.length : text.length,
+        }),
+        
+        firstChar: text.charAt(0) || 'N/A',
+        lastChar: text.slice(-1) || 'N/A',
+        last10Chars: text.slice(-10),
+        first10Chars: text.slice(0, 10),
+        isEmpty: text.trim().length === 0,
+        hasContent: text.trim().length > 0,
+        contentForOT: { text },
+        delta: quill.getContents(),
+        html: html,
+        length: text.length
+      };
+    };
+
+    // ===== TEXT CHANGE HANDLER =====
+    const handleTextChange = (delta, oldDelta, source) => {
+      // Ignore changes from server (SILENT source)
+      if (source === 'silent') return;
+      
+      // Update outline
+      updateOutline();
+
+      const text = quill.getText();
+      const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      setWordCount(words);
+
+      // Track character changes
+      const charData = trackCharacters(quill, previousText, 'text-change');
+      console.log('✏️ Text Change:', charData);
+
+      // Convert delta to operations for OT
+      const operations = convertDeltaToOperations(delta, previousText);
+      console.log('📝 Operations from delta:', operations);
+
+      // Send operations if there are any
+      if (operations.length > 0) {
+        sendOperations(operations);
+      }
+
+      // Update previous text
+      previousText = text;
+
+      // Trigger syncing state
+      setIsSyncing(true);
+
+      // Clear existing timeout
+      if (saveTimeoutId) {
+        clearTimeout(saveTimeoutId);
+      }
+
+      // Debounced auto-save
+      saveTimeoutId = setTimeout(() => {
+        const html = quill.root.innerHTML;
+        onSave(title, html, words);
+        setIsSyncing(false);
+        saveTimeoutId = null;
+      }, 50);
+    };
+
+    // ===== SELECTION CHANGE HANDLER =====
+    const handleSelectionChange = (range, oldRange, source) => {
+      if (source === 'silent') return;
+      
+      if (range) {
+        const position = range.index;
+        const selection = range;
+        
+        // Send cursor data with debounce
+        if (cursorTimeoutId) {
+          clearTimeout(cursorTimeoutId);
+        }
+        
+        cursorTimeoutId = setTimeout(() => {
+          sendCursorData(position, selection);
+          cursorTimeoutId = null;
+        }, 80);
+      }
+    };
+
+    // ===== CLICK HANDLER =====
+   const handleClick = (event) => {
+    const text = quill.getText();
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    setWordCount(words);
+    
+    const charData = trackCharacters(quill, previousText, 'click', event);
+    console.log('🖱️ Click Event:', charData);
+    
+    const clickPosition = getClickPosition(event);
+    console.log('🖱️ Click Position:', {
+      absoluteIndex: clickPosition,
+      character: clickPosition !== null ? quill.getText()[clickPosition] : 'N/A',
+      wordAtPosition: getWordAtPosition(clickPosition || 0),
+      lineAndColumn: getLineAndColumn(clickPosition || 0)
+    });
+
+  // EMIT CLICK EVENT THROUGH SOCKET
+    if (clickPosition !== null && user) {
+      const clickData = {
+        docId: doc._id,
+        userId: user.id,
+        userName: user.fullName || 'Anonymous',
+        avatar: user.avatar || "",
+        position: clickPosition,
+        character: clickPosition !== null ? quill.getText()[clickPosition] : 'N/A',
+        wordAtPosition: getWordAtPosition(clickPosition || 0),
+        lineAndColumn: getLineAndColumn(clickPosition || 0),
+        charData: charData,
+        timestamp: Date.now(),
+        eventType: 'click'
+      };
+      
+    // Emit the click event
+      socket.emit(CURSOR_EVENT.CURSOR_CHANGE, clickData);
+      // Or if you want to use your existing CURSOR_EVENT constant
+      // socket.emit(CURSOR_EVENT.CURSOR_CLICK, clickData);
+    }
+  };
+
+    // ===== MOUSE UP HANDLER =====
+    const handleMouseUp = () => {
+      const selection = quill.getSelection();
+      if (selection && selection.length > 0) {
+        const text = quill.getText();
+        const selectedText = text.substring(selection.index, selection.index + selection.length);
+        console.log('🖱️ Selection Change:', {
+          selectedText: selectedText.slice(0, 50),
+          selectionLength: selection.length,
+          startIndex: selection.index,
+          endIndex: selection.index + selection.length
+        });
+      }
+    };
+
+    // ===== KEYBOARD HANDLER =====
+    const handleKeyDown = (event) => {
+      console.log('⌨️ Key Pressed:', {
+        key: event.key,
+        code: event.code,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        charCount: quill.getText().length,
+        cursorPosition: quill.getSelection()?.index || 0
+      });
+    };
+
+    // ===== SOCKET EVENT LISTENERS =====
+    // Listen for operations from other users
+    socket.on(DOCUMENT_EVENT.RECEIVE_OPERATION, applyReceivedOperation);
+    
+    // Listen for cursor updates from other users
+    socket.on(CURSOR_EVENT.CURSOR_UPDATE, handleCursorUpdate);
+
+    // Listen for user left event to remove cursor
+    socket.on(DOCUMENT_EVENT.USER_LEFT, (data) => {
+      const { userId } = data;
+      const cursorElement = document.getElementById(`cursor-${userId}`);
+      if (cursorElement) {
+        cursorElement.remove();
+      }
+      setRemoteCursors(prev => {
+        const newCursors = { ...prev };
+        delete newCursors[userId];
+        return newCursors;
+      });
+    });
+
+    // Register Quill event listeners
+    quill.on('text-change', handleTextChange);
+    quill.on('selection-change', handleSelectionChange);
+
+    // DOM event listeners
+    const editorRoot = quill.root;
+    editorRoot.addEventListener('click', handleClick);
+    editorRoot.addEventListener('mouseup', handleMouseUp);
+    editorRoot.addEventListener('keydown', handleKeyDown);
+
+    const container = quill.container;
+    container.addEventListener('click', handleClick);
+
+    // Initial outline extraction
+    const initTimeout = setTimeout(updateOutline, 50);
+
+    // ===== CLEANUP =====
+    return () => {
+      // Clear timeouts
+      if (saveTimeoutId) clearTimeout(saveTimeoutId);
+      if (initTimeout) clearTimeout(initTimeout);
+      if (cursorTimeoutId) clearTimeout(cursorTimeoutId);
+
+      // Remove socket listeners
+      socket.off(DOCUMENT_EVENT.RECEIVE_OPERATION, applyReceivedOperation);
+      socket.off(CURSOR_EVENT.CURSOR_UPDATE, handleCursorUpdate);
+      socket.off(DOCUMENT_EVENT.USER_LEFT);
+
+      // Remove Quill event listeners
+      if (quillInstance.current) {
+        quillInstance.current.off('text-change', handleTextChange);
+        quillInstance.current.off('selection-change', handleSelectionChange);
+      }
+
+      // Remove DOM event listeners
+      if (quillInstance.current) {
+        const editorRoot = quillInstance.current.root;
+        const container = quillInstance.current.container;
+        
+        editorRoot.removeEventListener('click', handleClick);
+        editorRoot.removeEventListener('mouseup', handleMouseUp);
+        editorRoot.removeEventListener('keydown', handleKeyDown);
+        container.removeEventListener('click', handleClick);
+      }
+
+      // Clean up remote cursors
+      Object.keys(remoteCursors).forEach(userId => {
+        const cursorElement = document.getElementById(`cursor-${userId}`);
+        if (cursorElement) {
+          cursorElement.remove();
+        }
+      });
+
+      // Clear cursor timeouts
+      if (window.cursorTimeouts) {
+        Object.values(window.cursorTimeouts).forEach(timeout => {
+          clearTimeout(timeout);
+        });
+        window.cursorTimeouts = {};
+      }
+
+      // Clean up Quill instance
+      if (quillInstance.current) {
+        quillInstance.current.emitter.off();
+        if (quillInstance.current.container) {
+          quillInstance.current.container.innerHTML = '';
+        }
+        quillInstance.current = null;
+      }
+    };
+  }, []);
 
   // Clean up autosave timeout on unmount
   useEffect(() => {
@@ -179,12 +1014,20 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
     triggerAutosave();
   };
 
+
   // Monitor cursor selection / typing to toggle active toolbar states
   const handleSelectionChange = () => {
     if (!editorRef.current) return;
     
     updateCounts();
     updateOutline();
+
+
+    setTimeout(() => {
+      onSave(newTitle, html, words)
+      setIsSyncing(false)
+    }, 750)
+  }
 
     setActiveStyles({
       bold: document.queryCommandState('bold'),
@@ -198,6 +1041,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
       fontSize: document.queryCommandValue('fontSize') || '3'
     });
   };
+
 
   // Autosave title & body content changes
   const triggerAutosave = (updatedTitle = title) => {
@@ -241,6 +1085,19 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
     }, 500);
   };
 
+
+  // 6. Handle Outline Item Navigation Click
+  const handleOutlineClick = (id) => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Brief visual flash to highlight destination element
+      el.style.transition = 'background-color 0.4s'
+      el.style.backgroundColor = 'var(--accent-bg)'
+      setTimeout(() => {
+        el.style.backgroundColor = 'transparent'
+      }, 750)
+
   // Clipboard commands
   const handlePaste = async () => {
     try {
@@ -251,8 +1108,36 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
       }
     } catch (err) {
       triggerToast('Clipboard access blocked. Use Ctrl+V.', 'warning');
+
     }
   };
+
+
+  // 7. Format Painter selection hooks
+  useEffect(() => {
+    if (quillInstance.current) {
+      console.log(quillInstance.current)
+      const handleSelectionChange = (range, oldRange, source) => {
+        if (range && range.index !== null) {
+          // If Format Painter is active and user selected a new block of text, apply styles
+          if (formatPainterActive && copiedFormat && range.length > 0) {
+            Object.keys(copiedFormat).forEach((fmt) => {
+              quillInstance.current.formatText(range.index, range.length, fmt, copiedFormat[fmt]);
+            });
+            setFormatPainterActive(false); // Reset paint active state
+          }
+        }
+      };
+
+      quillInstance.current.on('selection-change', handleSelectionChange);
+
+      return () => {
+        if (quillInstance.current) {
+          quillInstance.current.off('selection-change', handleSelectionChange);
+        }
+      };
+    }
+  }, [formatPainterActive, copiedFormat]);
 
   const handleCut = () => {
     document.execCommand('cut');
@@ -263,6 +1148,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
     document.execCommand('copy');
     triggerToast('Text copied to clipboard', 'info');
   };
+
 
   const handleFormatPainterClick = () => {
     triggerToast('Format Painter active. Select text to apply format.', 'info');
@@ -384,6 +1270,35 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
     }
   };
 
+
+    // Dynamic response simulation
+    setTimeout(() => {
+      const replies = [
+        "That looks perfect! The structure flows really well.",
+        "Oh nice, I see you updated the main objectives block.",
+        "Makes sense! I will check the proposal outlines again.",
+        "Let me know when you need my review on the setup notes.",
+        "Awesome! The live outline widget is matching perfectly.",
+        "Should we add another section describing our REST endpoint specs?"
+      ]
+      const team = ['Lisa Chen', 'Alex Johnson', 'Antigravity AI']
+      const randomMember = team[Math.floor(Math.random() * team.length)]
+      const randomReply = replies[Math.floor(Math.random() * replies.length)]
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: randomMember,
+          text: randomReply,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'received'
+        }
+      ])
+      setIsSyncing(false)
+    }, 100)
+  }
+
   const handleInsertTable = () => {
     const rows = 2;
     const cols = 2;
@@ -402,6 +1317,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
     tableHTML += '</tbody></table>';
     applyFormat('insertHTML', tableHTML);
   };
+
 
   const handleInsertImage = () => {
     const url = prompt('Enter image URL:', 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=600');
@@ -458,6 +1374,34 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#F0F4FF] dark:bg-[#090D16] text-[#0A0F1E] dark:text-[#94A3B8] font-sans select-none animate-fade-in transition-colors">
       
+
+      {/* 1. TOP WINDOW TITLE BAR (Word Top Bar) */}
+      <header className="editor-header">
+        <div className="editor-header-left">
+          <button className="sidebar-toggle-btn" onClick={onBack} title="Back to Dashboard">
+            <FaChevronLeft size={20} />
+          </button>
+
+          {/* Quick Access Toolbar Icons */}
+          <div className="quick-access-icons">
+            <button 
+              className={`autosave-toggle ${autoSaveActive ? 'active' : ''}`} 
+              onClick={() => setAutoSaveActive(!autoSaveActive)}
+              title={`AutoSave is ${autoSaveActive ? 'ON' : 'OFF'}`}
+            >
+              
+
+              <LuRefreshCw size={14} className={autoSaveActive ? 'rotating-slow' : ''} />
+              <span className="autosave-label">AutoSave</span>
+            </button>
+            <button onClick={() => quillInstance.current?.history.undo()} title="Undo (Ctrl+Z)">
+              <FaUndo size={14} />
+            </button>
+            <button onClick={() => quillInstance.current?.history.redo()} title="Redo (Ctrl+Y)">
+              <FaRedo size={14} />
+            </button>
+          </div>
+
       {/* Styles Injection for Formatting Marks and Page Constraints */}
       <style>{`
         .word-page {
@@ -533,6 +1477,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
           >
             <FiSave size={13} />
           </button>
+
           
           <button 
             onClick={() => applyFormat('undo')} 
@@ -558,12 +1503,27 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
               placeholder="Untitled Document"
               title="Edit document title inline"
             />
+
+            <span className="word-file-extension" style={{ display: 'inline-flex', alignItems: 'center', height: '32px' }}>- Word</span>
+            <span className="word-title-cloud-status" title="Saved to Cloud" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '6px', height: '32px' }}>
+              <FaCloud size={14} style={{ color: 'var(--accent)' }} />
+            </span>
+            <span className="text-center text-[14px] text-yellow-400">{docUserRole}</span>
+
             <span className="text-[#6B7280] dark:text-[#94A3B8] text-[11px] font-normal select-none">- Word</span>
+
           </div>
+
+
+        <div className="editor-header-center">
+          <div className="word-header-search">
+            <FaSearch size={14} className="search-glass-icon" />
+            <input type="text" placeholder="Search (Alt+Q)" disabled title="Microsoft Search features" />
 
           <div className="flex items-center gap-1.5 ml-2 text-[10px] select-none text-[#6B7280] dark:text-[#94A3B8]" title="AutoSave status">
             <span className={`w-1.5 h-1.5 rounded-full ${autosaveState === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-[#107C10]'}`}></span>
             <span>{autosaveState === 'saving' ? 'Saving...' : 'Saved'}</span>
+
           </div>
         </div>
 
@@ -575,6 +1535,14 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
             <div className="w-5.5 h-5.5 rounded-full bg-pink-500 text-white text-[9px] font-bold flex items-center justify-center border border-white" title="Lisa Chen">LC</div>
             <div className="w-5.5 h-5.5 rounded-full bg-teal-500 text-white text-[9px] font-bold flex items-center justify-center border border-white" title="Alex Johnson">AJ</div>
           </div>
+
+
+          <button className="theme-toggle-btn" onClick={toggleTheme} title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"} style={{ marginRight: '8px' }}>
+            {theme === 'dark' ? <FaSun size={18} /> : <FaMoon size={18} />}
+          </button>
+
+          <button className="btn-primary" onClick={() => setShowShareModal(true)}>
+            <LuShare2 size={16} /> Share
 
           {/* Share Button */}
           <button 
@@ -591,6 +1559,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
             title="Toggle theme (Light / Dark mode)"
           >
             {isDarkMode ? <FiSun size={12} /> : <FiMoon size={12} />}
+
           </button>
 
           {/* Window controls */}
@@ -920,6 +1889,45 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
               <span className="text-[8px] text-[#94A3B8] mt-0.5">Pictures</span>
             </button>
 
+
+        {/* REVIEW TAB CONTENT */}
+        <div className={`ribbon-tab-content ${activeRibbonTab === 'review' ? 'visible' : 'hidden'}`}>
+          <div className="ribbon-group">
+            <div className="ribbon-controls-container">
+              <div className="ribbon-buttons-row">
+                <button type="button" className="ribbon-custom-btn" onClick={() => {
+                  alert(`Proofing Statistics:\n- Total Words: ${wordCount}\n- Estimated Reading Time: ${Math.ceil(wordCount / 200)} min\n- Characters: ${(quillInstance.current ? quillInstance.current.getText() : '').length} chars`);
+                }} title="Proofing Statistics">
+                  <FaBookOpen size={16} style={{ marginRight: '6px' }} />
+                  <span>Word Count Details</span>
+                </button>
+                <button type="button" className="ribbon-custom-btn" onClick={() => {
+                  alert("Spelling & Grammar Check completed!\nNo spelling or grammatical issues were found.");
+                }} title="Spelling Check">
+                  <FaCheck size={16} style={{ marginRight: '6px' }} />
+                  <span>Spelling & Grammar</span>
+                </button>
+              </div>
+            </div>
+            <span className="ribbon-group-label">Proofing</span>
+          </div>
+        </div>
+
+        {/* VIEW TAB CONTENT */}
+        <div className={`ribbon-tab-content ${activeRibbonTab === 'view' ? 'visible' : 'hidden'}`}>
+          <div className="ribbon-group">
+            <div className="ribbon-controls-container">
+              <div className="ribbon-buttons-row">
+                <button type="button" className={`ribbon-custom-btn ${!leftSidebarCollapsed ? 'active' : ''}`} onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}>
+                  <FaList size={16} style={{ marginRight: '6px' }} />
+                  <span>Navigation Outline</span>
+                </button>
+                <button type="button" className={`ribbon-custom-btn ${!rightSidebarCollapsed ? 'active' : ''}`} onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}>
+                  <FaUserSecret size={16} style={{ marginRight: '6px' }} />
+                  <span>Collaborations Pane</span>
+                </button>
+              </div>
+
             <button 
               onClick={handleInsertLink}
               className="flex flex-col items-center justify-center p-1 rounded hover:bg-[#EEF2FF] dark:hover:bg-[#1E293B] cursor-pointer text-[#374151] dark:text-[#94A3B8] min-w-[36px] transition-colors"
@@ -933,6 +1941,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
 
             <div className="text-[10px] text-[#94A3B8] select-none flex items-center gap-1 italic">
               <span>Header</span> | <span>Footer</span> | <span>WordArt</span>
+
             </div>
           </div>
         )}
@@ -985,6 +1994,22 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
           </div>
         )}
 
+
+      {/* 5. MAIN WORKSPACE */}
+      <main className="editor-workspace">
+        
+        {/* Toggle Left Sidebar Control Tab */}
+        <div style={{ position: 'absolute', left: leftSidebarCollapsed ? '8px' : '268px', top: '12px', zIndex: 50, transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <button 
+            className="sidebar-toggle-btn" 
+            onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
+            title={leftSidebarCollapsed ? 'Expand Navigation Sidebar' : 'Collapse Navigation Sidebar'}
+          >
+            {leftSidebarCollapsed ? <FaPlus size={16} /> : <LuX size={16} />}
+          </button>
+        </div>
+
         {/* FILE TAB TOOLBAR */}
         {activeTab === 'File' && (
           <div className="flex items-center gap-3 px-2">
@@ -997,13 +2022,18 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
               <span className="text-[8px] text-[#94A3B8] mt-0.5 leading-none">Dashboard</span>
             </button>
 
+
             <button 
               onClick={handleManualSave}
               className="flex flex-col items-center justify-center p-1 rounded hover:bg-[#EEF2FF] dark:hover:bg-[#1E293B] cursor-pointer text-[#374151] dark:text-[#94A3B8] transition-colors"
               title="Save a backup checkpoint now"
             >
+
+              <FaList size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Outline
+
               <FiSave size={13} />
               <span className="text-[8px] text-[#94A3B8] mt-0.5 leading-none">Backup Save</span>
+
             </button>
 
             <button 
@@ -1014,8 +2044,12 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
               className="flex flex-col items-center justify-center p-1 rounded hover:bg-[#EEF2FF] dark:hover:bg-[#1E293B] cursor-pointer text-[#374151] dark:text-[#94A3B8] transition-colors"
               title="Open checkpoints history sidebar"
             >
+
+              <FaHistory size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> History
+
               <History size={13} />
               <span className="text-[8px] text-[#94A3B8] mt-0.5 leading-none">Checkpoints</span>
+
             </button>
           </div>
         )}
@@ -1234,7 +2268,21 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
           )}
         </section>
 
+
+        {/* Toggle Right Sidebar Control Tab */}
+        <div style={{ position: 'absolute', right: rightSidebarCollapsed ? '8px' : '268px', top: '12px', zIndex: 50, transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <button 
+            className="sidebar-toggle-btn" 
+            onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}
+            title={rightSidebarCollapsed ? 'Expand Collaborations Sidebar' : 'Collapse Collaborations Sidebar'}
+          >
+            {rightSidebarCollapsed ? <FaUsers size={16} /> : <LuX size={16} />}
+          </button>
+        </div>
+
       </div>
+
 
       {/* 6. STATUS BAR */}
       <div className="flex items-center justify-between px-4 py-1 bg-[#2563EB] text-white text-xs shrink-0 select-none">
@@ -1257,7 +2305,11 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
               onClick={() => setZoom(z => Math.max(50, z - 10))}
               className="hover:bg-white/20 rounded w-5 h-5 flex items-center justify-center"
             >
+
+              <LuMessageSquare size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Team Chat
+
               −
+
             </button>
             <input 
               type="range" 
@@ -1271,17 +2323,138 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
               onClick={() => setZoom(z => Math.min(200, z + 10))}
               className="hover:bg-white/20 rounded w-5 h-5 flex items-center justify-center"
             >
+
+              <FaUsers size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Comments
               +
-            </button>
+
+           </button>
             <span className="w-8 text-center">
               {zoom}%
             </span>
           </div>
+
+
+          <div className="sidebar-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 100px)' }}>
+            
+            {rightTab === 'chat' ? (
+              <div className="chat-container">
+                <div className="chat-messages">
+                  {chatMessages.map((msg) => (
+                    <div key={msg.id} className={`chat-bubble ${msg.type}`}>
+                      <span className="chat-bubble-meta">
+                        <strong>{msg.sender}</strong> • {msg.time}
+                      </span>
+                      {msg.text}
+                    </div>
+                  ))}
+                  <div ref={chatBottomRef}></div>
+                </div>
+
+                <form onSubmit={handleSendMessage} className="chat-input-area">
+                  <input
+                    type="text"
+                    className="chat-input"
+                    value={chatInputText}
+                    onChange={(e) => setChatInputText(e.target.value)}
+                    placeholder="Type a team message..."
+                  />
+                  <button type="submit" className="chat-send-btn" title="Send message">
+                    <LuSend size={14} />
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '16px' }}>
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="comment-card">
+                      <div className="comment-header">
+                        <span className="comment-author">{comment.author}</span>
+                        <span className="comment-time">{comment.time}</span>
+                      </div>
+                      <p className="comment-text">{comment.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <form onSubmit={handleAddComment} className="comment-new-container">
+                  <textarea
+                    className="comment-textarea"
+                    placeholder="Add feedback to canvas..."
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    required
+                  ></textarea>
+                  <button type="submit" className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px', alignSelf: 'flex-end' }}>
+                    Post Comment
+                  </button>
+                </form>
+              </div>
+            )}
+            
+          </div>
+        </aside>
+      </main>
+
+      {/* 6. BOTTOM WORD STATUS BAR */}
+      <footer className="word-status-bar">
+        <div className="status-bar-left">
+          <span>Page 1 of 1</span>
+          <span className="status-bar-separator">|</span>
+          <span>{wordCount} words</span>
+          <span className="status-bar-separator">|</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="Proofing status check">
+            <LuCheck size={12} style={{ color: '#10b981' }} /> Spelling: Checked
+          </span>
+          <span className="status-bar-separator">|</span>
+          <span>English (India)</span>
+          <span className="status-bar-separator">|</span>
+          <span>Accessibility: Good to go</span>
+        </div>
+
+        <div className="status-bar-center">
+          <div className={`sync-badge ${isSyncing ? 'syncing' : ''}`} style={{ border: 'none', background: 'transparent', padding: 0 }}>
+            <span className="sync-dot"></span>
+            <span>{isSyncing ? 'AutoSave: Syncing...' : 'Saved to Cloud'}</span>
+          </div>
+        </div>
+
+        <div className="status-bar-right">
+          <button 
+            type="button"
+            className="status-bar-btn"
+            onClick={() => alert("Focus Mode activated! Enjoy distraction-free writing.")}
+            style={{ background: 'transparent', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer' }}
+          >
+            Focus
+          </button>
+          <span className="status-bar-separator">|</span>
+          <button onClick={handleZoomOut} className="zoom-btn" title="Zoom Out">-</button>
+          <input 
+            type="range" 
+            min="50" 
+            max="150" 
+            value={zoomPercent} 
+            onChange={(e) => setZoomPercent(Number(e.target.value))} 
+            className="zoom-slider" 
+            title="Zoom percentage slider" 
+          />
+          <button onClick={handleZoomIn} className="zoom-btn" title="Zoom In">+</button>
+          <span style={{ fontWeight: 600, width: '36px', textAlign: 'right' }}>{zoomPercent}%</span>
+
         </div>
       </div>
 
       {/* Share / Invitation Modal Overlay */}
       {showShareModal && (
+
+        <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Share Workspace</h3>
+              <button className="modal-close" onClick={() => setShowShareModal(false)}>
+                <LuX size={18} />
+
         <div className="flat-modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="flat-modal-card bg-white dark:bg-[#080E1A] text-[#0A0F1E] dark:text-white border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl shadow-2xl p-4" onClick={(e) => e.stopPropagation()}>
             <div className="flat-modal-header border-b border-[#E2E8F0] dark:border-[#1E293B] pb-2 flex justify-between items-center">
@@ -1291,6 +2464,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
                 onClick={() => setShowShareModal(false)}
               >
                 <X size={14} />
+
               </button>
             </div>
             
@@ -1310,6 +2484,16 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
                     value={shareRole}
                     onChange={(e) => setShareRole(e.target.value)}
                   >
+
+                    <option value={DOCUMENT_ROLES.OWNER}>{DOCUMENT_ROLES.OWNER}</option>
+                    <option value={DOCUMENT_ROLES.EDITOR}>{DOCUMENT_ROLES.EDITOR}</option>
+                    <option value={DOCUMENT_ROLES.VIEWER}>{DOCUMENT_ROLES.VIEWER}</option>
+                  </select>
+                  <button 
+                    className="btn-primary"
+                    style={{ padding: '0 16px' }}
+                    onClick={handleSendCollabLink}
+
                     <option value="Editor">Editor</option>
                     <option value="Viewer">Viewer</option>
                   </select>
@@ -1321,6 +2505,7 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
                         setShareEmail('');
                       }
                     }}
+
                   >
                     Invite
                   </button>
@@ -1336,11 +2521,24 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
                     readOnly 
                     value={window.location.href}
                   />
+
+                  <button className="btn-copy" onClick={handleCopyLink}>
+                    {copied ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <FaCheck size={14} /> Copied!
+                      </span>
+                    ) : (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <FaCopy size={14} /> Copy Link
+                      </span>
+                    )}
+
                   <button 
                     className="bg-[#EEF2FF] dark:bg-[#1E293B] text-[#2563EB] dark:text-[#60A5FA] hover:bg-[#2563EB] hover:text-white dark:hover:bg-[#2563EB] dark:hover:text-white text-xs px-3 py-1 rounded-lg cursor-pointer transition-colors" 
                     onClick={handleCopyLink}
                   >
                     {linkCopied ? 'Copied!' : 'Copy Link'}
+
                   </button>
                 </div>
               </div>
@@ -1349,5 +2547,10 @@ function EditingPageContent({ document: doc, onBack, onSave }) {
         </div>
       )}
     </div>
+
+  )
+}
+
   );
 }
+

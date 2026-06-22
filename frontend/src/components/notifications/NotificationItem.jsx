@@ -12,7 +12,7 @@ export default function NotificationItem({ notification, onRead }) {
         return <FiUserX className="text-red-500 text-base" />;
       default:
         return <FiBell className="text-gray-400 text-base" />;
-    }
+    };
   };
 
   const getBg = (type) => {
@@ -31,11 +31,11 @@ export default function NotificationItem({ notification, onRead }) {
   const getMessage = (n) => {
     switch (n.type) {
       case 'COLLAB_INVITED':
-        return `${n.inviter} invited you to collaborate on "${n.title}"`;
+        return `${n.inviterName} invited you to collaborate on "${n.docname}"`;
       case 'COLLAB_ACCEPTED':
-        return `${n.accepterName} accepted your invite for "${n.documentTitle}"`;
+        return `${n.accepterName} accepted your invite for "${n.docname}"`;
       case 'COLLAB_DECLINED':
-        return `Invite for "${n.documentTitle}" was declined`;
+        return `Invite for "${n.docname}" was declined`;
       default:
         return 'New notification';
     }

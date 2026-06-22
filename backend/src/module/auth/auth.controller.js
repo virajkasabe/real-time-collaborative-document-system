@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
-import { deleteuser, getOTP, setOTP, setUser } from "../../redis/client.js";
+import { deleteuser, getOTP, getUser, setOTP, setUser } from "../../redis/client.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -67,33 +67,43 @@ export const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = tokenExpiry;
 
   const otp = otpGenerator();
+
+  await setOTP(user._id, { otp: otp, emailToken : unHashedToken });
+  console.log({
+    otp,
+  });
+
   const hashedOtp = await bcrypt.hash(otp.toString(), 10);
   user.otp = hashedOtp;
   user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
 
   console.log("Generated OTP:", otp);
 
   await user.save({ validateBeforeSave: false });
 
-  console.log(`${ENV.BACKEND_URI}/auth/verify-email/${unHashedToken}`);
-
-  //  await sendEmailVerifyUser(user.email, user.fullName, unHashedToken)
-
   const { refreshToken, accessToken } = await generateAccessRefreshToken(
     user._id
   );
 
+
+  console.log("OTP", otp);
+
+  // TODO : SEND EMAIL FOR OTP
   const responseData = { token: unHashedToken };
   if (process.env.NODE_ENV === "development" || ENV.NODE_ENV === "development") {
     responseData.otp = otp; // REMOVE IN PRODUCTION
   }
 
+
   return res
     .status(201)
-    .cookie("accessToken", accessToken, option)
-    .cookie("refreshToken", refreshToken, option)
     .json(
+ 
+      new ApiResponse(201, {}, `user created  successfully`)
+
       new ApiResponse(201, responseData, `user created  successfully`)
+
     );
 });
 
@@ -170,6 +180,44 @@ export const logoutUser = asyncHandler(async (req, res) => {
     .cookie("refreshToken", "", option)
     .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
+
+export const accessTokenRefreshed = asyncHandler(async(req,res)=>{
+
+  const incomingToken = req.cookies.refreshToken || req.body.refreshToken
+
+  if(!incomingToken) {
+    throw new ApiError(400, "Incoming Token Required")
+  }
+
+  try {
+    
+    const decodedToken = jwt.verify(incomingToken, ENV.REFRESH_TOKEN_SECRET)
+
+    const user = await getUser(decodedToken?._id)
+
+    if(!user) {
+      throw new ApiError(401, "Invalid Refresh Token")
+    }
+
+    if(incomingToken !== user.refreshToken) {
+      throw new ApiError(401, "Token Expired or Used")
+    }
+
+    const { accessToken, newRefreshToken : refreshToken } = await generateAccessRefreshToken(user?._id)
+
+  return res
+      .status(200)
+      .cookie("accessToken", accessToken, option)
+      .cookie("refreshToken", newRefreshToken, option)
+      .json(new ApiResponse(200, {
+        accessToken,
+        newRefreshToken
+      } , "Access Token refreshed"))
+
+  } catch (error) {
+      throw new ApiError(401, error.message || `Invalid Access Token`)    
+  }
+})
 
 export const refreshTokenHandler = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body;
@@ -433,7 +481,11 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
   const otp = otpGenerator();
   console.log("Resent OTP:", otp);
 
+
+  await setOTP(user._id, { otp: otp, emailToken : unHashedToken });
+
   const hashedNewOtp = await bcrypt.hash(otp.toString(), 10);
+
 
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
@@ -442,42 +494,74 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
+
+  console.log("OTP", otp);
+
+  // TODO : SEND EMAIL FOR OTP
+
   const responseData = { token: unHashedToken };
   if (process.env.NODE_ENV === "development" || ENV.NODE_ENV === "development") {
     responseData.otp = otp; // REMOVE IN PRODUCTION
   }
 
+
   return res
     .status(200)
     .json(
+
+      new ApiResponse(200, { }, `user verify emailId`)
+
       new ApiResponse(200, responseData, `New OTP sent successfully`)
+
     );
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
-  const { unHashedToken } = req.params;
-  const { otp } = req.body;
+  const { otp, email } = req.body;
+  console.log("otp",email)
+  console.log("otp", req.body)
+
+  const findUser = await User.findOne({ email });
+
+
+  const redisOTPData = await getOTP(findUser._id)
+
+  console.log("unHashedToken",redisOTPData.emailToken)
+  console.log("otp",otp)
 
   console.log("unHashedToken", unHashedToken)
   console.log("otp", otp)
 
-  if (!unHashedToken) {
+
+  if (!redisOTPData.emailToken) {
     throw new ApiError(400, "Email verification token missing");
   }
 
   const hashedToken = crypto
     .createHash("sha256")
-    .update(unHashedToken)
+    .update(redisOTPData.emailToken)
     .digest("hex");
 
   const user = await User.findOne({
     emailVerificationToken: hashedToken,
     emailVerificationExpiry: { $gt: Date.now() },
+
+  }).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
+  console.log("user", user)
+
   });
+
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired verification token");
   }
+
+
+  if (redisOTPData.otp !== otp) {
+    throw new ApiError(401, "OTP INVALID");
 
   // Check OTP Expiry
   if (!user.otp || !user.otpExpiry || Date.now() > user.otpExpiry) {
@@ -488,6 +572,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(otp.toString(), user.otp);
   if (!isMatch) {
     throw new ApiError(400, "Invalid or expired OTP");
+
   }
 
   await setUser(user._id, user);
@@ -499,7 +584,21 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.otp = undefined;
   user.otpExpiry = undefined;
 
+  /*  
+
+
+      //   .cookie("accessToken", accessToken, option)
+      //   .cookie("refreshToken", refreshToken, option)
+      // {
+      //   user: secureUSER,
+      //   accessToken: accessToken,
+      //   refreshToken: refreshToken,
+      // }
+      
+  */
+
   await user.save({ validateBeforeSave: false });
+
 
   return res
     .status(200)

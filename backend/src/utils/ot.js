@@ -4,7 +4,7 @@ export const applyOperation = (content, actions) => {
   }
   let result = content;
 
-  // Sort actions in reverse order of position so index updates don't shift prior indices
+
   const sortedActions = [...actions].sort((a, b) => b.position - a.position);
 
   for (const action of sortedActions) {
@@ -24,35 +24,29 @@ export const applyOperation = (content, actions) => {
 
 export const transformAction = (actionA, actionB) => {
   const bPrime = { ...actionB };
-
   if (actionA.type === "insert" && actionB.type === "insert") {
     if (actionA.position < actionB.position) {
       bPrime.position += actionA.text.length;
     } else if (actionA.position === actionB.position) {
-      // Tie-breaker: shift actionB if we assign it lower priority
       bPrime.position += actionA.text.length;
     }
   } else if (actionA.type === "insert" && actionB.type === "delete") {
     if (actionA.position <= actionB.position) {
       bPrime.position += actionA.text.length;
     } else if (actionA.position < actionB.position + actionB.length) {
-      // Insert is inside deleted range: expand delete length
       bPrime.length += actionA.text.length;
     }
   } else if (actionA.type === "delete" && actionB.type === "insert") {
     if (actionA.position + actionA.length <= actionB.position) {
       bPrime.position -= actionA.length;
     } else if (actionA.position < actionB.position) {
-      // Insert inside deleted range: shift insertion position to start of deletion
       bPrime.position = actionA.position;
     }
   } else if (actionA.type === "delete" && actionB.type === "delete") {
     if (actionA.position + actionA.length <= actionB.position) {
       bPrime.position -= actionA.length;
     } else if (actionA.position >= actionB.position + actionB.length) {
-      // No overlap, delete A is after delete B
     } else {
-      // Overlap: adjust range
       const overlapStart = Math.max(actionA.position, actionB.position);
       const overlapEnd = Math.min(actionA.position + actionA.length, actionB.position + actionB.length);
       const overlapLength = overlapEnd - overlapStart;

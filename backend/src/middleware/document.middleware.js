@@ -47,7 +47,7 @@ export const verifyDocumentAdmin = async (docId, user) => {
 export const verifyDocumentEditor = async (docId, user) => {
   const role = await getDocumentRole(docId, user);
 
-  if (![DOCUMENT_ROLES.OWNER, DOCUMENT_ROLES.OWNER].includes(role)) {
+  if (![DOCUMENT_ROLES.EDITOR, DOCUMENT_ROLES.OWNER].includes(role)) {
     throw new ApiError(
       403,
       "Editor permission required"
