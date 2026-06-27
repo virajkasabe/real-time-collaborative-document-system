@@ -185,6 +185,11 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
 
   const documentFolder = result[0]?.documents || [];
 
+  
+  documentFolder.map(async(d)=>{
+    await fetchDoc(d._id)
+  })
+
   return res
     .status(200)
     .json(
@@ -283,6 +288,11 @@ export const shareWithMeDocuments = asyncHandler(async (req, res) => {
       $sort: { updatedAt: -1 }
     }
   ]);
+
+   shareWithMeDocs.map(async(d)=>{
+    await fetchDoc(d._id)
+  })
+
 
   return res.status(200).json(
     new ApiResponse(

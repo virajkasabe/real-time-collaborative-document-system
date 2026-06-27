@@ -79,7 +79,7 @@ export const getOTP = async (userId) => {
 
 // ?? ===== DOCUMENT =====
 // ***** SET *****
-export const setDocument = async (docId, payload, expiry = 60) => {
+export const setDocument = async (docId, payload, expiry = 1800) => {
   if (!client || !isConnected) return null;
   const key = `doc:${docId}`;
   return await client.setex(key, expiry, JSON.stringify(payload));
@@ -87,9 +87,9 @@ export const setDocument = async (docId, payload, expiry = 60) => {
 
 // ***** GET *****
 export const getDocument = async (docId) => {
-  if (!client || !isConnected) return null;
+  if (!client || !isConnected) return [];
   const key = `doc:${docId}`;
-  const payload = await client.get(docId);
+  const payload = await client.get(key);
   return payload ? JSON.parse(payload) : null;
 };
 
@@ -193,7 +193,7 @@ export const getPendingNotification = async (pendingKey) => {
 export const deletePendingNotification = async (pendingKey) => {
   if (!client || !isConnected) return null;
   const key = `pending:${pendingKey}`;
-  await client.del(key);
+  await client.del();
 };
 
 // ?? ====== DIRTY DOCUMENT SET ======
@@ -242,11 +242,11 @@ export const appendChats = async(docId, data, expiry = 3600) => {
 }
 
 export const getChats = async(docId) => {
-  if(!client || !isConnected) {
+  if(!client || !isConnected) return []
     const key = `chats:${docId}:history`
     const list = await client.lrange(key,0,-1)
     return list ? list.map((item)=> JSON.parse(item)) : []
-  }
+
 }
 
 export { Publisher, Subscriber };

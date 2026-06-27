@@ -1,70 +1,138 @@
-export const applyOperation = (content, actions) => {
-  if (typeof content !== "string") {
-    content = content?.text || "";
+export const applyActionToOps = (ops = [], action) => {
+  if (action.type === "insert") {
+    const shifted = ops.map((op) => ({
+      ...op,
+      position:
+        op.position >= action.position
+          ? op.position + action.text.length
+          : op.position,
+    }));
+
+    shifted.push({
+      text: action.text,
+      position: action.position,
+      attributes: action.attributes || {},
+    });
+
+    return shifted.sort((a, b) => a.position - b.position);
   }
-  let result = content;
 
+  if (action.type === "delete") {
+    const deleteLen = action.length || 1;
+    const deleteStart = action.position;
+    const deleteEnd = deleteStart + deleteLen;
 
-  const sortedActions = [...actions].sort((a, b) => b.position - a.position);
+    return ops
+      .filter((op) => {
+        const opStart = op.position;
+        const opEnd = op.position + op.text.length;
 
-  for (const action of sortedActions) {
-    if (action.type === "insert") {
-      result =
-        result.slice(0, action.position) +
-        action.text +
-        result.slice(action.position);
-    } else if (action.type === "delete") {
-      result =
-        result.slice(0, action.position) +
-        result.slice(action.position + action.length);
-    }
+        // ✅ Drop any op that overlaps with the deleted range
+        const fullyBefore = opEnd <= deleteStart;   // op ends before delete starts
+        const fullyAfter  = opStart >= deleteEnd;   // op starts after delete ends
+
+        return fullyBefore || fullyAfter;
+      })
+      .map((op) => ({
+        ...op,
+        // ✅ Only shift ops that come AFTER the deleted range
+        position:
+          op.position >= deleteEnd
+            ? op.position - deleteLen
+            : op.position,
+      }));
   }
-  return result;
+
+  if (action.type === "format") {
+    const formatEnd = action.position + (action.length || 1);
+    return ops.map((op) =>
+      op.position >= action.position && op.position < formatEnd
+        ? { ...op, attributes: { ...op.attributes, ...action.attributes } }
+        : op
+    );
+  }
+
+  return ops;
 };
 
-export const transformAction = (actionA, actionB) => {
-  const bPrime = { ...actionB };
-  if (actionA.type === "insert" && actionB.type === "insert") {
-    if (actionA.position < actionB.position) {
-      bPrime.position += actionA.text.length;
-    } else if (actionA.position === actionB.position) {
-      bPrime.position += actionA.text.length;
-    }
-  } else if (actionA.type === "insert" && actionB.type === "delete") {
-    if (actionA.position <= actionB.position) {
-      bPrime.position += actionA.text.length;
-    } else if (actionA.position < actionB.position + actionB.length) {
-      bPrime.length += actionA.text.length;
-    }
-  } else if (actionA.type === "delete" && actionB.type === "insert") {
-    if (actionA.position + actionA.length <= actionB.position) {
-      bPrime.position -= actionA.length;
-    } else if (actionA.position < actionB.position) {
-      bPrime.position = actionA.position;
-    }
-  } else if (actionA.type === "delete" && actionB.type === "delete") {
-    if (actionA.position + actionA.length <= actionB.position) {
-      bPrime.position -= actionA.length;
-    } else if (actionA.position >= actionB.position + actionB.length) {
-    } else {
-      const overlapStart = Math.max(actionA.position, actionB.position);
-      const overlapEnd = Math.min(actionA.position + actionA.length, actionB.position + actionB.length);
-      const overlapLength = overlapEnd - overlapStart;
+/**
+ * Apply multiple actions in sequence to the ops array.
+ */
+export const applyActionsToOps = (ops = [], actions = []) => {
+  return actions.reduce((currentOps, action) => {
+    return applyActionToOps(currentOps, action);
+  }, ops);
+};
 
-      bPrime.length -= overlapLength;
-      if (actionA.position < actionB.position) {
-        bPrime.position -= (actionB.position - actionA.position);
+/**
+ * Transform actionB against actionA so both can be applied independently.
+ */
+export const transformAction = (actionA, actionB) => {
+  const b = { ...actionB };
+
+  try {
+    if (actionA.type === "insert" && actionB.type === "insert") {
+      if (actionA.position <= actionB.position) {
+        b.position += actionA.text.length;
+      }
+    } else if (actionA.type === "insert" && actionB.type === "delete") {
+      if (actionA.position <= actionB.position) {
+        b.position += actionA.text.length;
+      } else if (actionA.position < actionB.position + (actionB.length || 1)) {
+        b.length = (b.length || 1) + actionA.text.length;
+      }
+    } else if (actionA.type === "delete" && actionB.type === "insert") {
+      const deleteLen = actionA.length || 1;
+      if (actionA.position + deleteLen <= actionB.position) {
+        b.position -= deleteLen;
+      } else if (actionA.position < actionB.position) {
+        b.position = actionA.position;
+      }
+    } else if (actionA.type === "delete" && actionB.type === "delete") {
+      const aLen = actionA.length || 1;
+      const bLen = actionB.length || 1;
+      const aEnd = actionA.position + aLen;
+      const bEnd = actionB.position + bLen;
+
+      if (aEnd <= actionB.position) {
+        // A is entirely before B — shift B left
+        b.position -= aLen;
+      } else if (actionA.position >= bEnd) {
+        // A is entirely after B — no change
+      } else {
+        // Overlapping deletes — shrink B by the overlap
+        const overlapStart = Math.max(actionA.position, actionB.position);
+        const overlapEnd = Math.min(aEnd, bEnd);
+        const overlapLen = overlapEnd - overlapStart;
+        b.length = bLen - overlapLen;
+        if (actionA.position < actionB.position) {
+          b.position -= actionB.position - actionA.position;
+        }
       }
     }
+  } catch (err) {
+    console.error("transformAction error:", err);
   }
 
-  return bPrime;
+  return b;
 };
 
-export const transformOperations = (actionsA, actionsB) => {
-  let transformedB = [...actionsB];
+/**
+ * Transform all of actionsB against all of actionsA.
+ * Call this when the client is behind the server version.
+ */
+export const transformOperations = (actionsA = [], actionsB = []) => {
+  if (!actionsA.length) return actionsB;
+  if (!actionsB.length) return [];
+
+  let transformed = [...actionsB];
+
   for (const actionA of actionsA) {
-    transformedB = transformedB.map((actionB) => transformAction(actionA, actionB));
+    transformed = transformed.map((actionB) => transformAction(actionA, actionB));
   }
-  return transformedB.filter((action) => action.type !== "delete" || action.length > 0);
+
+  // Drop deletes that were made redundant by overlapping concurrent deletes
+  return transformed.filter(
+    (action) => action.type !== "delete" || (action.length && action.length > 0)
+  );
 };

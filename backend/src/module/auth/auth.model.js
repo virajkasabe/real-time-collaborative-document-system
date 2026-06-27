@@ -14,7 +14,6 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -39,22 +38,10 @@ const userSchema = new Schema(
     forgotPasswordExpiry: {
       type: Date,
     },
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpiry: {
-      type: Date,
-    },
     emailVerificationToken: {
       type: String,
     },
     emailVerificationExpiry: {
-      type: Date,
-    },
-    otp: {
-      type: String,
-    },
-    otpExpiry: {
       type: Date,
     },
     refreshToken: {
@@ -72,10 +59,6 @@ userSchema.pre("save", async function () {
 
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
-};
-
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 userSchema.methods.generateAccessToken = function () {

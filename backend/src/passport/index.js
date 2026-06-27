@@ -41,7 +41,7 @@ passport.use(
         let user = await User.findOne({ email });
 
         if (user) {
-          if (user.loginType !== loginType.GOOGLE) {
+          if (user.loginType !== userLoginType.GOOGLE) {
             return done(
               new ApiError(
                 400,

@@ -5,27 +5,24 @@ import {
   changeCurrentPassword,
   currentUser,
   deleteUser,
-  forgotPassword,
-  login,
-  logout,
+  forgetPasswordRequest,
+  loginUser,
+  logoutUser,
   refreshTokenHandler,
-  register,
+  registerUser,
   resetPassword,
   updateAccountDetails,
   verifyEmail,
   verifyEmailRequest,
-  verifyOTP,
-  googleLoginCallback,
 } from "./auth.controller.js";
-import passport from "passport";
 
 const router = Router();
 
-router.route("/register").post(register);
+router.route("/register").post(registerUser);
 
-router.route("/login").post(login);
+router.route("/login").post(loginUser);
 
-router.route("/logout").post(verifyJWT, logout);
+router.route("/logout").get(verifyJWT, logoutUser);
 
 router.route("/refresh-token-refreshed").post(refreshTokenHandler);
 
@@ -45,20 +42,9 @@ router.route("/verify-email").post(verifyEmail);
 
 router.route("/verify-email-request").post(verifyEmailRequest);
 
-router.route("/verify-otp").post(verifyJWT, verifyOTP);
+router.route("/forgot-password-request").post(forgetPasswordRequest);
 
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password/:token', resetPassword);
-router.post('/reset-password', resetPassword);
-
-router.route("/google").get(
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-router.route("/callback/google").get(
-  passport.authenticate("google", { session: false }),
-  googleLoginCallback
-);
+router.route("/reset-password/:unHashedToken").post(resetPassword);
 
 //!! =====  DANGER ZONE =====
 router.route("/delete").delete(deleteUser);

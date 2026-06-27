@@ -9,6 +9,10 @@ import {
   setPendingNotification,
   setrealtimeNotification,
 } from "../../redis/client.js";
+import {
+  joinCollab,
+  registerAndJoinCollab,
+} from "../../services/sendCollabLink.service.js";
 import { emitSocketEvent } from "../../socket/socket.js";
 import {
   COLLABORATION_EVENT,
@@ -52,7 +56,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     docId,
     email,
     role,
-
     inviterId : inviter._id
   }
 
@@ -86,35 +89,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       // );
     */
 
-    token: unHashedToken,
-    inviterId: inviter._id.toString(),
-    inviterName: inviter.fullName,
-    docTitle: document.title,
-  };
-
-  const user = await User.findOne({ email });
-  await setCollaboration(hashedToken, payload, collabExpiry);
-
-  if (!user) {
-    // Deferred/Delayed Notification or Pre-Registration Invite Queue
-    const notificationData = {
-      type: "COLLAB_INVITE",
-      title: `Invitation for collaboration in ${document.title}`,
-      docId,
-      tokenId: unHashedToken,
-      documentTitle: document.title,
-      inviterName: inviter.fullName,
-      inviterEmail: inviter.email,
-      accepterEmail: email,
-      createdAt: Date.now(),
-      expiry: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
-      ).toLocaleString()
-    };
-
-    await setPendingNotification(email, notificationData);
-
-
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -123,11 +97,10 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
           acceptCollab: acceptCollabLink,
           declineCollab: declineCollabLink
         },
-        "user not registered, invitation notification queued"
+        "user not register invite link send via email"
       )
     );
   }
-
   
   // TODO : IF USER ONLINE
   const userId = accepter._id.toString();
@@ -149,34 +122,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     await setrealtimeNotification(email, notificationData);
     await setCollaboration(collabId, collabData, registeredUserExpiry);
     io.to(userId).emit(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, notificationData);
-
-
-  const userId = user._id.toString();
-  const socketsInRoom = await io.in(userId).fetchSockets();
-  const isOnline = socketsInRoom.length > 0;
-
-  const notificationData = {
-    type: "COLLAB_INVITE",
-    title: `Invitation for collaboration in ${document.title}`,
-    docId,
-    tokenId: unHashedToken,
-    documentTitle: document.title,
-    inviterName: inviter.fullName,
-    inviterEmail: inviter.email,
-    accepterEmail: user.email,
-    createdAt: Date.now(),
-    expiry: new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
-    ).toLocaleString()
-  };
-
-  if (isOnline) {
-    await setrealtimeNotification(unHashedToken, payload);
-    io.to(userId).emit(
-      NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
-      notificationData
-    );
-
     return res
       .status(200)
       .json(
@@ -191,7 +136,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
         )
       );
   }
-
 
   notificationData.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
 
@@ -211,9 +155,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
   */
  
  
-
-  await setPendingNotification(email, notificationData);
-
   return res
     .status(200)
     .json(
@@ -221,11 +162,10 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
         200,
         {
           login : loginLink,
-          acceptCollab: acceptCollabLink,
-          declineCollab: declineCollabLink,
-          sentVia: ["redis"]
-        },
-        "User offline. Saved to Redis"
+           acceptCollab: acceptCollabLink,
+            declineCollab: declineCollabLink,
+          sentVia: ["email", "redis"] },
+        "User offline. Saved to Redis + email sent"
       )
     );
 });
@@ -279,26 +219,27 @@ export const acceptCollaboration = asyncHandler(async (req, res) => {
 
   const sockets = await io.in(inviter._id.toString()).fetchSockets();
 
-  const acceptNotificationData = {
-    type: "INVITE_ACCEPTED",
-    title: `${user.fullName} accepted your invitation to collaborate on ${doc.title}`,
-    docId: collabData.docId,
-    documentTitle: doc.title,
-    inviterName: inviter.fullName,
-    inviterEmail: inviter.email,
-    accepterName: user.fullName,
-    accepterEmail: user.email,
-    createdAt: Date.now()
-  };
-
   if (sockets.length > 0) {
-    io.to(inviter._id.toString()).emit(
-      NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
-      acceptNotificationData
+    emitSocketEvent(
+      req,
+      inviter._id.toString(),
+      COLLABORATION_EVENT.ACCEPT_COLLABORATION,
+      {
+        accepterName: user.fullName,
+        accepterEmail: user.email,
+        documentTitle: doc.title,
+      }
     );
   }
 
-  await setPendingNotification(inviter.email, acceptNotificationData);
+  await setPendingNotification(inviter.email, {
+    type: "COLLAB_ACCEPTED",
+    accepterName: user.fullName,
+    accepterEmail: user.email,
+    documentTitle: doc.title,
+    inviterEmail: inviter.email,
+    createdAt:  Date.now()
+  });
 
   await deleteCollaboration(hashedTokenID);
   await setDocument(updatedDoc._id.toString(), updatedDoc);
@@ -334,25 +275,23 @@ export const declineJoinCollaboration = asyncHandler(async (req, res) => {
 
   const sockets = await io.in(inviter._id.toString()).fetchSockets();
 
-  const declineNotificationData = {
-    type: "INVITE_REJECTED",
-    title: `${req.user?.fullName || 'Someone'} declined your invitation to collaborate on ${doc.title}`,
-    docId: collabData.docId,
-    documentTitle: doc.title,
-    inviterName: inviter.fullName,
-    inviterEmail: inviter.email,
-    accepterEmail: req.user?.email || collabData.email,
-    createdAt: Date.now()
-  };
-
   if (sockets.length > 0) {
-    io.to(inviter._id.toString()).emit(
-      NOTIFICATION_EVENT.NOTIFICATION_RECEIVED,
-      declineNotificationData
+    emitSocketEvent(
+      req,
+      inviter._id.toString(),
+      COLLABORATION_EVENT.DECLINE_COLLABORATION,
+      {
+        documentTitle: doc.title,
+      }
     );
   }
 
-  await setPendingNotification(inviter.email, declineNotificationData);
+  await setPendingNotification(inviter.email, {
+    type: "COLLAB_DECLINED",
+    documentTitle: doc.title,
+    inviterEmail: inviter.email,
+    createdAt: new Date.now().toLocaleString(),
+  });
 
   await deleteCollaboration(hashedTokenID);
 
