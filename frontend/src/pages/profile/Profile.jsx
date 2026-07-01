@@ -17,50 +17,34 @@ import {
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
-import { documentService } from '../../utils/documentService';
-import axios from 'axios';
+import { documentService } from '../../services/documentService';
 
 export default function Profile() {
-  const { user, updateProfile, triggerToast } = useAuth();
+  const { user, triggerToast } = useAuth();
   const { sidebarOpen } = useOutletContext();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.fullName || '');
   const [isEditing, setIsEditing] = useState(false);
-  const [isResetLoading, setIsResetLoading] = useState(false);
 
-  const handleResetPasswordClick = async () => {
-    if (!user?.email) {
-      triggerToast('User email not found', 'error');
-      return;
-    }
-    try {
-      setIsResetLoading(true);
-      const res = await axios.post(
-        'http://localhost:5000/api/v1/rtcds/auth/forgot-password',
-        { email: user.email },
-        { withCredentials: true }
-      );
-      const token = res.data?.resetToken || res.data?.data?.resetToken;
-      if (!token) {
-        throw new Error('Reset token not found in API response');
-      }
-      navigate(`/reset-password/${token}`);
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Failed to initiate password reset';
-      triggerToast(msg, 'error');
-    } finally {
-      setIsResetLoading(false);
-    }
-  };
-
-  const handleSave = async (e) => {
+  const handleSave = (e) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
     if (!name.trim()) return;
 
+    // Update localStorage user so name persists across reloads
+    if (user) {
+      const updatedUser = { ...user, name: name.trim() };
+      localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
+    }
+
+    triggerToast('Profile updated successfully!', 'success');
     setIsEditing(false);
-    await updateProfile({ fullName: name.trim(), avatar: user?.avatar });
+
+    // Short timeout to let the toast render before we refresh to update Navbar user name
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   };
 
   const allDocs = documentService.getAll();
@@ -95,12 +79,7 @@ export default function Profile() {
                 </>
               ) : (
                 <>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleResetPasswordClick} 
-                    loading={isResetLoading} 
-                    icon={Lock}
-                  >
+                  <Button variant="outline" onClick={() => navigate('/reset-password')} icon={Lock}>
                     Reset Password
                   </Button>
                   <Button onClick={() => setIsEditing(true)} icon={User}>

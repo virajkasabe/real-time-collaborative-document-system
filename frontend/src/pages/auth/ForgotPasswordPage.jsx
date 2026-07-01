@@ -3,38 +3,42 @@ import { Link, useNavigate } from 'react-router-dom';
 import { HiOutlineMail } from 'react-icons/hi';
 import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
-import { useAuth } from "../../context/AuthContext";
 import { FiLock, FiSend, FiShield, FiUsers,
          FiClock, FiRefreshCw, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
 
 
 export default function ForgotPasswordPage() {
-  const { forgotPassword, loading, devResetURL } = useAuth();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
-
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!email) {
-      setError('Please enter your email address');
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+
+    const emailVal = email.trim();
+    if (!emailVal) {
+      setError('Email address is required');
       return;
     }
-    if (!/\S+@\S+\.\S+/.test(email)) {
+
+    // Simple email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailVal)) {
       setError('Please enter a valid email address');
       return;
     }
-    try {
-      setError('');
-      await forgotPassword(email);
-      setSuccess(true);
-    } catch (err) {
-      setError(err.message || 'Failed to generate reset link');
-    }
+
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      navigate('/reset-password');
+    }, 1500);
   };
 
 
@@ -191,7 +195,7 @@ export default function ForgotPasswordPage() {
           />
 
           <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center h-full select-text">
-            {!success ? (
+            {!sent ? (
               <div className="w-full flex flex-col">
                 
                 {/* a) Mail+lock icon circle (centered) */}
@@ -218,7 +222,7 @@ export default function ForgotPasswordPage() {
                 </p>
 
                 {/* Form */}
-                <div className="flex flex-col gap-4">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   
                   {/* d) Email field */}
                   <div className="space-y-1.5 text-left">
@@ -233,102 +237,54 @@ export default function ForgotPasswordPage() {
                         placeholder="Enter your email address"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                         className="w-full h-12 rounded-xl border border-gray-200 dark:border-gray-600 pl-12 bg-white dark:bg-gray-700 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all text-sm font-medium"
                       />
                     </div>
                     {error && (
-                      <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '6px' }}>
-                        ⚠️ {error}
+                      <p className="text-red-500 text-xs mt-1.5 font-semibold">
+                        {error}
                       </p>
                     )}
                   </div>
 
                   {/* e) Send Reset Link button */}
                   <button
-                    type="button"
-                    onClick={handleSubmit}
+                    type="submit"
                     disabled={loading}
                     className="w-full h-12 rounded-xl mt-4 bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-base flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
                   >
                     <FiSend className="text-white text-lg" />
-                    {loading ? 'Generating Link...' : 'Send Reset Link'}
+                    {loading ? 'Sending...' : 'Send Reset Link'}
                   </button>
 
                   {/* h) ← Back to Login link */}
-                  <div
-                    onClick={() => navigate('/login')}
+                  <Link
+                    to="/login"
                     className="text-[#2563EB] dark:text-blue-400 font-semibold text-sm mt-4 flex items-center justify-center gap-1 hover:underline cursor-pointer"
                   >
                     <FiArrowLeft className="text-lg" />
                     Back to Login
-                  </div>
-                </div>
+                  </Link>
+                </form>
               </div>
             ) : (
               /* Success State */
-              <div className="text-center py-6 animate-fade-in w-full text-left">
-                <div style={{
-                  width: '60px', height: '60px',
-                  background: '#d1fae5',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 16px',
-                  fontSize: '28px'
-                }}>✅</div>
-                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white text-center">Reset Link Generated!</h3>
-                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2 text-center">Please copy the reset link below</p>
-
-                {/* Dev mode - show reset URL */}
-                {devResetURL && (
-                  <div style={{
-                    background: '#fff3cd',
-                    border: '1px solid #ffc107',
-                    padding: '14px 16px',
-                    borderRadius: '10px',
-                    marginTop: '16px'
-                  }}>
-                    <p style={{
-                      margin: '0 0 8px',
-                      fontSize: '13px',
-                      color: '#856404',
-                      fontWeight: '600'
-                    }}>
-                      🔗 Development Reset URL (email disabled):
-                    </p>
-                    <a
-                      href={devResetURL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: '#1a73e8',
-                        fontSize: '12px',
-                        wordBreak: 'break-all',
-                        textDecoration: 'underline'
-                      }}
-                    >
-                      {devResetURL}
-                    </a>
-                    <p style={{
-                      margin: '8px 0 0',
-                      fontSize: '11px',
-                      color: '#856404'
-                    }}>
-                      ☝️ Click the link above to reset your password
-                    </p>
-                  </div>
-                )}
-
-                <div className="text-center mt-6">
-                  <div
-                    onClick={() => navigate('/login')}
-                    className="inline-flex items-center gap-1 text-[#2563EB] dark:text-blue-400 font-semibold text-sm hover:underline cursor-pointer"
-                  >
-                    <FiArrowLeft size={14} /> Back to Login
-                  </div>
+              <div className="text-center py-6 animate-fade-in w-full">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/35 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FiCheck className="text-green-500 text-3xl" />
                 </div>
+                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white">
+                  Email Sent!
+                </h3>
+                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2">
+                  Check your inbox for reset instructions.
+                </p>
+                <Link
+                  to="/login"
+                  className="mt-6 inline-flex items-center gap-1 text-[#2563EB] dark:text-blue-400 font-semibold text-sm hover:underline"
+                >
+                  <FiArrowLeft size={14} /> Back to Login
+                </Link>
               </div>
             )}
 

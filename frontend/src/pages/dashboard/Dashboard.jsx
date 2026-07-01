@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
-import { documentService } from '../../utils/documentService';
+import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import { createDoc, deleteDoc, fetchDocumentFolder } from '../../apis/api';
 
@@ -247,6 +247,7 @@ export default function Dashboard() {
 
   const handleDelete = async (e, docId) => {
     e.stopPropagation();
+    console.log("docId", docId)
     await deleteDoc(docId);
     triggerToast('Moved file to trash', 'info');
     setRowMenuOpen(null);
@@ -804,14 +805,14 @@ export default function Dashboard() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setRowMenuOpen(rowMenuOpen === doc.id ? null : doc.id);
+                                setRowMenuOpen(rowMenuOpen === doc._id ? null : doc._id);
                               }}
                               className="p-1 rounded hover:bg-[#E5E7EB]/40 dark:hover:bg-[#0F172A] text-[#6B7280] transition-colors"
                             >
                               <MoreVertical size={14} />
                             </button>
 
-                            {rowMenuOpen === doc.id && (
+                            {rowMenuOpen === doc._id && (
                               <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 shadow-lg p-1 z-50 rounded-lg text-xs font-semibold select-none text-left">
                                 <button
                                   onClick={(e) => openRename(e, doc)}
@@ -835,7 +836,7 @@ export default function Dashboard() {
                                   <span>Duplicate</span>
                                 </button>
                                 <button
-                                  onClick={(e) => handleDelete(e, doc.id)}
+                                  onClick={(e) => handleDelete(e, doc._id)}
                                   className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 border-t border-[#E5E7EB] dark:border-white/10 mt-0.5"
                                 >
                                   <Trash2 size={11} />

@@ -32,7 +32,6 @@ export const generateAccessRefreshToken = async (userId) => {
 };
 
 export const registerUser = asyncHandler(async (req, res) => {
-  // console.log(req.body);
   const { fullName, email, password } = req.body;
 
   requiredField([fullName, email, password]);
@@ -83,6 +82,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   // TODO : SEND EMAIL FOR OTP
 
+  console.log("user register");
   return res
     .status(201)
     .json(
@@ -123,6 +123,8 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   await setUser(secureUSER._id, secureUSER);
 
+  console.log("user login");
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, option)
@@ -156,6 +158,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
   );
 
   req.user = ""
+
+  console.log("user logout")
 
   return res
     .status(200)
@@ -430,8 +434,8 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { otp, email } = req.body;
-  console.log("otp",email)
-  console.log("otp", req.body)
+  // console.log("otp",otp)
+  // console.log("otp", req.body)
 
   const findUser = await User.findOne({ email });
 
@@ -455,8 +459,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   }).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
-
-  console.log("user", user)
 
   if (!user) {
     throw new ApiError(400, "Invalid or expired verification token");

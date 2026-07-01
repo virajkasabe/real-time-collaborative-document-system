@@ -20,7 +20,7 @@ import {
 import Button from '../../components/common/Button';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
-import { documentService } from '../../utils/documentService';
+import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import { createDoc, fetchDocumentFolder, restoreDoc, docMoveToTrash } from '../../apis/api';
 

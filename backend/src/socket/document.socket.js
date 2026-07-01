@@ -1,5 +1,3 @@
-// socket/document.handler.js
-
 import { verifyDocumentEditor } from "../middleware/document.middleware.js";
 import Doc from "../module/document/document.model.js";
 import {
@@ -16,7 +14,7 @@ import { fetchDoc } from "../utils/helper.js";
 import { applyActionsToOps, transformOperations } from "../utils/ot.js";
 import { DOCUMENT_EVENT, SOCKET_EVENT } from "./socketEvents.js";
 
-// ─── Per-document promise queue (prevents race conditions) ───────────────────
+
 
 const documentQueues = new Map();
 
@@ -44,7 +42,7 @@ const queueDocumentOperation = (docId, task) => {
   return next;
 };
 
-// ─── Warm Redis from MongoDB (cache miss) ────────────────────────────────────
+
 
 const warmDocument = async (docId) => {
   const dbDoc = await fetchDoc(docId);
@@ -61,7 +59,7 @@ const warmDocument = async (docId) => {
   return document;
 };
 
-// ─── Join / Leave ─────────────────────────────────────────────────────────────
+
 
 export const mountJoinDocumentEvent = (socket, io) => {
   socket.on(DOCUMENT_EVENT.USER_JOIN, async (data) => {
@@ -130,12 +128,12 @@ export const mountJoinDocumentEvent = (socket, io) => {
   });
 };
 
-// ─── Receive & process operation ─────────────────────────────────────────────
+
 
 export const mountDocumentRecivedOperation = (socket, io) => {
   socket.on(DOCUMENT_EVENT.SEND_OPERATION, async (data) => {
     const payload = data.data || data;
-    const { docId, actions, version } = payload;
+    const { docId, actions, version, userId } = payload;
 
     // Basic validation
     if (!docId) {
@@ -155,7 +153,7 @@ export const mountDocumentRecivedOperation = (socket, io) => {
       }
 
       queueDocumentOperation(docId, async () => {
-        // 1. Load from Redis; warm from MongoDB on miss
+        
         let document = await getDocument(docId);
         if (!document) {
           document = await warmDocument(docId);
@@ -164,11 +162,11 @@ export const mountDocumentRecivedOperation = (socket, io) => {
         const serverVersion = document.version || 0;
         let transformedActions = [...actions];
 
-        // 2. OT: client is behind — transform against concurrent ops
+        
         if (version < serverVersion) {
           console.log(`[OT] client@${version} < server@${serverVersion} — transforming`);
           const history = (await getDocHistory(docId)) || [];
-          const concurrent = history.filter((h) => h.version > version);
+          const concurrent = history.filter((h) => h.version > version && h.userId !== userId);
 
           for (const entry of concurrent) {
             if (Array.isArray(entry.actions)) {
@@ -177,28 +175,31 @@ export const mountDocumentRecivedOperation = (socket, io) => {
           }
         }
 
-        // 3. Apply transformed actions directly to positional ops array
+        
         const currentOps = document.content?.ops || [];
         const updatedOps = applyActionsToOps(currentOps, transformedActions);
 
-        // 4. Save back to Redis
+        
         document.content = { ops: updatedOps };
         document.version = serverVersion + 1;
-
-        await setDocument(docId, document);
-        await appendDocHistory(docId, document.version, transformedActions);
-        await markDocumentDirty(docId);
 
         console.log(
           `[DOC] ${docId} v${document.version} — ops: ${updatedOps.length}`
         );
 
-        // 5. Broadcast to everyone else in the room
+        
         socket.to(docId).emit(DOCUMENT_EVENT.RECEIVE_OPERATION, {
           docId,
           actions: transformedActions,
           version: document.version,
         });
+
+        
+        await Promise.all([
+          setDocument(docId, document),
+          appendDocHistory(docId, document.version, transformedActions, userId),
+          markDocumentDirty(docId)
+        ]);
       });
     } catch (err) {
       console.error("SEND_OPERATION error:", err.message);
@@ -209,7 +210,7 @@ export const mountDocumentRecivedOperation = (socket, io) => {
   });
 };
 
-// ─── Flush dirty documents to MongoDB every 10 seconds ───────────────────────
+
 
 export const startDocumentFlushScheduler = () => {
   console.log("Auto-sync to MongoDB every 10s ⚡💾");

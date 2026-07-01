@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Star, Trash2, Edit2, Share2, MoreVertical } from 'lucide-react';
-import { documentService } from '../../utils/documentService';
+import { documentService } from '../../services/documentService';
 import ShareDocumentModal from '../modals/ShareDocumentModal';
 import RenameDocumentModal from '../modals/RenameDocumentModal';
 

@@ -11,6 +11,7 @@ import {
   COLLABORATION_EVENT,
   INVITATION_EVENT,
   NOTIFICATION_EVENT,
+  SOCKET_EVENT,
 } from "./socketEvents.js";
 import crypto from 'crypto'
 
@@ -48,7 +49,8 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
     if (userAlreadyExists) {
       await deleteCollaboration(collabId);
-      throw new ApiError(401, "User Already exist");
+      // throw new ApiError(401, "User Already exist");
+      socket.emit(docId).emit(SOCKET_EVENT.ERROR,{message : "User Already exist"})
     }
 
     const updateDocument = await Doc.findByIdAndUpdate(
@@ -91,8 +93,6 @@ export const mountRecivedRealTimeNotification = (socket) => {
     if (!collabData) {
       throw new ApiError(400, "Token Expired or Invalid");
     }
-
-
 
     const doc = await fetchDoc(collabData.docId);
 

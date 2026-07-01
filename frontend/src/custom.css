@@ -232,7 +232,7 @@ h1, h2, h3, h4, h5, h6 {
 
   --app-bg: radial-gradient(at top left, #f8fafc 0%, #dbeafe 100%);
   --paper-bg: #ffffff;
-  --editor-pane-bg: #F0F4FF;
+  --editor-pane-bg: #f1f5f9;
 }
 
 :root.dark {
@@ -249,12 +249,13 @@ h1, h2, h3, h4, h5, h6 {
 
   --app-bg: radial-gradient(at top left, #0f172a 0%, #030712 100%);
   --paper-bg: #1e293b;
-  --editor-pane-bg: #1A1F2E;
+  --editor-pane-bg: #0b0f19;
 }
 
 /* Flexbox Layout components */
 .editor-workspace {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   overflow: hidden;
   flex: 1;
   position: relative;
@@ -270,12 +271,9 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s;
   height: 100%;
-}
-
-.editor-sidebar.left-sidebar {
-  width: 220px;
 }
 
 .editor-sidebar.right-sidebar {
@@ -286,7 +284,6 @@ h1, h2, h3, h4, h5, h6 {
 .editor-sidebar.collapsed {
   width: 0px !important;
   border-inline: none !important;
-  overflow: hidden !important;
 }
 
 .sidebar-toggle-btn {
@@ -340,9 +337,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-tab.active {
-  color: var(--accent) !important;
-  border-bottom: 2px solid var(--accent) !important;
-  background: var(--bg) !important;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--bg);
 }
 
 .sidebar-content {
@@ -1000,16 +997,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .ribbon-tab-content {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: 180px 420px 320px minmax(156px, 1fr) 160px !important;
   align-items: center !important;
   height: 100% !important;
+  width: 100% !important;
   max-width: 1400px !important;
   margin: 0 auto !important;
   padding: 0 24px !important;
   box-sizing: border-box !important;
   animation: fadeIn 0.2s ease !important;
   flex-shrink: 0 !important;
-  gap: 16px !important;
 }
 
 .ribbon-tab-content.hidden {
@@ -1518,9 +1516,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .ql-editor {
-  padding: 48px 80px !important; /* Word page margins - consistent padding 48px 80px */
+  padding: 60px clamp(40px, 6vw, 80px) 80px !important; /* Word page margins */
   line-height: 1.65 !important;
-  color: #0A0F1E !important;
+  color: var(--text-h) !important;
   outline: none !important;
   box-sizing: border-box !important;
   min-height: 1056px !important;
@@ -1549,44 +1547,27 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.07) !important;
 }
 
-/* Force document page text to always be dark color */
-.ql-editor,
-.ql-editor * {
-  color: #0A0F1E !important;
-}
-.ql-editor code {
-  color: #0d6efd !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-.ql-editor.ql-blank::before {
-  color: #0A0F1E !important;
-  opacity: 0.5 !important;
-  left: 80px !important; /* matches padding-left: 80px */
-  text-align: left !important; /* removes any text-align: center on the placeholder */
-  right: 80px !important;
-}
-
 /* Dark Mode Multi-Page Overrides */
 .dark .ql-editor {
   background-image: linear-gradient(
     to bottom,
-    #ffffff 0px,
-    #ffffff 1026px,
-    rgba(15, 23, 42, 0.05) 1026px,
-    rgba(15, 23, 42, 0.05) 1027px,
-    var(--editor-pane-bg) 1027px,
-    var(--editor-pane-bg) 1040px,
-    rgba(15, 23, 42, 0.08) 1040px,
-    rgba(15, 23, 42, 0.08) 1041px,
-    var(--editor-pane-bg) 1041px,
-    var(--editor-pane-bg) 1055px,
-    rgba(15, 23, 42, 0.05) 1055px,
-    rgba(15, 23, 42, 0.05) 1056px
+    #1e293b 0px,
+    #1e293b 1026px,
+    rgba(255, 255, 255, 0.04) 1026px,
+    rgba(255, 255, 255, 0.04) 1027px,
+    #0b0f19 1027px,
+    #0b0f19 1040px,
+    rgba(255, 255, 255, 0.08) 1040px,
+    rgba(255, 255, 255, 0.08) 1041px,
+    #0b0f19 1041px,
+    #0b0f19 1055px,
+    rgba(255, 255, 255, 0.04) 1055px,
+    rgba(255, 255, 255, 0.04) 1056px
   ) !important;
   
-  border-left-color: rgba(0, 0, 0, 0.06) !important;
-  border-right-color: rgba(0, 0, 0, 0.06) !important;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.07) !important;
+  border-left-color: rgba(255, 255, 255, 0.05) !important;
+  border-right-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 16px 48px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Custom buttons for View/Review ribbons */

@@ -53,7 +53,6 @@ export const userRefreshTokenRefreshed = (data) => {
     return apiClient.post("/auth/refresh-token-refreshed", data)
 }
 
-
 // ?? =============================================
 // collab invite, accept, declined 
 // ?? =============================================
@@ -70,8 +69,6 @@ export const acceptCollab = (email,tokenId) => {
 export const declinedCollab = (email,tokenId) => {
     return apiClient.post(`collab/decline/email=${email}/join=${tokenId}`)
 }
-
-
 
 // ?? =============================================
 // docuement create, read, update, delete
