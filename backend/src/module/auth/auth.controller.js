@@ -36,37 +36,34 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   requiredField([fullName, email, password]);
 
-  const avatar = req.files?.avatar?.[0]?.path;
-
-  let avatarURI;
-
-  if (avatar) {
-    avatarURI = await uploadCloudinary(avatar);
-  }
-
   const alreadyExist = await User.findOne({ email });
 
   if (alreadyExist) {
-    throw new ApiError(400, `${alreadyExist.email} already exist`);
+    throw new ApiError(400, `${email} already exist`);
   }
-
+  
   const user = await User.create({
     fullName,
     password,
     email,
   });
 
+  // Laxman Shinde
+
+
   const { unHashedToken, hashedToken, tokenExpiry } =
-    user.generateTemporaryToken();
+  user.generateTemporaryToken();
 
   user.emailVerificationToken = hashedToken;
   user.emailVerificationExpiry = tokenExpiry;
+  
 
   const otp = otpGenerator();
   await setOTP(user._id, { otp: otp, emailToken : unHashedToken });
   console.log({
     otp,
   });
+  
 
   await User.findById(user._id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"

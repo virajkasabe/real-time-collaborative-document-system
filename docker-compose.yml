@@ -14,7 +14,7 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_DATBASE: caffine_and_redis
+      MONGO_INITDB_DATABASE: caffine_and_mongo
     volumes:
       - mongo-data:/data/db
 

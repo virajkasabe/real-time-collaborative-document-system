@@ -1,10 +1,10 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { Schema, model } from "mongoose";
+import mongoose from "mongoose";
 import { ENV } from "../../config/ENV.js";
 
-const userSchema = new Schema(
+const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
@@ -104,5 +104,5 @@ userSchema.methods.generateTemporaryToken = function () {
   };
 };
 
-const User = model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 export default User;
