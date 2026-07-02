@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
+import passport  from 'passport';
 import {
   accessTokenRefreshed,
   changeCurrentPassword,
   currentUser,
   deleteUser,
   forgetPasswordRequest,
+  googleLoginCallback,
   loginUser,
   logoutUser,
   refreshTokenHandler,
@@ -33,6 +35,20 @@ router.route("/getme").get(verifyJWT, currentUser);
 // router
 //   .route("/update-profile")
 //   .put(verifyJWT, uploadAvatar.single("avatar"), updateAccountDetails);
+
+router.route("/google").get(
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  }),
+  (req, res) => {
+    res.send("redirecting to google...");
+  }
+);
+
+router
+  .route("/callback/google")
+  .get(passport.authenticate("google", {session : true}), googleLoginCallback);
+
 
 router.route("/update-profile").put(verifyJWT, updateAccountDetails);
 

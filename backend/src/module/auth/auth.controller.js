@@ -490,7 +490,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Email verified successfully"));
 });
 
-const googleLoginCallback = asyncHandler(async (req, res) => {
+export const googleLoginCallback = asyncHandler(async (req, res) => {
   const user = req.user;
 
   if (!user) {

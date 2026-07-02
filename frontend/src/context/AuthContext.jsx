@@ -17,7 +17,8 @@ import {
   userForgetPasswordRequest,
   changeUserCurrentPassword,
   userAccessTokenRefreshed,
-  userRefreshTokenRefreshed
+  userRefreshTokenRefreshed,
+  userGoogleLogin
 } from '../apis/api';
 import { LocalStorage } from '../apis/index';
 
