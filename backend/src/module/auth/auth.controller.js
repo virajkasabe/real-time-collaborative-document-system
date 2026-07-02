@@ -511,9 +511,7 @@ export const googleLoginCallback = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
-    .redirect(
-      `${process.env.CLIENT_URL || "http://localhost:5173"}${redirectUrl}`
-    );
+    .json(new ApiResponse(200, { user : req.user}, "user login with google"))
 });
 
 // !! ==== DANGER ZONE ====

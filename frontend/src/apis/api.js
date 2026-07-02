@@ -21,8 +21,10 @@ export const userLogin = async (data) => {
     return await apiClient.post("/auth/login",data)
 }
 
-export const userGoogleLogin = () => {
-    return apiClient.get("/auth/callback/google")
+export const userGoogleLogin = async() => {
+    const data = await apiClient.get("/auth/callback/google")
+    console.log("data",data)
+    return data
 }
 
 export const userLogout = () => {
