@@ -22,6 +22,7 @@ import ToastNotification from '../components/notifications/ToastNotification';
 import AboutUs from '../pages/About';
 import ContactUs from '../pages/Contact';
 import HelpPage from '../pages/Help';
+import PublicLayout from './PublicLayout';
 
 const DashboardLayout = ({ children }) => {
   return (
@@ -35,10 +36,14 @@ const DashboardLayout = ({ children }) => {
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/about" element={<AboutUs />} />
-      <Route path="/contact" element={<ContactUs />} />
-      <Route path="/help" element={<HelpPage />} />
+      
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/help" element={<HelpPage />} />
+      </Route>
+
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
