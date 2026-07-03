@@ -40,3 +40,11 @@
 
 
 ```
+
+
+
+
+```
+Google Console config barobar aahe. Issue ha ahe ki aplla frontend axios.get() ne OAuth callback call karto — pan te browser ne page redirect karun karaycha asto, axios ne nahi. Fix: button click zalyavar window.location.href ne redirect karaycha, axios call kadhun takaycha
+
+```

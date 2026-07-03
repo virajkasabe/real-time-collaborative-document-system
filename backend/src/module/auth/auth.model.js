@@ -3,6 +3,7 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { ENV } from "../../config/ENV.js";
+import { loginType, loginTypeEnum } from "../../utils/constant.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -23,6 +24,11 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: "",
+    },
+    userLoginType : {
+      type : String,
+      default : loginType.EMAIL_PASSWORD,
+      enum : loginTypeEnum
     },
     password: {
       type: String,

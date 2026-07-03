@@ -507,6 +507,8 @@ export const googleLoginCallback = asyncHandler(async (req, res) => {
 
   const redirectUrl = "http://localhost:5173/dashboard";
 
+  const secureUSER = await secureUser(user._id);
+
   return res
     .status(200)
     .cookie("accessToken", accessToken, option)

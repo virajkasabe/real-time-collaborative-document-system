@@ -29,7 +29,9 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
     const collabData = await getCollaboration(collabId);
     if (!collabData) {
-      throw new ApiError(400, "Token Expired or Invalid");
+      // TODO :  throw the socker error not the apierror
+      // throw new ApiError(400, "Token Expired or Invalid");
+      console.log("ERROR : Token Expired or Invalid")
     }
 
     const { docId,role, inviterId } = collabData
@@ -50,7 +52,7 @@ export const mountRecivedRealTimeNotification = (socket) => {
     if (userAlreadyExists) {
       await deleteCollaboration(collabId);
       // throw new ApiError(401, "User Already exist");
-      socket.emit(docId).emit(SOCKET_EVENT.ERROR,{message : "User Already exist"})
+      socket.emit(inveter._id).emit(SOCKET_EVENT.ERROR,{message : "User Already exist"})
     }
 
     const updateDocument = await Doc.findByIdAndUpdate(
@@ -91,7 +93,8 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
     const collabData = await getCollaboration(hashedTokenID);
     if (!collabData) {
-      throw new ApiError(400, "Token Expired or Invalid");
+      // TODO :  throw the socker error not the apierror
+      console.log("ERROR : Token Expired or Invalid")
     }
 
     const doc = await fetchDoc(collabData.docId);

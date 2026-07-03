@@ -18,7 +18,7 @@ import {
   changeUserCurrentPassword,
   userAccessTokenRefreshed,
   userRefreshTokenRefreshed,
-  userGoogleLogin
+  // userGoogleLogin
 } from '../apis/api';
 import { LocalStorage } from '../apis/index';
 
@@ -33,17 +33,19 @@ export function AuthProvider({ children }) {
 
 
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async() => {
       try {
+        const res = await getUser()
+        const user = res.data.data.user
+        console.log("user",res.data)
+         LocalStorage.set("user", user);
         const savedUser = LocalStorage.get("user");
-        const accessToken = LocalStorage.get("accessToken");
-        
-        if (savedUser && accessToken) {
+
+        if (savedUser) {
           setUser(savedUser);
           setIsAuthenticated(true);
         } else {
           LocalStorage.remove("user");
-          LocalStorage.remove("accessToken");
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
@@ -112,13 +114,12 @@ export function AuthProvider({ children }) {
         throw new Error(res.data.message || "Login failed");
       }
 
-      const { user, accessToken } = res.data.data;
+      const { user } = res.data.data;
       
-      if (!user || !accessToken) {
+      if (!user ) {
         throw new Error("Invalid login response: missing user or access token");
       }
 
-      LocalStorage.set("accessToken", accessToken);
       LocalStorage.set("user", user);
       setUser(user);
       setIsAuthenticated(true);
@@ -132,45 +133,45 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const googleLogin = useCallback(async()=>{
-    setError(null)
-    try {
-      const res = await userGoogleLogin()
-      console.log("userGoogleLogin", res.data)
-       if (!res.data.success) {
-        throw new Error(res.data.message || "Login failed");
-      }
+  // const googleLogin = useCallback(async()=>{
+  //   setError(null)
+  //   try {
+  //     const res = await userGoogleLogin()
+  //     console.log("res",res)
+  //     console.log("userGoogleLogin", res.data)
+  //      if (!res.data.success) {
+  //       throw new Error(res.data.message || "Login failed");
+  //     }
 
-      const { user, accessToken } = res.data.data;
+  //     const { user, accessToken } = res.data.data;
       
-      if (!user || !accessToken) {
-        throw new Error("Invalid login response: missing user or access token");
-      }
+  //     if (!user || !accessToken) {
+  //       throw new Error("Invalid login response: missing user or access token");
+  //     }
 
-      LocalStorage.set("accessToken", accessToken);
-      LocalStorage.set("user", user);
-      setUser(user);
-      setIsAuthenticated(true);
+  //     LocalStorage.set("accessToken", accessToken);
+  //     LocalStorage.set("user", user);
+  //     setUser(user);
+  //     setIsAuthenticated(true);
       
-      return res.data;
+  //     return res.data;
 
-    } catch (error) {
-      console.log(
-        "error : " , error.message
-      )
-       const errorMessage = error.response?.data?.message || error.message || "Login failed";
-        console.error("Login error:", errorMessage);
-        setError(errorMessage);
-        throw error;
-    }
-  },[])
+  //   } catch (error) {
+  //     console.log(
+  //       "error : " , error.message
+  //     )
+  //      const errorMessage = error.response?.data?.message || error.message || "Login failed";
+  //       console.error("Login error:", errorMessage);
+  //       setError(errorMessage);
+  //       throw error;
+  //   }
+  // },[])
 
   const logout = useCallback(async () => {
     try {
       const res = await userLogout();
       if (res.data.success) {
         LocalStorage.remove("user");
-        LocalStorage.remove("accessToken");
         setUser(null);
         setIsAuthenticated(false);
         return res.data;
@@ -179,7 +180,6 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error.message);
       LocalStorage.remove("user");
-      LocalStorage.remove("accessToken");
       setUser(null);
       setIsAuthenticated(false);
       throw error;
@@ -235,7 +235,7 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     loading,
     login,
-    googleLogin,
+    // googleLogin,
     register,
     toast,
     logout,
@@ -250,7 +250,7 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     loading,
     login,
-    googleLogin,
+    // googleLogin,
     register,
     toast,
     logout,

@@ -1,135 +1,100 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { io } from 'socket.io-client'
-import { CONNECT_DISCONNET_EVENT } from '../utils/constants';
-import { LocalStorage } from '../apis';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { io } from "socket.io-client";
+import { CONNECT_DISCONNET_EVENT } from "../utils/constants";
+
 const SocketContext = createContext();
+
 let socketInstance = null;
 
 export function SocketProvider({ children }) {
-  const socketRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
 
-  const connectSocket = useCallback(()=>{
-
-    const token = LocalStorage.get("accessToken")
-    if(!token) {
-       console.log("🧑🏼‍🦯‍➡️ auth handsheck token not found")
-       return null;
+  const connectSocket = useCallback(() => {
+    // Prevent duplicate connections
+    if (socketInstance) {
+      if (socketInstance.connected || socketInstance.active) {
+        return socketInstance;
+      }
     }
 
-    if(socketInstance?.socket) {
-      console.log(`socket instance already connected: ${socketInstance.id}`)
-      return socketInstance;
-    }
-
-    if(socketInstance?.active) {
-      console.log(`Socket already connecting`)
-      return socketInstance;
-    }
-
-    console.log(`New Socket Connecting`)
+    console.log("🔌 Connecting socket...");
 
     socketInstance = io(
       import.meta.env.VITE_SOCKET_URL || "http://localhost:5000",
       {
-        auth : { token },
-        transports : ['websocket'],
-        withCredentials : true,
-        autoConnect : true,
-        reconnection : true,
-        reconnectionDelay : 500,
-        reconnectionAttempts : 5
+        withCredentials: true, // Browser sends HttpOnly cookies automatically
+        transports: ["websocket"],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionDelay: 500,
+        reconnectionAttempts: 5,
       }
-    )
+    );
 
-    socketInstance.on(CONNECT_DISCONNET_EVENT.CONNECTION, ()=> {
-      console.log(`Socket connected : ${socketInstance.auth}`)
+    socketInstance.on(CONNECT_DISCONNET_EVENT.CONNECT, () => {
+      console.log("✅ Socket Connected:", socketInstance.id);
       setIsConnected(true);
       setSocketReady(true);
-    })
+    });
 
-
-    socketInstance.on(CONNECT_DISCONNET_EVENT.CONNECTED, ()=> {
-      console.log(`Socket connected : `,socketInstance.id)
-      setIsConnected(true);
-      setSocketReady(true);
-    })
-
-
-    socketInstance.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (resonse)=> {
-      console.log(`Socket ${CONNECT_DISCONNET_EVENT.DISCONNECT} : ${resonse}`)
+    socketInstance.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (reason) => {
+      console.log("❌ Socket Disconnected:", reason);
       setIsConnected(false);
-    })
+      setSocketReady(false);
+    });
 
-    socketInstance.on(CONNECT_DISCONNET_EVENT.SOCKET_ERROR, (error)=>{
-      console.log(`Socket Connect Error : ${error.message}`)
+    socketInstance.on(CONNECT_DISCONNET_EVENT.CONNECT_ERROR, (err) => {
+      console.log("🚫 Socket Error:", err.message);
+
       setIsConnected(false);
-      if(error.message === "Authentication error") {
-        LocalStorage.remove("accessToken");
-        window.location.href("/login")
+      setSocketReady(false);
+
+      if (err.message === "Authentication error") {
+        window.location.href = "/login";
       }
     });
 
-    socketRef.current = socketInstance;
     return socketInstance;
-  },[]);
+  }, []);
 
+  const disconnectSocket = useCallback(() => {
+    if (!socketInstance) return;
 
-  const disconnecteSocket = useCallback(()=>{
-    console.log(`MANUAL DISCONNECTE`);
-      if(socketInstance) {
-        socketInstance.removeAllListeners();
-        socketInstance.disconnect();
-        socketInstance = null;
-        socketInstance.current = null;
-        setIsConnected(false);
-        setSocketReady(false);
-      }
-  },[]);
+    console.log("🔌 Disconnecting socket...");
 
+    socketInstance.removeAllListeners();
+    socketInstance.disconnect();
+    socketInstance = null;
 
+    setIsConnected(false);
+    setSocketReady(false);
+  }, []);
 
-  const initSocketWithToken = useCallback((token)=>{
-    LocalStorage.set("accessToken", token);
-    disconnecteSocket();
-    setTimeout(()=> connectSocket(),80)
-  },[connectSocket, disconnecteSocket])
-
-
-  const updateSocketToken = useCallback((newToken)=> {
-    if(!socketInstance) return;
-    LocalStorage.set("accessToken", newToken);
-    socketInstance.auth = {token : newToken};
-    if(!socketInstance.connected) {
-      socketInstance.connect();
-    }
-  },[])
-
-  useEffect(()=>{
-    const token = LocalStorage.get("accessToken");
-    console.log(`Token Mount :${token} ? Missing : missing`)
-
-    if(token && !socketInstance) {
-      connectSocket()
-    }
+  useEffect(() => {
+    connectSocket();
 
     return () => {
-      console.log("SocketProvider unmounting - keeping socket alive");
-    }
-
-  },[connectSocket])
+      disconnectSocket();
+    };
+  }, [connectSocket, disconnectSocket]);
 
   return (
-    <SocketContext.Provider value={{ 
-      socket : socketInstance,
-      isConnected,
-      socketReady,
-      connectSocket,
-      disconnecteSocket,
-      initSocketWithToken,
-      updateSocketToken
-     }}>
+    <SocketContext.Provider
+      value={{
+        socket: socketInstance,
+        isConnected,
+        socketReady,
+        connectSocket,
+        disconnectSocket,
+      }}
+    >
       {children}
     </SocketContext.Provider>
   );
@@ -137,10 +102,10 @@ export function SocketProvider({ children }) {
 
 export const useSocket = () => {
   const context = useContext(SocketContext);
-  
-  if(!context) {
-      throw new Error("useSocket must be used inside SocketProvider");
-  }
-  return context;
-}
 
+  if (!context) {
+    throw new Error("useSocket must be used inside SocketProvider");
+  }
+
+  return context;
+};

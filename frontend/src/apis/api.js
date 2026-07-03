@@ -1,5 +1,4 @@
-
-import { apiClient } from "./index"
+import { apiClient, baseAPIURL } from "./index"
 
 // ?? =============================================
 // auth register, login , logout
@@ -21,10 +20,9 @@ export const userLogin = async (data) => {
     return await apiClient.post("/auth/login",data)
 }
 
-export const userGoogleLogin = async() => {
-    const data = await apiClient.get("/auth/callback/google")
-    return data
-}
+// ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
+export const googleLoginApi = `${baseAPIURL}/callback/google`
+
 
 export const userLogout = () => {
     return apiClient.get("/auth/logout")
@@ -119,4 +117,6 @@ export const docMoveToTrash = (docId) => {
 export const deleteDoc = (docId) => {
     return apiClient.delete(`/doc/delete/${docId}`)
 }
+
+
 

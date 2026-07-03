@@ -30,6 +30,14 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
   const { email, role } = req.body;
   const { docId } = req.params;
   const io = req.app.get("io");
+
+  const isDocumentExist = await fetchDoc(docId)
+  if(!isDocumentExist){
+    // TODO : THROW THE SOCKER ERROR AS WELL AS API ERROR
+    throw new ApiError(401, "YOUR NOT AUTHORIZED FOR THIS ACTION");
+  }
+
+
   const isOwner = await verifyDocumentAdmin(docId, req.user);
   if (isOwner !== DOCUMENT_ROLES.OWNER) {
     throw new ApiError(401, "YOUR NOT AUTHORIZED FOR THIS ACTION");
@@ -112,13 +120,12 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
   );
 
   if (userAlreadyExists ) {
-    throw new ApiError(401, "User Already exist");
+    throw new ApiError(409, `User with email '${accepter.email}' already exists.`);
+    return res.status(409).json(new ApiResponse(409, {}, `User with email '${accepter.email}' already exists.`))
   }
 
   if (isOnline) {
-
     notificationData.expiry = new Date(Date.now() +  20 * 60 * 1000).toLocaleString()
-
     await setrealtimeNotification(email, notificationData);
     await setCollaboration(collabId, collabData, registeredUserExpiry);
     io.to(userId).emit(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, notificationData);

@@ -8,6 +8,8 @@ import { useAuth } from '../../context/AuthContext';
 import bgImage from '../../assets/collab-bg.png';
 import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
+import { LocalStorage } from '../../apis';
+import { googleLoginApi } from '../../apis/api';
 
 export default function RegisterPage() {
   const { register, login, triggerToast } = useAuth();
@@ -75,16 +77,13 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    // Google signup: same as login page simulation
-    const success = await login('google.user@company.com', 'password');
-    setLoading(false);
-    if (success) {
-      triggerToast('Signed up with Google (Simulated)', 'success');
-      navigate('/dashboard');
-    }
-  };
+   const handleGoogleSignup = () => {
+         LocalStorage.set("googleAuthReturnUrl", window.location.pathname);
+   
+         const baseApi = import.meta.env.VITE_GOOGLE_CALLBACK_URL || googleLoginApi;
+   
+         window.location.assign(baseApi);
+       };
 
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-[#EEF2F7] dark:bg-[#070B14] p-4 md:p-6 font-sans select-none">

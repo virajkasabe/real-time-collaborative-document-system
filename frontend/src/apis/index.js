@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+export const baseAPIURL = "http://localhost:5000/api/v1/rtcds"
+
 export const apiClient = axios.create({
-    baseURL : import.meta.env.VITE_SERVER_URI || "http://localhost:5000/api/v1/rtcds",
+    baseURL : import.meta.env.VITE_SERVER_URI || baseAPIURL,
     withCredentials : true,
     timeout : 30000,
     headers :{ 

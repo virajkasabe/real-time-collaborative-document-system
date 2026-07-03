@@ -28,6 +28,11 @@ export const NOTIFICATION_EVENT = Object.freeze({
   RECIVED_REAL_TIME_NOTIFICATION: "recivedRealTimeNotification",
 });
 
+
+export const NOTIFICATION_ERROR = Object.freeze({
+  
+})
+
 export const INVITATION_EVENT = Object.freeze({
   ACCEPT_INVITATION: "acceptIneInvitation",
   DECLINE_INVITATION: "declineInvitation",

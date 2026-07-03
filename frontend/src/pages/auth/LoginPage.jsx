@@ -9,6 +9,8 @@
   import { BRAND_NAME } from "../../utils/constants";
   import athenuraLogo from "../../assets/athenura-logo.png";
   import { useTheme } from "../../context/ThemeContext";
+import { LocalStorage } from '../../apis';
+import { googleLoginApi } from '../../apis/api';
 
   export default function LoginPage() {
     const { login, triggerToast, error, googleLogin } = useAuth();
@@ -53,14 +55,12 @@
       }
     };
 
-    const handleGoogleLogin = async () => {
-      setLoading(true);
-      const success = await googleLogin()
-      setLoading(false);
-      if (success) {
-        triggerToast('Signed in with Google (Simulated)', 'success');
-        navigate('/dashboard');
-      }
+    const handleGoogleLogin = () => {
+      LocalStorage.set("googleAuthReturnUrl", window.location.pathname);
+
+      const baseApi = import.meta.env.VITE_GOOGLE_CALLBACK_URL || googleLoginApi;
+
+      window.location.assign(baseApi);
     };
 
     return (
