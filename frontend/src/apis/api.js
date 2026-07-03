@@ -23,7 +23,6 @@ export const userLogin = async (data) => {
 
 export const userGoogleLogin = async() => {
     const data = await apiClient.get("/auth/callback/google")
-    console.log("data",data)
     return data
 }
 
@@ -73,7 +72,7 @@ export const acceptCollab = (email,tokenId) => {
 }
 
 export const declinedCollab = (email,tokenId) => {
-    return apiClient.post(`collab/decline/email=${email}/join=${tokenId}`)
+    return apiClient.post(`/collab/decline/email=${email}/join=${tokenId}`)
 }
 
 // ?? =============================================
@@ -111,11 +110,12 @@ export const deleteUserAccount = (userId) => {
     return apiClient.delete(`/auth/delete/${userId}` )
 }
 
-// !! docs
+// !! docs move trash
 export const docMoveToTrash = (docId) => {
     return apiClient.delete(`/doc/move-trash/${docId}`)
 }
 
+// !! docs delete document
 export const deleteDoc = (docId) => {
     return apiClient.delete(`/doc/delete/${docId}`)
 }
