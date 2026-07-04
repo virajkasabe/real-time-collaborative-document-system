@@ -35,18 +35,21 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initializeAuth = async() => {
       try {
-        const res = await getUser()
-        const user = res.data.data.user
-        console.log("user",res.data)
-         LocalStorage.set("user", user);
-        const savedUser = LocalStorage.get("user");
+        if(!user) {
+            const res = await getUser()
+              const user = res.data.data.user
+              console.log("user",res.data.data.user)
+              LocalStorage.set("user", user);
+              const savedUser = LocalStorage.get("user");
 
-        if (savedUser) {
-          setUser(savedUser);
-          setIsAuthenticated(true);
-        } else {
-          LocalStorage.remove("user");
+              if (savedUser) {
+                setUser(savedUser);
+                setIsAuthenticated(true);
+              } else {
+                LocalStorage.remove("user");
+              }
         }
+        
       } catch (error) {
         console.error("Auth initialization error:", error);
       } finally {

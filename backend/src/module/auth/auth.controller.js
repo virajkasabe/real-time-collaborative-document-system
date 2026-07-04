@@ -120,7 +120,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   await setUser(secureUSER._id, secureUSER);
 
-  console.log("user login");
+  console.log(`🏃‍➡️ ${secureUSER.fullName} login successufully`)
 
   return res
     .status(200)
@@ -153,10 +153,10 @@ export const logoutUser = asyncHandler(async (req, res) => {
     },
     { new: true }
   );
-
+  
+  console.log(`🏃 ${req.user.fullName} logout successufully`)
   req.user = ""
 
-  console.log("user logout")
 
   return res
     .status(200)
