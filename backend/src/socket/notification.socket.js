@@ -8,6 +8,7 @@ import {
 import ApiError from "../utils/ApiError.js";
 import { fetchDoc, secureUser } from "../utils/helper.js";
 import {
+  COLLABORATION_ERROR_EVENT,
   COLLABORATION_EVENT,
   INVITATION_EVENT,
   NOTIFICATION_EVENT,
@@ -15,9 +16,11 @@ import {
 } from "./socketEvents.js";
 import crypto from 'crypto'
 
-export const mountRecivedRealTimeNotification = (socket) => {
-  socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
 
+
+export const mountRecivedRealTimeNotification = (socket) => {
+  
+  socket.on(INVITATION_EVENT.ACCEPT_INVITATION, async (data) => {
     const { collabId } = data
 
     const user = await secureUser(socket.user._id);
@@ -32,6 +35,11 @@ export const mountRecivedRealTimeNotification = (socket) => {
       // TODO :  throw the socker error not the apierror
       // throw new ApiError(400, "Token Expired or Invalid");
       console.log("ERROR : Token Expired or Invalid")
+      socket
+      .to(user._id)
+      .emit(COLLABORATION_ERROR_EVENT.ERROR_ACCEPT_COLLABORATION, {
+        message : "Token Expirted or used"
+      });
     }
 
     const { docId,role, inviterId } = collabData
@@ -40,9 +48,9 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
     const doc = await fetchDoc(docId);
 
-    if (doc.ownerId.toString() === user._id.toString()) {
-      throw new ApiError(400, "Owner can't add on Users");
-    }
+    // if (doc.ownerId.toString() === user._id.toString()) {
+    //   throw new ApiError(400, "Owner can't add on Users");
+    // }
 
     const userAlreadyExists = doc.users.some(
       (collaborator) =>
@@ -51,8 +59,11 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
     if (userAlreadyExists) {
       await deleteCollaboration(collabId);
-      // throw new ApiError(401, "User Already exist");
-      socket.emit(inveter._id).emit(SOCKET_EVENT.ERROR,{message : "User Already exist"})
+      socket
+      .to(user._id)
+      .emit(COLLABORATION_ERROR_EVENT.ERROR_ACCEPT_COLLABORATION, {
+        message : "User Already exist"
+      });
     }
 
     const updateDocument = await Doc.findByIdAndUpdate(
@@ -86,15 +97,28 @@ export const mountRecivedRealTimeNotification = (socket) => {
 
   socket.on(INVITATION_EVENT.DECLINE_INVITATION, async (data) => {
     const user = await secureUser(socket.user._id);
+
     const hashedTokenID = crypto
       .createHash("sha256")
       .update(tokenId)
       .digest("hex");
 
+    if (!hashedTokenID) {
+      socket
+      .to(user._id)
+      .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
+        message : "Token Expired"
+      });
+    }
+
+
     const collabData = await getCollaboration(hashedTokenID);
     if (!collabData) {
-      // TODO :  throw the socker error not the apierror
-      console.log("ERROR : Token Expired or Invalid")
+      socket
+      .to(user._id)
+      .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
+        message : "Token Expirted or used"
+      });
     }
 
     const doc = await fetchDoc(collabData.docId);

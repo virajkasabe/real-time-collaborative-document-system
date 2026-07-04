@@ -21,6 +21,12 @@ export const COLLABORATION_EVENT = Object.freeze({
   DECLINE_COLLABORATION: "declineCollaborationRequest",
 });
 
+export const COLLABORATION_ERROR_EVENT = Object.freeze({
+  ERROR_ACCEPT_COLLABORATION: "errorAcceptCollaborationRequest",
+  ERROR_DECLINE_COLLABORATION: "errorDeclineCollaborationRequest",
+});
+
+
 export const NOTIFICATION_EVENT = Object.freeze({
   NOTIFICATION_SEND: "notificationSend",
   NOTIFICATION_RECIVED: "notificationRecived",

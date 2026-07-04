@@ -9,14 +9,15 @@ import React, {
 } from 'react';
 import Quill from 'quill';
 import { useNavigate, useParams } from 'react-router-dom';
-
+import { FaCrown } from "react-icons/fa6";
+import { FaPencilAlt } from "react-icons/fa";
+import { FaEye } from "react-icons/fa";
 import { fetchDoc, inviteCollab } from '../apis/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { documentService } from '../services/documentService';
 import { CURSOR_EVENT, DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
-import { getRandomColor } from '../utils/helpers';
 
 import {
   FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaCopy, FaHistory,
@@ -25,16 +26,18 @@ import {
 import {
   LuCheck, LuMessageSquare, LuRefreshCw, LuSend, LuShare2, LuX,
 } from 'react-icons/lu';
+import { CURRENTUSER, randomUser } from '../../public';
+import Button from '../components/common/Button';
+import { ATHENURA_CIRCLE_IMAGE } from '../assets';
 
 // ============================================================
 // CONSTANTS
 // ============================================================
 
-const RIBBON_TABS = ['home', 'insert', 'review', 'view'];
+const RIBBON_TABS = ['home', 'insert', 'design', 'layout', 'review', 'view'];
 
 const STATIC_MENU_ALERTS = {
   file: 'File Options:\n- Back to Dashboard\n- Document is auto-saved locally.',
-  layout: 'Layout Ribbon: Margins and A4 sheet structure is active by default.',
   references: 'References Ribbon: Heading indexes are automatically built.',
   mailings: 'Mailings Ribbon: Collaborative share triggers are active.',
   help: 'Help Ribbon: Contact Antigravity AI for developer notes.',
@@ -47,6 +50,13 @@ const STYLE_CARDS = [
   { type: 'heading2', label: 'Heading 2', preview: 'Heading 2', style: { color: 'var(--accent)', fontWeight: '500' } },
   { type: 'subtitle', label: 'Subtitle', preview: 'Sub', style: { fontStyle: 'italic' } },
 ];
+
+const ACCENT_SWATCHES = ['#0D6EFD', '#7C3AED', '#DC2626', '#059669', '#EA580C', '#0891B2'];
+const PAGE_LAYOUTS = {
+  narrow: { label: 'Narrow', maxWidth: '680px' },
+  normal: { label: 'Normal', maxWidth: '816px' },
+  wide: { label: 'Wide', maxWidth: '1000px' },
+};
 
 const SIMULATED_TEAM_REPLIES = [
   'That looks perfect! The structure flows really well.',
@@ -61,19 +71,36 @@ const SIMULATED_TEAM_MEMBERS = ['Lisa Chen', 'Alex Johnson', 'Team Member'];
 const FONT_SIZE_GROW = { small: 'medium', medium: 'large', large: 'huge', huge: 'huge' };
 const FONT_SIZE_SHRINK = { huge: 'large', large: 'medium', medium: 'small', small: 'small' };
 
-const AUTOSAVE_DEBOUNCE_MS = 80;
-const CURSOR_SEND_DEBOUNCE_MS = 500;
+const AUTOSAVE_DEBOUNCE_MS = 20;
+const CURSOR_SEND_DEBOUNCE_MS = 20;
 // How long a remote cursor flag stays on screen after the last update we heard
 // for that user. This was previously 50ms, which meant a cursor flag would
 // vanish almost immediately after being drawn — it needs to comfortably
 // outlast the interval at which we expect cursor updates to arrive.
-const REMOTE_CURSOR_TTL_MS = 2000;
+const REMOTE_CURSOR_TTL_MS = 500;
 // Separate, tighter debounce used to broadcast the local cursor position while
 // the user is actively typing (not just when they click/select), so remote
 // viewers see the caret advance as characters are typed.
-const TYPING_CURSOR_BROADCAST_DEBOUNCE_MS = 150;
+const TYPING_CURSOR_BROADCAST_DEBOUNCE_MS = 15;
 const OPERATION_DEDUPE_WINDOW_MS = 50;
-const TITLE_SAVE_DEBOUNCE_MS = 750;
+const TITLE_SAVE_DEBOUNCE_MS = 30;
+const TOAST_DURATION_MS = 1500;
+const MOBILE_BREAKPOINT = 768;
+const MAX_UNDO_STACK = 100;
+
+// A fixed palette so a given collaborator always renders with the same
+// color. Previously the color was re-rolled at random on every single
+// cursor broadcast, which made remote cursor flags appear to "flicker"
+// or change identity on every keystroke.
+const CURSOR_COLOR_PALETTE = ['#FF6B6B', '#4ECDC4', '#45AAF2', '#FED330', '#A55EEA', '#26DE81', '#FD9644', '#EB3B5A'];
+
+function colorForUserId(id) {
+  const str = String(id || 'anonymous');
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  return CURSOR_COLOR_PALETTE[hash % CURSOR_COLOR_PALETTE.length];
+}
+
 
 // ============================================================
 // CONTENT CONVERSION HELPERS (pure functions, framework-agnostic)
@@ -227,12 +254,95 @@ function countWords(text) {
   return trimmed === '' ? 0 : trimmed.split(/\s+/).length;
 }
 
+/** True if a text-change delta actually inserts or deletes content, as
+ * opposed to only applying formatting (bold, color, alignment, etc). Used to
+ * keep undo/redo scoped to real content changes only. */
+function deltaChangesContent(delta) {
+  if (!delta?.ops) return false;
+  return delta.ops.some((op) => op.insert !== undefined || op.delete !== undefined);
+}
+
+// ============================================================
+// HOOK: useIsMobile
+// ============================================================
+function useIsMobile(breakpoint = MOBILE_BREAKPOINT) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= breakpoint,
+  );
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= breakpoint);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+// ============================================================
+// HOOK: useToasts
+// A small, self-contained toast system so this page no longer depends on
+// AuthContext's triggerToast / its popup styling.
+// ============================================================
+function useToasts() {
+  const [toasts, setToasts] = useState([]);
+
+  const dismissToast = useCallback((toastId) => {
+    setToasts((prev) => prev.filter((t) => t.id !== toastId));
+  }, []);
+
+  const showToast = useCallback((message, type = 'info') => {
+    const toastId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setToasts((prev) => [...prev, { id: toastId, message, type }]);
+    setTimeout(() => dismissToast(toastId), TOAST_DURATION_MS);
+  }, [dismissToast]);
+
+  return { toasts, showToast, dismissToast };
+}
+
+const TOAST_ICON = { success: '✅', error: '⛔', warning: '⚠️', info: 'ℹ️' };
+const TOAST_ACCENT = { success: '#26DE81', error: '#EB3B5A', warning: '#FED330', info: '#45AAF2' };
+
+function ToastStack({ toasts, onDismiss }) {
+  if (!toasts.length) return null;
+  return (
+    <div
+      className="own-toast-stack"
+      style={{
+        position: 'fixed', top: '16px', right: '16px', zIndex: 9999,
+        display: 'flex', flexDirection: 'column', gap: '8px',
+        maxWidth: 'min(90vw, 340px)',
+      }}
+    >
+      <style>{'@keyframes ownToastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }'}</style>
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          role="alert"
+          onClick={() => onDismiss(t.id)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'var(--bg, #ffffff)', color: 'var(--text, #111827)',
+            borderLeft: `4px solid ${TOAST_ACCENT[t.type] || TOAST_ACCENT.info}`,
+            borderRadius: '8px', padding: '10px 12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            fontSize: '13px', cursor: 'pointer',
+            animation: 'ownToastIn 0.18s ease-out',
+          }}
+        >
+          <span aria-hidden="true">{TOAST_ICON[t.type] || TOAST_ICON.info}</span>
+          <span style={{ flex: 1 }}>{t.message}</span>
+          <LuX size={12} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ============================================================
 // HOOK: useDocumentLoader
 // Fetches the document + role over REST, joins the socket room,
 // and toasts when other users join.
 // ============================================================
-function useDocumentLoader(id, socket, navigate, triggerToast, currentUser) {
+function useDocumentLoader(id, socket, navigate, showToast, currentUser) {
   const [doc, setDoc] = useState(null);
   const [docUserRole, setDocUserRole] = useState(null);
 
@@ -244,17 +354,17 @@ function useDocumentLoader(id, socket, navigate, triggerToast, currentUser) {
         const response = await fetchDoc(id);
         const responseData = response.data.data; // { document, role }
         if (!responseData?.document) {
-          triggerToast('Document not found', 'warning');
+          showToast('Document not found', 'warning');
           navigate('/dashboard');
           return;
         }
         setDocUserRole(responseData.role);
         setDoc(responseData.document);
         socket.emit(DOCUMENT_EVENT.USER_JOIN, { docId: responseData.document._id || id });
-        triggerToast('Document loaded successfully', 'success');
+        showToast('Document loaded successfully', 'success');
       } catch (error) {
         console.error('Error fetching document:', error);
-        triggerToast('Failed to load document', 'error');
+        showToast('Failed to load document', 'error');
         navigate('/dashboard');
       }
     };
@@ -264,23 +374,63 @@ function useDocumentLoader(id, socket, navigate, triggerToast, currentUser) {
     const handleNewUserJoin = (data) => {
       if (data?.user?._id === currentUser?._id) return; // don't toast yourself
       if (data?.user) {
-        triggerToast(`${data.user.fullName || 'User'} joined the document`, 'info');
+        showToast(`${data.user.fullName || 'User'} joined the document`, 'info');
       } else if (data?.message) {
-        triggerToast(data.message, 'info');
+        showToast(data.message, 'info');
       }
     };
 
     socket.on(DOCUMENT_EVENT.NEW_USER_JOIN, handleNewUserJoin);
     return () => socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, handleNewUserJoin);
-  }, [id, socket, navigate, triggerToast, currentUser]);
+  }, [id, socket, navigate, showToast, currentUser]);
 
   return { doc, docUserRole };
 }
 
 // ============================================================
+// HOOK: useActiveCollaborators
+// Tracks who is currently present in the document (join/leave) so the
+// header avatar stack reflects real people instead of hardcoded names.
+// ============================================================
+function useActiveCollaborators(socket, currentUser, showToast) {
+  const [activeUsers, setActiveUsers] = useState([]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const handleJoin = (data) => {
+      if (!data?.user?._id || data.user._id === currentUser?._id) return;
+      setActiveUsers((prev) => {
+        if (prev.some((u) => u._id === data.user._id)) return prev;
+        return [...prev, data.user];
+      });
+    };
+
+    const handleLeft = ({ userId }) => {
+      if (!userId) return;
+      setActiveUsers((prev) => {
+        const leaving = prev.find((u) => u._id === userId);
+        if (leaving) showToast(`${leaving.fullName || 'A collaborator'} left the document`, 'info');
+        return prev.filter((u) => u._id !== userId);
+      });
+    };
+
+    socket.on(DOCUMENT_EVENT.NEW_USER_JOIN, handleJoin);
+    socket.on(DOCUMENT_EVENT.USER_LEFT, handleLeft);
+    return () => {
+      socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, handleJoin);
+      socket.off(DOCUMENT_EVENT.USER_LEFT, handleLeft);
+    };
+  }, [socket, currentUser, showToast]);
+
+  return activeUsers;
+}
+
+// ============================================================
 // HOOK: useCollaborativeQuill
 // Owns the Quill instance lifecycle: initial content, outbound/inbound
-// operation sync, remote cursor rendering, and debounced autosave.
+// operation sync, remote cursor rendering, content-only undo/redo, and
+// debounced autosave.
 // ============================================================
 function useCollaborativeQuill({
   quillRef, doc, docId, canEdit, socket, user, title, onSave, onOutlineChange, onWordCountChange, onSyncingChange,
@@ -292,12 +442,46 @@ function useCollaborativeQuill({
   // closure over the initial {} state.
   const remoteCursorsRef = useRef({});
 
+  // Custom undo/redo: we intentionally do NOT use Quill's built-in history
+  // module, because it records every change including pure formatting
+  // (bold/italic/align/etc). Undo/redo here should only ever step through
+  // actual character insertions and deletions.
+  const undoStackRef = useRef([]);
+  const redoStackRef = useRef([]);
+  const isApplyingHistoryRef = useRef(false);
+  const performUndoRef = useRef(() => {});
+  const performRedoRef = useRef(() => {});
+  const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
+
   useEffect(() => {
     if (!quillRef.current || quillInstanceRef.current) return undefined;
 
     const quill = new Quill(quillRef.current, {
       theme: 'snow',
-      modules: { toolbar: '#word-ribbon-toolbar' },
+      modules: {
+        toolbar: '#word-ribbon-toolbar',
+        history: { delay: 0, maxStack: 0, userOnly: true },
+        keyboard: {
+          bindings: {
+            customUndo: {
+              key: 'Z',
+              shortKey: true,
+              handler: () => { performUndoRef.current(); return false; },
+            },
+            customRedo: {
+              key: 'Z',
+              shortKey: true,
+              shiftKey: true,
+              handler: () => { performRedoRef.current(); return false; },
+            },
+            customRedoY: {
+              key: 'Y',
+              shortKey: true,
+              handler: () => { performRedoRef.current(); return false; },
+            },
+          },
+        },
+      },
       placeholder: canEdit ? 'Start writing your document here...' : 'This document is read-only.',
     });
     quillInstanceRef.current = quill;
@@ -309,6 +493,31 @@ function useCollaborativeQuill({
     let selectionCursorTimeoutId = null;
     let typingCursorTimeoutId = null;
     let isSendingOperation = false;
+
+    const updateHistoryState = () => setHistoryState({
+      canUndo: undoStackRef.current.length > 0,
+      canRedo: redoStackRef.current.length > 0,
+    });
+
+    performUndoRef.current = () => {
+      if (!canEdit || undoStackRef.current.length === 0) return;
+      const entry = undoStackRef.current.pop();
+      isApplyingHistoryRef.current = true;
+      quill.updateContents(entry.undo, Quill.sources.USER);
+      isApplyingHistoryRef.current = false;
+      redoStackRef.current.push(entry);
+      updateHistoryState();
+    };
+
+    performRedoRef.current = () => {
+      if (!canEdit || redoStackRef.current.length === 0) return;
+      const entry = redoStackRef.current.pop();
+      isApplyingHistoryRef.current = true;
+      quill.updateContents(entry.redo, Quill.sources.USER);
+      isApplyingHistoryRef.current = false;
+      undoStackRef.current.push(entry);
+      updateHistoryState();
+    };
 
     // ---- Outbound: local edits -> socket ----
     const sendOperations = (operations) => {
@@ -330,10 +539,13 @@ function useCollaborativeQuill({
         docId: docId || doc._id,
         userId: user._id || user.id,
         userName: user.fullName || user.name || 'Anonymous',
-        avatar: user.avatar || '',
+        avatar: user.avatar || randomUser,
         position,
         selection: selection || { index: position, length: 0 },
-        color: getRandomColor(),
+        // Stable per-user color instead of a fresh random color on every
+        // broadcast — a changing color on every keystroke is what made the
+        // remote cursor flags look like they were "fluttering".
+        color: colorForUserId(user._id || user.id),
         timestamp: Date.now(),
       });
     };
@@ -409,8 +621,20 @@ function useCollaborativeQuill({
     };
 
     // ---- Quill-native event handlers ----
-    const handleTextChange = (delta, _oldDelta, source) => {
+    const handleTextChange = (delta, oldContents, source) => {
       if (source === 'silent') return;
+
+      // Record content-only undo/redo history. Formatting-only changes (the
+      // `else` branch) are intentionally never pushed onto the stack, and
+      // changes we're replaying ourselves via performUndo/performRedo are
+      // skipped too so undo/redo can't grow their own stacks.
+      if (!isApplyingHistoryRef.current && deltaChangesContent(delta)) {
+        const invertDelta = delta.invert(oldContents);
+        undoStackRef.current.push({ undo: invertDelta, redo: delta });
+        if (undoStackRef.current.length > MAX_UNDO_STACK) undoStackRef.current.shift();
+        redoStackRef.current = [];
+        updateHistoryState();
+      }
 
       onOutlineChange();
       const words = countWords(quill.getText());
@@ -460,6 +684,7 @@ function useCollaborativeQuill({
           userName: user.fullName || user.name || 'Anonymous',
           avatar: user.avatar || '',
           position: clickPosition,
+          color: colorForUserId(user._id || user.id),
           timestamp: Date.now(),
           eventType: 'click',
         });
@@ -494,6 +719,8 @@ function useCollaborativeQuill({
 
       if (quill.container) quill.container.innerHTML = '';
       quillInstanceRef.current = null;
+      undoStackRef.current = [];
+      redoStackRef.current = [];
 
       // Clean up any remote cursor flags and their expiry timers so a manual
       // page refresh (which tears this component down) doesn't leave orphaned
@@ -508,7 +735,12 @@ function useCollaborativeQuill({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, docId, onSave, title, user, socket, canEdit]);
 
-  return { quillInstanceRef, remoteCursors };
+  const performUndo = useCallback(() => performUndoRef.current(), []);
+  const performRedo = useCallback(() => performRedoRef.current(), []);
+
+  return {
+    quillInstanceRef, remoteCursors, performUndo, performRedo, canUndo: historyState.canUndo, canRedo: historyState.canRedo,
+  };
 }
 
 function loadInitialContent(quill, content) {
@@ -545,50 +777,67 @@ function resolveClickPosition(quill, _event) {
   }
 }
 
-function renderRemoteCursorFlag(quill, { userId, userName, position, color, avatar }) {
-  document.getElementById(`cursor-${userId}`)?.remove();
+// Updates an existing cursor flag's position/color/label in place instead of
+// removing and recreating the DOM node on every single update. The old
+// remove-then-recreate approach caused a visible flash/flutter on every
+// keystroke from a remote collaborator; reusing the node plus a short CSS
+// transition makes the flag glide smoothly to its new position instead.
+function renderRemoteCursorFlag(quill, cursorData) {
+  const {
+    userId, userName, position, color, avatar,
+  } = cursorData;
   const bounds = quill.getBounds(position);
   if (!bounds) return;
 
-  const cursorColor = color || '#FF6B6B';
+  const cursorColor = color || colorForUserId(userId);
+  let cursorEl = document.getElementById(`cursor-${userId}`);
+  let flagEl;
 
-  const cursorEl = document.createElement('div');
-  cursorEl.id = `cursor-${userId}`;
-  cursorEl.className = 'remote-cursor';
-  cursorEl.style.cssText = `
-    position: absolute;
-    top: ${bounds.top}px;
-    left: ${bounds.left}px;
-    height: ${bounds.height}px;
-    width: 2px;
-    background-color: ${cursorColor};
-    pointer-events: none;
-    z-index: 1000;
-    transition: all 0.05s ease;
-  `;
+  if (!cursorEl) {
+    cursorEl = document.createElement('div');
+    cursorEl.id = `cursor-${userId}`;
+    cursorEl.className = 'remote-cursor';
+    cursorEl.style.cssText = `
+      position: absolute;
+      width: 2px;
+      pointer-events: none;
+      z-index: 1000;
+      transition: top 0.12s ease, left 0.12s ease, height 0.12s ease;
+    `;
 
-  const flag = document.createElement('div');
-  flag.className = 'remote-cursor-flag';
-  flag.style.cssText = `
-    position: absolute;
-    top: -22px;
-    left: -10px;
-    background-color: ${cursorColor};
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    white-space: nowrap;
-    pointer-events: none;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  `;
+    flagEl = document.createElement('div');
+    flagEl.className = 'remote-cursor-flag';
+    flagEl.style.cssText = `
+      position: absolute;
+      top: -22px;
+      left: -10px;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    `;
+    cursorEl.appendChild(flagEl);
+    quill.container.style.position = 'relative';
+    quill.container.appendChild(cursorEl);
+  } else {
+    flagEl = cursorEl.querySelector('.remote-cursor-flag');
+  }
+
+  cursorEl.style.top = `${bounds.top}px`;
+  cursorEl.style.left = `${bounds.left}px`;
+  cursorEl.style.height = `${bounds.height}px`;
+  cursorEl.style.backgroundColor = cursorColor;
+  flagEl.style.backgroundColor = cursorColor;
 
   if (avatar) {
-    flag.innerHTML = `
+    flagEl.innerHTML = `
       <img src="${avatar}" alt="${userName}" style="
         width: 16px; height: 16px; border-radius: 50%;
         border: 1px solid rgba(255,255,255,0.3); object-fit: cover;
@@ -596,12 +845,8 @@ function renderRemoteCursorFlag(quill, { userId, userName, position, color, avat
       ${userName || 'User'}
     `;
   } else {
-    flag.textContent = userName || 'User';
+    flagEl.textContent = userName || 'User';
   }
-
-  cursorEl.appendChild(flag);
-  quill.container.style.position = 'relative';
-  quill.container.appendChild(cursorEl);
 }
 
 // ============================================================
@@ -610,11 +855,12 @@ function renderRemoteCursorFlag(quill, { userId, userName, position, color, avat
 export default function EditingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, triggerToast } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { socket } = useSocket();
+  const { toasts, showToast, dismissToast } = useToasts();
 
-  const { doc, docUserRole } = useDocumentLoader(id, socket, navigate, triggerToast, user);
+  const { doc, docUserRole } = useDocumentLoader(id, socket, navigate, showToast, user);
   const [localDoc, setLocalDoc] = useState(null);
 
   // Keep a local, updatable copy once the document has loaded.
@@ -642,33 +888,38 @@ export default function EditingPage() {
     if (updated) setLocalDoc(updated);
   }, [id]);
 
-  if (!localDoc) {
-    return (
-      <div className="min-h-screen bg-[#F7FAFF] dark:bg-[#070B14] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0D6EFD]" />
-      </div>
-    );
-  }
-
   return (
-    <EditingPageContent
-      document={localDoc}
-      theme={theme}
-      toggleTheme={toggleTheme}
-      onBack={() => navigate('/dashboard')}
-      onSave={handleSave}
-      docUserRole={docUserRole}
-      docId={id}
-    />
+    <>
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      {!localDoc ? (
+        <div className="min-h-screen bg-[#F7FAFF] dark:bg-[#070B14] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0D6EFD]" />
+        </div>
+      ) : (
+        <EditingPageContent
+          document={localDoc}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onBack={() => navigate('/dashboard')}
+          onSave={handleSave}
+          docUserRole={docUserRole}
+          docId={id}
+          showToast={showToast}
+        />
+      )}
+    </>
   );
 }
 
 // ============================================================
 // EDITING PAGE CONTENT
 // ============================================================
-function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave, docUserRole, docId }) {
+function EditingPageContent({
+  document: doc, theme, toggleTheme, onBack, onSave, docUserRole, docId, showToast,
+}) {
   const { socket } = useSocket();
-  const { user, triggerToast } = useAuth();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const [title, setTitle] = useState(doc.title || 'Untitled Document');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -677,6 +928,10 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
   const isEditor = docUserRole === DOCUMENT_ROLES.EDITOR;
   const canEdit = isOwner || isEditor;
   const canShare = isOwner;
+
+  // Who else is currently present in the document (drives the header avatar
+  // stack — added on join, removed on leave).
+  const activeUsers = useActiveCollaborators(socket, user, showToast);
 
   // Sidebar / ribbon UI state
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true);
@@ -688,6 +943,26 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
   const [autoSaveActive, setAutoSaveActive] = useState(true);
   const [copiedFormat, setCopiedFormat] = useState(null);
   const [formatPainterActive, setFormatPainterActive] = useState(false);
+  const [accentColor, setAccentColor] = useState(null);
+  const [pageLayout, setPageLayout] = useState('normal');
+
+  // On a small screen only one sidebar should be open at a time, or the
+  // panels cover the entire viewport and hide each other.
+  const toggleLeftSidebar = useCallback(() => {
+    setLeftSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (!next && isMobile) setRightSidebarCollapsed(true);
+      return next;
+    });
+  }, [isMobile]);
+
+  const toggleRightSidebar = useCallback(() => {
+    setRightSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (!next && isMobile) setLeftSidebarCollapsed(true);
+      return next;
+    });
+  }, [isMobile]);
 
   // Find & Replace
   const [showFindReplace, setShowFindReplace] = useState(false);
@@ -754,7 +1029,9 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { quillInstanceRef, remoteCursors } = useCollaborativeQuill({
+  const {
+    quillInstanceRef, remoteCursors, performUndo, performRedo, canUndo, canRedo,
+  } = useCollaborativeQuill({
     quillRef,
     doc,
     docId,
@@ -816,6 +1093,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     el.style.transition = 'background-color 0.4s';
     el.style.backgroundColor = 'var(--accent-bg)';
     setTimeout(() => { el.style.backgroundColor = 'transparent'; }, 750);
+    if (isMobile) setLeftSidebarCollapsed(true);
   };
 
   // ---- Format painter trigger ----
@@ -826,7 +1104,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       setCopiedFormat(quillInstance.getFormat(range.index, range.length));
       setFormatPainterActive(true);
     } else {
-      triggerToast('Select some formatted text first to copy its style!', 'info');
+      showToast('Select some formatted text first to copy its style!', 'info');
     }
   };
 
@@ -852,7 +1130,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       quillInstance.setSelection(index, findText.length);
       setSearchIndex(index + findText.length);
     } else {
-      triggerToast(`No matches found for "${findText}"`, 'info');
+      showToast(`No matches found for "${findText}"`, 'info');
       setSearchIndex(0);
     }
   };
@@ -888,7 +1166,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
       index = text.toLowerCase().indexOf(needle, index + replaceText.length);
     }
 
-    triggerToast(`Replaced ${count} occurrences of "${findText}"`, 'success');
+    showToast(`Replaced ${count} occurrences of "${findText}"`, 'success');
     setSearchIndex(0);
     updateOutline();
   };
@@ -925,6 +1203,13 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     if (!quillInstance) return;
     const range = quillInstance.getSelection();
     if (range) quillInstance.format('background', 'rgba(59, 130, 246, 0.15)');
+  };
+
+  // ---- Design tab: accent color ----
+  const applyAccentColor = (hex) => {
+    setAccentColor(hex);
+    document.documentElement.style.setProperty('--accent', hex);
+    showToast('Accent color updated', 'success');
   };
 
   // ---- Team chat (simulated replies) ----
@@ -969,22 +1254,34 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
     e.preventDefault();
     try {
       const res = await inviteCollab({ docId, email: shareEmail, role: shareRole });
-      triggerToast(res.data.message || 'Invitation sent', 'success');
+      showToast(res.data.message || 'Invitation sent', 'success');
       setShareEmail('');
     } catch (error) {
-      triggerToast(error.response?.data?.message || error.message || 'Failed to send invitation', 'warning');
+      showToast(error.response?.data?.message || error.message || 'Failed to send invitation', 'warning');
     }
   };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`https://quillsuite.collab/docs/${docId}`).then(() => {
       setCopied(true);
+      showToast('Link copied to clipboard', 'success');
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
   const handleShowStats = () => {
-    alert(`Proofing Statistics:\n- Words: ${wordCount}\n- Reading time: ~${Math.ceil(wordCount / 200)} min\n- Chars: ${quillInstance?.getText().length || 0}`);
+    showToast(
+      `Words: ${wordCount} · Reading time: ~${Math.ceil(wordCount / 200)} min · Chars: ${quillInstance?.getText().length || 0}`,
+      'info',
+    );
+  };
+
+  const handleOpenShare = () => {
+    if (canShare) {
+      setShowShareModal(true);
+    } else {
+      showToast('Only document owners can share this document', 'warning');
+    }
   };
 
   // ============================================================
@@ -997,8 +1294,10 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         autoSaveActive={autoSaveActive}
         onToggleAutoSave={() => setAutoSaveActive((p) => !p)}
         canEdit={canEdit}
-        onUndo={() => quillInstance?.history.undo()}
-        onRedo={() => quillInstance?.history.redo()}
+        onUndo={performUndo}
+        onRedo={performRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
         title={title}
         onTitleChange={handleTitleChange}
         docUserRole={docUserRole}
@@ -1006,13 +1305,17 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         toggleTheme={toggleTheme}
         canShare={canShare}
         isEditor={isEditor}
-        onShareClick={() => setShowShareModal(true)}
+        onShareClick={handleOpenShare}
+        activeUsers={activeUsers}
+        currentUser={user}
+        isMobile={isMobile}
       />
 
       <RibbonTabsBar
         activeRibbonTab={activeRibbonTab}
         setActiveRibbonTab={setActiveRibbonTab}
         theme={theme}
+        isMobile={isMobile}
       />
 
       <RibbonToolbar
@@ -1028,9 +1331,16 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         onOpenReplace={() => openFindReplace('replace-input-focus')}
         onShowStats={handleShowStats}
         leftSidebarCollapsed={leftSidebarCollapsed}
-        setLeftSidebarCollapsed={setLeftSidebarCollapsed}
+        setLeftSidebarCollapsed={toggleLeftSidebar}
         rightSidebarCollapsed={rightSidebarCollapsed}
-        setRightSidebarCollapsed={setRightSidebarCollapsed}
+        setRightSidebarCollapsed={toggleRightSidebar}
+        accentColor={accentColor}
+        onApplyAccentColor={applyAccentColor}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        pageLayout={pageLayout}
+        setPageLayout={setPageLayout}
+        isMobile={isMobile}
       />
 
       {showFindReplace && (
@@ -1046,11 +1356,12 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         />
       )}
 
-      <main className="editor-workspace">
+      <main className="editor-workspace" style={isMobile ? { position: 'relative' } : undefined}>
         <SidebarToggle
           side="left"
           collapsed={leftSidebarCollapsed}
-          onClick={() => setLeftSidebarCollapsed((p) => !p)}
+          onClick={toggleLeftSidebar}
+          isMobile={isMobile}
         />
 
         <LeftSidebar
@@ -1061,6 +1372,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
           onOutlineClick={handleOutlineClick}
           canEdit={canEdit}
           history={history}
+          isMobile={isMobile}
         />
 
         <section className="editor-canvas-pane">
@@ -1069,7 +1381,9 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
             style={{
               transform: `scale(${zoomPercent / 100})`,
               transformOrigin: 'top center',
-              transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.2s ease',
+              maxWidth: isMobile ? '100%' : PAGE_LAYOUTS[pageLayout].maxWidth,
+              margin: '0 auto',
             }}
           >
             <div ref={quillRef} style={{ minHeight: '100%' }} />
@@ -1079,7 +1393,8 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         <SidebarToggle
           side="right"
           collapsed={rightSidebarCollapsed}
-          onClick={() => setRightSidebarCollapsed((p) => !p)}
+          onClick={toggleRightSidebar}
+          isMobile={isMobile}
         />
 
         <RightSidebar
@@ -1095,6 +1410,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
           newCommentText={newCommentText}
           setNewCommentText={setNewCommentText}
           onAddComment={handleAddComment}
+          isMobile={isMobile}
         />
       </main>
 
@@ -1103,6 +1419,7 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
         isSyncing={isSyncing}
         zoomPercent={zoomPercent}
         setZoomPercent={setZoomPercent}
+        isMobile={isMobile}
       />
 
       {showShareModal && canShare && (
@@ -1127,11 +1444,13 @@ function EditingPageContent({ document: doc, theme, toggleTheme, onBack, onSave,
 // ============================================================
 
 function EditorHeader({
-  onBack, autoSaveActive, onToggleAutoSave, canEdit, onUndo, onRedo,
+  onBack, autoSaveActive, onToggleAutoSave, canEdit, onUndo, onRedo, canUndo, canRedo,
   title, onTitleChange, docUserRole, theme, toggleTheme, canShare, isEditor, onShareClick,
+  activeUsers, currentUser, isMobile,
 }) {
+  const you = currentUser?.fullName || currentUser?.name || 'You';
   return (
-    <header className="editor-header">
+    <header className="editor-header" style={isMobile ? { flexWrap: 'wrap', gap: '8px' } : undefined}>
       <div className="editor-header-left">
         <button className="sidebar-toggle-btn" onClick={onBack} title="Back to Dashboard">
           <FaChevronLeft size={20} />
@@ -1147,8 +1466,8 @@ function EditorHeader({
           </button>
           {canEdit && (
             <>
-              <button onClick={onUndo} title="Undo (Ctrl+Z)"><FaUndo size={14} /></button>
-              <button onClick={onRedo} title="Redo (Ctrl+Y)"><FaRedo size={14} /></button>
+              <button onClick={onUndo} disabled={!canUndo} style={{ opacity: canUndo ? 1 : 0.4 }} title="Undo (Ctrl+Z)"><FaUndo size={14} /></button>
+              <button onClick={onRedo} disabled={!canRedo} style={{ opacity: canRedo ? 1 : 0.4 }} title="Redo (Ctrl+Y)"><FaRedo size={14} /></button>
             </>
           )}
         </div>
@@ -1161,28 +1480,44 @@ function EditorHeader({
             placeholder="Untitled Document"
             disabled={!canEdit}
             title={canEdit ? 'Edit document title' : 'You do not have edit access'}
+            style={isMobile ? { maxWidth: '120px' } : undefined}
           />
-          <span className="word-file-extension">- Word</span>
+          {!isMobile && <span className="word-file-extension">- Word</span>}
           <span className="word-title-cloud-status" title="Saved to Cloud">
             <FaCloud size={14} style={{ color: 'var(--accent)' }} />
           </span>
-          <span className="text-center text-[14px] text-yellow-400">{docUserRole}</span>
+          {!isMobile && <span className="text-center text-[14px] text-yellow-400">{docUserRole}</span>}
         </div>
       </div>
 
-      <div className="editor-header-center">
-        <div className="word-header-search">
-          <FaSearch size={14} className="search-glass-icon" />
-          <input type="text" placeholder="Search (Alt+Q)" disabled />
+      {!isMobile && (
+        <div className="editor-header-center">
+          <div className="word-header-search">
+            <FaSearch size={14} className="search-glass-icon" />
+            <input type="text" placeholder="Search (Alt+Q)" disabled />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="editor-header-right">
         <div className="avatar-stack">
-          <div className="avatar-item" style={{ backgroundColor: 'var(--accent)' }} data-tooltip="You">Y</div>
-          <div className="avatar-item" style={{ backgroundColor: '#10b981' }} data-tooltip="Lisa Chen">LC</div>
-          <div className="avatar-item" style={{ backgroundColor: '#3b82f6' }} data-tooltip="Alex Johnson">AJ</div>
-          <div className="avatar-item avatar-more" data-tooltip="Simulated team members">+1</div>
+          <div className="avatar-item" style={{ backgroundColor: 'var(--accent)' }} data-tooltip={you}>
+            {
+              currentUser.avatar ? <img src={currentUser?.avatar} alt="" className='rounded-full h-8 w-full' />  :  <p>{you.charAt(0).toUpperCase()} </p>
+            }
+          </div>
+          {activeUsers.map((u) => (
+            <div
+              key={u._id}
+              className="avatar-item"
+              style={{ backgroundColor: colorForUserId(u._id) }}
+              data-tooltip={u.fullName }
+            >
+              {
+              u?.avatar ? <img src={u?.avatar} alt="" className='rounded-full h-8 w-full' />  :  <p>{u.fullName.charAt(0).toUpperCase()} </p>
+            }
+            </div>
+          ))}
         </div>
         <button
           className="theme-toggle-btn"
@@ -1194,7 +1529,7 @@ function EditorHeader({
         </button>
         {canShare ? (
           <button className="btn-primary" onClick={onShareClick}>
-            <LuShare2 size={16} /> Share
+            <LuShare2 size={16} /> {!isMobile && 'Share'}
           </button>
         ) : (
           <button
@@ -1203,7 +1538,7 @@ function EditorHeader({
             style={{ opacity: 0.4, cursor: 'not-allowed' }}
             title={isEditor ? 'Only document Owners can share' : 'You have read-only access'}
           >
-            <LuShare2 size={16} /> Share
+            <LuShare2 size={16} /> {!isMobile && 'Share'}
           </button>
         )}
       </div>
@@ -1211,29 +1546,29 @@ function EditorHeader({
   );
 }
 
-function RibbonTabsBar({ activeRibbonTab, setActiveRibbonTab, theme }) {
+function RibbonTabsBar({
+  activeRibbonTab, setActiveRibbonTab, theme, isMobile,
+}) {
   return (
-    <div className="word-ribbon-tabs-bar">
+    <div
+      className="word-ribbon-tabs-bar"
+      style={isMobile ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'nowrap' } : undefined}
+    >
       <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.file)}>File</button>
       {RIBBON_TABS.map((tab) => (
         <button
           key={tab}
           className={`ribbon-tab-header-btn ${activeRibbonTab === tab ? 'active' : ''}`}
           onClick={() => setActiveRibbonTab(tab)}
+          style={{ whiteSpace: 'nowrap' }}
         >
           {tab.charAt(0).toUpperCase() + tab.slice(1)}
         </button>
       ))}
-      <button
-        className="ribbon-tab-header-btn"
-        onClick={() => { setActiveRibbonTab('design'); alert(`Design Ribbons: System accents are anchored to ${theme} Cobalt.`); }}
-      >
-        Design
-      </button>
-      <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.layout)}>Layout</button>
       <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.references)}>References</button>
       <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.mailings)}>Mailings</button>
       <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.help)}>Help</button>
+      {theme && null}
     </div>
   );
 }
@@ -1242,9 +1577,14 @@ function RibbonToolbar({
   activeRibbonTab, canEdit, formatPainterActive, onFormatPainterClick, onGrowFont, onShrinkFont,
   onParagraphShading, onApplyStyle, onOpenFind, onOpenReplace, onShowStats,
   leftSidebarCollapsed, setLeftSidebarCollapsed, rightSidebarCollapsed, setRightSidebarCollapsed,
+  accentColor, onApplyAccentColor, theme, toggleTheme, pageLayout, setPageLayout, isMobile,
 }) {
   return (
-    <div id="word-ribbon-toolbar" className="word-ribbon-toolbar-panel">
+    <div
+      id="word-ribbon-toolbar"
+      className="word-ribbon-toolbar-panel"
+      style={isMobile ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch' } : undefined}
+    >
       {/* HOME TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'home' ? 'visible' : 'hidden'}`}>
         {!canEdit ? (
@@ -1326,7 +1666,9 @@ function RibbonToolbar({
 
             <div className="ribbon-group styles-group">
               <div className="styles-carousel">
-                {STYLE_CARDS.map(({ type, label, preview, style }) => (
+                {STYLE_CARDS.map(({
+                  type, label, preview, style,
+                }) => (
                   <button
                     key={type}
                     type="button"
@@ -1369,6 +1711,66 @@ function RibbonToolbar({
         )}
       </div>
 
+      {/* DESIGN TAB */}
+      <div className={`ribbon-tab-content ${activeRibbonTab === 'design' ? 'visible' : 'hidden'}`}>
+        <div className="ribbon-group">
+          <div className="ribbon-controls-container">
+            <div className="ribbon-buttons-row" style={{ gap: '6px' }}>
+              {ACCENT_SWATCHES.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  onClick={() => onApplyAccentColor(hex)}
+                  title={`Use ${hex} as accent color`}
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    background: hex,
+                    border: accentColor === hex ? '2px solid var(--text, #111)' : '1px solid rgba(0,0,0,0.15)',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          <span className="ribbon-group-label">Accent Color</span>
+        </div>
+        <div className="ribbon-group-separator" />
+        <div className="ribbon-group">
+          <div className="ribbon-controls-container">
+            <button type="button" className="ribbon-custom-btn" onClick={toggleTheme}>
+              {theme === 'dark' ? <FaSun size={16} style={{ marginRight: '6px' }} /> : <FaMoon size={16} style={{ marginRight: '6px' }} />}
+              <span>{theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}</span>
+            </button>
+          </div>
+          <span className="ribbon-group-label">Theme</span>
+        </div>
+      </div>
+
+      {/* LAYOUT TAB */}
+      <div className={`ribbon-tab-content ${activeRibbonTab === 'layout' ? 'visible' : 'hidden'}`}>
+        <div className="ribbon-group">
+          <div className="ribbon-controls-container">
+            <div className="ribbon-buttons-row">
+              {Object.entries(PAGE_LAYOUTS).map(([key, { label }]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`ribbon-custom-btn ${pageLayout === key ? 'active' : ''}`}
+                  onClick={() => setPageLayout(key)}
+                  title={`${label} margins`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <span className="ribbon-group-label">Page Width</span>
+        </div>
+      </div>
+
       {/* REVIEW TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'review' ? 'visible' : 'hidden'}`}>
         <div className="ribbon-group">
@@ -1401,7 +1803,7 @@ function RibbonToolbar({
               <button
                 type="button"
                 className={`ribbon-custom-btn ${!leftSidebarCollapsed ? 'active' : ''}`}
-                onClick={() => setLeftSidebarCollapsed((p) => !p)}
+                onClick={setLeftSidebarCollapsed}
               >
                 <FaList size={16} style={{ marginRight: '6px' }} />
                 <span>Navigation Outline</span>
@@ -1409,7 +1811,7 @@ function RibbonToolbar({
               <button
                 type="button"
                 className={`ribbon-custom-btn ${!rightSidebarCollapsed ? 'active' : ''}`}
-                onClick={() => setRightSidebarCollapsed((p) => !p)}
+                onClick={setRightSidebarCollapsed}
               >
                 <FaUserSecret size={16} style={{ marginRight: '6px' }} />
                 <span>Collaborations Pane</span>
@@ -1465,14 +1867,19 @@ function FindReplacePane({
   );
 }
 
-function SidebarToggle({ side, collapsed, onClick }) {
+function SidebarToggle({
+  side, collapsed, onClick, isMobile,
+}) {
   const Icon = collapsed ? FaPlus : LuX;
   const style = side === 'left'
-    ? { left: collapsed ? '8px' : '268px', transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }
-    : { right: collapsed ? '8px' : '268px', transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' };
+    ? { left: collapsed ? '8px' : (isMobile ? 'calc(85vw + 8px)' : '268px'), transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }
+    : { right: collapsed ? '8px' : (isMobile ? 'calc(85vw + 8px)' : '268px'), transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' };
 
   return (
-    <div style={{ position: 'absolute', top: '12px', zIndex: 50, ...style }}>
+    <div style={{
+      position: 'absolute', top: '12px', zIndex: 1600, ...style,
+    }}
+    >
       <button
         className="sidebar-toggle-btn"
         onClick={onClick}
@@ -1487,9 +1894,17 @@ function SidebarToggle({ side, collapsed, onClick }) {
   );
 }
 
-function LeftSidebar({ collapsed, leftTab, setLeftTab, outline, onOutlineClick, canEdit, history }) {
+function LeftSidebar({
+  collapsed, leftTab, setLeftTab, outline, onOutlineClick, canEdit, history, isMobile,
+}) {
+  const mobileStyle = (!collapsed && isMobile)
+    ? {
+      position: 'fixed', top: 0, bottom: 0, left: 0, width: '85vw', maxWidth: '320px', zIndex: 1500, boxShadow: '0 0 24px rgba(0,0,0,0.35)',
+    }
+    : undefined;
+
   return (
-    <aside className={`editor-sidebar left-sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`editor-sidebar left-sidebar ${collapsed ? 'collapsed' : ''}`} style={mobileStyle}>
       <div className="sidebar-header"><span>Navigation Outline</span></div>
       <div className="sidebar-tabs">
         <button className={`sidebar-tab ${leftTab === 'outline' ? 'active' : ''}`} onClick={() => setLeftTab('outline')}>
@@ -1539,10 +1954,16 @@ function LeftSidebar({ collapsed, leftTab, setLeftTab, outline, onOutlineClick, 
 
 function RightSidebar({
   collapsed, rightTab, setRightTab, chatMessages, chatInputText, setChatInputText, onSendMessage, chatBottomRef,
-  comments, newCommentText, setNewCommentText, onAddComment,
+  comments, newCommentText, setNewCommentText, onAddComment, isMobile,
 }) {
+  const mobileStyle = (!collapsed && isMobile)
+    ? {
+      position: 'fixed', top: 0, bottom: 0, right: 0, width: '85vw', maxWidth: '320px', zIndex: 1500, boxShadow: '0 0 24px rgba(0,0,0,0.35)',
+    }
+    : undefined;
+
   return (
-    <aside className={`editor-sidebar right-sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`editor-sidebar right-sidebar ${collapsed ? 'collapsed' : ''}`} style={mobileStyle}>
       <div className="sidebar-header"><span>Collaborations</span></div>
       <div className="sidebar-tabs">
         <button className={`sidebar-tab ${rightTab === 'chat' ? 'active' : ''}`} onClick={() => setRightTab('chat')}>
@@ -1609,21 +2030,27 @@ function RightSidebar({
   );
 }
 
-function StatusBar({ wordCount, isSyncing, zoomPercent, setZoomPercent }) {
+function StatusBar({
+  wordCount, isSyncing, zoomPercent, setZoomPercent, isMobile,
+}) {
   return (
-    <footer className="word-status-bar">
+    <footer className="word-status-bar" style={isMobile ? { flexWrap: 'wrap', gap: '6px', fontSize: '11px' } : undefined}>
       <div className="status-bar-left">
         <span>Page 1 of 1</span>
         <span className="status-bar-separator">|</span>
         <span>{wordCount} words</span>
-        <span className="status-bar-separator">|</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <LuCheck size={12} style={{ color: '#10b981' }} /> Spelling: Checked
-        </span>
-        <span className="status-bar-separator">|</span>
-        <span>English (India)</span>
-        <span className="status-bar-separator">|</span>
-        <span>Accessibility: Good to go</span>
+        {!isMobile && (
+          <>
+            <span className="status-bar-separator">|</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <LuCheck size={12} style={{ color: '#10b981' }} /> Spelling: Checked
+            </span>
+            <span className="status-bar-separator">|</span>
+            <span>English (India)</span>
+            <span className="status-bar-separator">|</span>
+            <span>Accessibility: Good to go</span>
+          </>
+        )}
       </div>
       <div className="status-bar-center">
         <div className={`sync-badge ${isSyncing ? 'syncing' : ''}`} style={{ border: 'none', background: 'transparent', padding: 0 }}>
@@ -1632,22 +2059,33 @@ function StatusBar({ wordCount, isSyncing, zoomPercent, setZoomPercent }) {
         </div>
       </div>
       <div className="status-bar-right">
-        <button
-          type="button"
-          className="status-bar-btn"
-          onClick={() => alert('Focus Mode activated! Enjoy distraction-free writing.')}
-          style={{ background: 'transparent', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer' }}
-        >
-          Focus
-        </button>
-        <span className="status-bar-separator">|</span>
+        {!isMobile && (
+          <>
+            <button
+              type="button"
+              className="status-bar-btn"
+              onClick={() => alert('Focus Mode activated! Enjoy distraction-free writing.')}
+              style={{
+                background: 'transparent', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer',
+              }}
+            >
+              Focus
+            </button>
+            <span className="status-bar-separator">|</span>
+          </>
+        )}
         <button onClick={() => setZoomPercent((p) => Math.max(50, p - 10))} className="zoom-btn" title="Zoom Out">-</button>
-        <input
-          type="range" min="50" max="150" value={zoomPercent}
-          onChange={(e) => setZoomPercent(Number(e.target.value))}
-          className="zoom-slider"
-          title="Zoom slider"
-        />
+        {!isMobile && (
+          <input
+            type="range"
+            min="50"
+            max="150"
+            value={zoomPercent}
+            onChange={(e) => setZoomPercent(Number(e.target.value))}
+            className="zoom-slider"
+            title="Zoom slider"
+          />
+        )}
         <button onClick={() => setZoomPercent((p) => Math.min(150, p + 10))} className="zoom-btn" title="Zoom In">+</button>
         <span style={{ fontWeight: 600, width: '36px', textAlign: 'right' }}>{zoomPercent}%</span>
       </div>
@@ -1655,47 +2093,418 @@ function StatusBar({ wordCount, isSyncing, zoomPercent, setZoomPercent }) {
   );
 }
 
-function ShareModal({ onClose, shareEmail, setShareEmail, shareRole, setShareRole, onInvite, docId, copied, onCopyLink }) {
+function ShareModal({
+  onClose, shareEmail, setShareEmail, shareRole, setShareRole, onInvite, docId, copied, onCopyLink,
+}) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="modal-title">Share Workspace</h3>
-          <button className="modal-close" onClick={onClose}>
-            <LuX size={18} />
-          </button>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', 
+        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        zIndex: 3000, padding: '20px',
+        backdropFilter: 'blur(8px)',
+        animation: 'fadeIn 0.2s ease-out'
+      }}
+    >
+      <style>{`
+        @keyframes shareModalPopIn { 
+          from { opacity: 0; transform: scale(0.94) translateY(12px); } 
+          to { opacity: 1; transform: scale(1) translateY(0); } 
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .modal-card::-webkit-scrollbar {
+          width: 6px;
+        }
+        .modal-card::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .modal-card::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 10px;
+        }
+        .modal-card::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(135deg, #5a67d8 0%, #6b46a1 100%);
+        }
+      `}</style>
+      <div
+        className="modal-card"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.35), 0 10px 30px rgba(0,0,0,0.1)',
+          width: '100%',
+          maxWidth: '560px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          animation: 'shareModalPopIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          padding: '0',
+          border: '1px solid rgba(255,255,255,0.2)',
+        }}
+      >
+        {/* Header with gradient */}
+        <div className="modal-header" style={{
+          padding: '24px 32px 16px 32px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '16px 16px 0 0',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '-50%',
+            right: '-20%',
+            width: '200px',
+            height: '200px',
+            background: 'rgba(255,255,255,0.08)',
+            borderRadius: '50%',
+            pointerEvents: 'none'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-60%',
+            left: '-10%',
+            width: '150px',
+            height: '150px',
+            background: 'rgba(255,255,255,0.05)',
+            borderRadius: '50%',
+            pointerEvents: 'none'
+          }} />
+          <div className="flex gap-4" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            position: 'relative',
+            zIndex: 1
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <img src={ATHENURA_CIRCLE_IMAGE} alt="" className='h-8 w-8' />
+              <h3 className="modal-title" style={{
+                margin: 0,
+                fontSize: '20px',
+                fontWeight: '700',
+                color: 'white',
+                letterSpacing: '-0.01em'
+              }}>Share Workspace</h3>
+            </div>
+            <button 
+              className="modal-close" 
+              onClick={onClose}
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '10px',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                color: 'white',
+                backdropFilter: 'blur(10px)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <p style={{
+            margin: '6px 0 0 0',
+            fontSize: '13px',
+            color: 'rgba(255,255,255,0.85)',
+            position: 'relative',
+            zIndex: 1,
+            fontWeight: '400'
+          }}>
+            INVITE ON REAL TIME COLLABORATION DOCUMENT SYSTEM
+          </p>
         </div>
-        <div className="modal-body">
-          <div className="form-group">
-            <label className="form-label">Add team member email</label>
-            <div className="form-input-row">
+        
+        <div className="modal-body" style={{ padding: '28px 32px 32px 32px' }}>
+          <div className="form-group" style={{ marginTop: '0' }}>
+            <label className="form-label" style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#1e293b',
+              marginBottom: '8px'
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Add team member email
+              </span>
+            </label>
+            
+            <div className="form-input-row" style={{
+              display: 'flex',
+              alignItems: 'stretch',
+              gap: '0',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+              border: '1px solid #e2e8f0',
+              transition: 'all 0.3s',
+              background: 'white'
+            }}>
               <input
                 type="email"
                 className="form-input"
+                style={{
+                  flex: '1',
+                  padding: '12px 16px',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '14px',
+                  color: '#1e293b',
+                  backgroundColor: 'transparent',
+                  transition: 'all 0.2s',
+                  minWidth: '0',
+                }}
                 placeholder="user@organization.com"
                 value={shareEmail}
                 onChange={(e) => setShareEmail(e.target.value)}
+                onFocus={(e) => {
+                  e.currentTarget.parentElement.style.borderColor = '#667eea';
+                  e.currentTarget.parentElement.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.15), 0 1px 3px rgba(0,0,0,0.06)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.parentElement.style.borderColor = '#e2e8f0';
+                  e.currentTarget.parentElement.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+                }}
               />
-              <select className="form-select" value={shareRole} onChange={(e) => setShareRole(e.target.value)}>
-                <option value={DOCUMENT_ROLES.OWNER}>{DOCUMENT_ROLES.OWNER}</option>
-                <option value={DOCUMENT_ROLES.EDITOR}>{DOCUMENT_ROLES.EDITOR}</option>
-                <option value={DOCUMENT_ROLES.VIEWER}>{DOCUMENT_ROLES.VIEWER}</option>
-              </select>
-              <button className="btn-primary" style={{ padding: '0 16px' }} onClick={onInvite}>
-                Invite
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 4px',
+                background: '#f8fafc',
+                borderLeft: '1px solid #e2e8f0',
+                borderRight: '1px solid #e2e8f0',
+              }}>
+                <select 
+                  className="form-select"
+                  style={{
+                    padding: '11px 28px 11px 14px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#1e293b',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 8px center',
+                    minWidth: '110px',
+                  }}
+                  value={shareRole} 
+                  onChange={(e) => setShareRole(e.target.value)}
+                >
+                  <option value={DOCUMENT_ROLES.OWNER} style={{ fontWeight: '600', color: '#7c3aed' }}><FaCrown className='h-10' />Owner</option>
+                  <option value={DOCUMENT_ROLES.EDITOR} style={{ fontWeight: '500', color: '#2563eb' }}><FaPencilAlt/> Editor</option>
+                  <option value={DOCUMENT_ROLES.VIEWER} style={{ fontWeight: '400', color: '#64748b' }}><FaEye/> Viewer</option>
+                </select>
+              </div>
+              
+              <button 
+                className="btn-primary"
+                onClick={onInvite}
+                style={{
+                  padding: '24px 24px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  whiteSpace: 'nowrap',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.96)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                  <line x1="20" y1="8" x2="20" y2="14" />
+                  <line x1="23" y1="11" x2="17" y2="11" />
+                </svg>
+                <span>Invite</span>
               </button>
             </div>
+            
+            {/* Helper text with icon */}
+            <div style={{
+              marginTop: '12px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px',
+              padding: '10px 14px',
+              background: 'linear-gradient(135deg, #f0f4ff 0%, #faf0ff 100%)',
+              borderRadius: '8px',
+              border: '1px solid #e8edff'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <p style={{
+                margin: 0,
+                fontSize: '12px',
+                color: '#475569',
+                lineHeight: '1.5'
+              }}>
+                <strong style={{ color: '#667eea' }}>Tip:</strong> Enter the email address of the person you'd like to invite. They'll receive an email with access instructions.
+              </p>
+            </div>
+
+            {/* Copy Link Section - Optional but nice to have */}
+            {/* <div style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e2e8f0'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  flex: 1,
+                  minWidth: 0
+                }}>
+                  <div style={{
+                    background: '#f1f5f9',
+                    padding: '6px',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                  </div>
+                  <span style={{
+                    fontSize: '13px',
+                    color: '#475569',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    Share via link
+                  </span>
+                </div>
+                <button 
+                  onClick={onCopyLink}
+                  style={{
+                    padding: '6px 16px',
+                    background: 'transparent',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                  }}
+                >
+                  {copied ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span style={{ color: '#10b981' }}>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div> */}
           </div>
-          <div className="form-group" style={{ marginTop: '8px' }}>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+/**
+ * 
+ * <div className="form-group" style={{ marginTop: '8px' }}>
             <label className="form-label">Workspace Shareable Link</label>
-            <div className="copy-row">
+            <div className="copy-row mt-2">
               <input
                 type="text"
                 className="copy-input"
                 readOnly
                 value={`https://quillsuite.collab/docs/${docId}`}
               />
-              <button className="btn-copy" onClick={onCopyLink}>
+              <button className="btn-copy m-4" onClick={onCopyLink}>
                 {copied ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaCheck size={14} /> Copied!</span>
                 ) : (
@@ -1704,8 +2513,4 @@ function ShareModal({ onClose, shareEmail, setShareEmail, shareRole, setShareRol
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+ */

@@ -40,7 +40,7 @@ app.use(requestIp.mw());
 
 const limit = rateLimit({
   windowMs : 15 * 60 * 1000,
-  max : 500,
+  max : 50000,
   standardHeaders : true,
   legacyHeaders : false,
   keyGenerator : (req,res) => {
