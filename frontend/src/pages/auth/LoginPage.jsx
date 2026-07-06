@@ -13,7 +13,7 @@ import { LocalStorage } from '../../apis';
 import { googleLoginApi } from '../../apis/api';
 
   export default function LoginPage() {
-    const { login, triggerToast, error, googleLogin } = useAuth();
+    const { login, triggerToast, error } = useAuth();
     const { theme } = useTheme();
     const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
     const navigate = useNavigate();

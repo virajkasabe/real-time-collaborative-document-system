@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+  
 import Quill from 'quill';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaCrown } from "react-icons/fa6";
@@ -20,14 +21,13 @@ import { documentService } from '../services/documentService';
 import { CURSOR_EVENT, DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
 
 import {
-  FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaCopy, FaHistory,
+  FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaHistory,
   FaList, FaMoon, FaPlus, FaRedo, FaSearch, FaSun, FaUndo, FaUsers, FaUserSecret,
 } from 'react-icons/fa';
 import {
   LuCheck, LuMessageSquare, LuRefreshCw, LuSend, LuShare2, LuX,
 } from 'react-icons/lu';
-import { CURRENTUSER, randomUser } from '../../public';
-import Button from '../components/common/Button';
+import { randomUser } from '../../public';
 import { ATHENURA_CIRCLE_IMAGE } from '../assets';
 
 // ============================================================
@@ -2252,7 +2252,7 @@ function ShareModal({
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
-                Add team member email
+                Invite User Email
               </span>
             </label>
             

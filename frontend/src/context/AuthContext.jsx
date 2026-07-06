@@ -17,9 +17,9 @@ import {
   userForgetPasswordRequest,
   changeUserCurrentPassword,
   userAccessTokenRefreshed,
-  userRefreshTokenRefreshed,
-  // userGoogleLogin
+  userRefreshTokenRefreshed
 } from '../apis/api';
+
 import { LocalStorage } from '../apis/index';
 
 const AuthContext = createContext();
@@ -136,40 +136,6 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // const googleLogin = useCallback(async()=>{
-  //   setError(null)
-  //   try {
-  //     const res = await userGoogleLogin()
-  //     console.log("res",res)
-  //     console.log("userGoogleLogin", res.data)
-  //      if (!res.data.success) {
-  //       throw new Error(res.data.message || "Login failed");
-  //     }
-
-  //     const { user, accessToken } = res.data.data;
-      
-  //     if (!user || !accessToken) {
-  //       throw new Error("Invalid login response: missing user or access token");
-  //     }
-
-  //     LocalStorage.set("accessToken", accessToken);
-  //     LocalStorage.set("user", user);
-  //     setUser(user);
-  //     setIsAuthenticated(true);
-      
-  //     return res.data;
-
-  //   } catch (error) {
-  //     console.log(
-  //       "error : " , error.message
-  //     )
-  //      const errorMessage = error.response?.data?.message || error.message || "Login failed";
-  //       console.error("Login error:", errorMessage);
-  //       setError(errorMessage);
-  //       throw error;
-  //   }
-  // },[])
-
   const logout = useCallback(async () => {
     try {
       const res = await userLogout();
@@ -238,7 +204,6 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     loading,
     login,
-    // googleLogin,
     register,
     toast,
     logout,
@@ -253,7 +218,6 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     loading,
     login,
-    // googleLogin,
     register,
     toast,
     logout,

@@ -3,11 +3,13 @@ import { FiBell, FiMail, FiUserCheck, FiUserX, FiCheck, FiX, FiTrash2 } from 're
 import { useNotifications } from '../context/NotificationContext';
 import { useSocket } from '../context/SocketContext';
 import { INVITATION_EVENT } from '../utils/constants';
+import { useAuth } from '../context/AuthContext';
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, clearNotification } = useNotifications();
   const [activeTab, setActiveTab] = useState('all');
   const { socket } = useSocket()
+  const { triggerToast } = useAuth()
   const tabs = [
     { id: 'all', label: 'All' },
     { id: 'unread', label: 'Unread' },
@@ -18,20 +20,25 @@ export default function NotificationsPage() {
 
 
    const acceptCollab = (acceptNotif) => {
-    console.log("acces",acceptNotif)
     markAsRead(acceptNotif.id)
       socket.emit(INVITATION_EVENT.ACCEPT_INVITATION,
         acceptNotif
       )
+      triggerToast("user join successfully", 'success')
+      clearNotification(acceptNotif.notificationId)
     }
+    
 
-  const declinedCollab = (declineNotif) => {
-    console.log("acces",declineNotif)
-    markAsRead(declineNotif.id)
-      socket.emit(INVITATION_EVENT.DECLINE_INVITATION,{
+    const declinedCollab = (declineNotif) => {
+      markAsRead(declineNotif.id)
+      console.log("notification", notifications)
+      socket.emit(INVITATION_EVENT.DECLINE_INVITATION,
         declineNotif
-      })
+      )
+      triggerToast("user decline the collab", 'fail')
+      clearNotification(declineNotif.notificationId)
   }
+
   
   const getFilteredNotifications = () => {
     switch (activeTab) {
@@ -109,7 +116,7 @@ export default function NotificationsPage() {
   const getMessage = (n) => {
     switch (n.type) {
       case 'COLLAB_INVITED':
-        return `${n.inviterName} invited you to collaborate on "${n.docname}"`;
+        return `${n.senderName} invited you to collaborate on "${n.documentTitle}"`;
       case 'COLLAB_ACCEPTED':
         return `${n.accepterName} accepted your invite for "${n.docname}"`;
       case 'COLLAB_DECLINED':
@@ -213,7 +220,7 @@ export default function NotificationsPage() {
                     {getMessage(notif)}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {new Date(notif.createdAt).toLocaleString()}
+                    {new Date(notif.expiry).toLocaleString()}
                   </p>
                 </div>
               </div>

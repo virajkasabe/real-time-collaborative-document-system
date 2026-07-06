@@ -259,6 +259,10 @@ export default function Dashboard() {
     setSelectedDoc(doc);
     setShareOpen(true);
     setRowMenuOpen(null);
+
+    console.log("doc",doc)
+
+
   };
 
   const openRename = (e, doc) => {

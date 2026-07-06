@@ -142,58 +142,33 @@ export const getUpdateDocumentOperation = async (docId) => {
 };
 
 // ?? ===== NOTIFICATION =====
-// ?? 1. ===== REAL_TIME - NOTIFICATION =====
-// ***** Set real-time notification *****
-export const setrealtimeNotification = async (
-  realTimeKey,
-  payload,
-  expiry = 20 * 60
-) => {
-  if (!client || !isConnected) return null;
-  const key = `realTime:${realTimeKey}`;
-  await client.setex(key, expiry, JSON.stringify(payload));
-};
-
-// ***** Get real-time notification *****
-export const getrealtimeNotification = async (realTimeKey) => {
-  if (!client || !isConnected) return null;
-  const key = `realTime:${realTimeKey}`;
-  const payload = await client.get(key);
-  return payload ? JSON.parse(payload) : null;
-};
-
-// ***** delete real-time notification *****
-export const deleterealtimeNotification = async (realTimeKey) => {
-  if (!client || !isConnected) return null;
-  const key = `realTime:${realTimeKey}`;
-  await client.del(key);
-};
-
-// ?? 2. ===== PENDING - NOTIFICATION =====
-export const setPendingNotification = async (
-  pendingKey,
+// ***** SET notification *****
+export const setNotification = async (
+  notifyKey,
   payload,
   expiry = 7 * 24 * 60 * 60
 ) => {
   if (!client || !isConnected) return null;
-  const key = `pending:${pendingKey}`;
+  const key = `notify:${notifyKey}`;
   await client.rpush(key, JSON.stringify(payload));
   await client.expire(key, expiry);
 };
 
-// ***** Get real-time notification *****
-export const getPendingNotification = async (pendingKey) => {
+// ***** GET notification *****
+export const getNotification = async (notifyKey) => {
   if (!client || !isConnected) return null;
-  const key = `pending:${pendingKey}`;
+  const key = `notify:${notifyKey}`;
   const payloads = await client.lrange(key, 0, -1);
   return payloads ? payloads.map((item) => JSON.parse(item)) : null;
 };
 
-// ***** delete real-time notification *****
-export const deletePendingNotification = async (pendingKey) => {
-  if (!client || !isConnected) return null;
-  const key = `pending:${pendingKey}`;
-  await client.del();
+// ***** DEL notification *****
+export const deleteNotification = async (notifyKey, notification) => {
+  if (!client || !isConnected) return 0;
+  const key = `notify:${notifyKey}`;
+  console.log("notification delete")
+  const res = await client.lpop(key);
+  return  
 };
 
 // ?? ====== DIRTY DOCUMENT SET ======

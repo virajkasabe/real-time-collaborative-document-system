@@ -62,7 +62,7 @@ export const initializeSocketIO = (io) => {
       mountPendingNotification(socket, io);
       mountJoinDocumentEvent(socket, io);
       mountDocumentRecivedOperation(socket, io);
-      mountRecivedRealTimeNotification(socket);
+      mountRecivedRealTimeNotification(socket, io);
       mountCursorChangeOperation(socket)
 
       // mountDocumentSendOperation(socket);
