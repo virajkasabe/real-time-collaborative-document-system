@@ -1,7 +1,7 @@
 
 export const loginType = Object.freeze({
-  EMAIL_PASSWORD: "EMAIL_PASSWORD",
-  GOOGLE: "GOOGLE",
+  EMAIL_PASSWORD: "Email Password",
+  GOOGLE: "Google",
 });
 
 export const DOCUMENT_ROLES = Object.freeze({

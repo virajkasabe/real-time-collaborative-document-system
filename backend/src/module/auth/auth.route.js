@@ -1,31 +1,30 @@
 import { Router } from "express";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
+import passport  from 'passport';
 import {
   accessTokenRefreshed,
   changeCurrentPassword,
   currentUser,
   deleteUser,
-  forgotPassword,
-  login,
-  logout,
+  forgetPasswordRequest,
+  googleLoginCallback,
+  loginUser,
+  logoutUser,
   refreshTokenHandler,
-  register,
+  registerUser,
   resetPassword,
   updateAccountDetails,
   verifyEmail,
   verifyEmailRequest,
-  verifyOTP,
-  googleLoginCallback,
 } from "./auth.controller.js";
-import passport from "passport";
 
 const router = Router();
 
-router.route("/register").post(register);
+router.route("/register").post(registerUser);
 
-router.route("/login").post(login);
+router.route("/login").post(loginUser);
 
-router.route("/logout").post(verifyJWT, logout);
+router.route("/logout").get(verifyJWT, logoutUser);
 
 router.route("/refresh-token-refreshed").post(refreshTokenHandler);
 
@@ -37,6 +36,20 @@ router.route("/getme").get(verifyJWT, currentUser);
 //   .route("/update-profile")
 //   .put(verifyJWT, uploadAvatar.single("avatar"), updateAccountDetails);
 
+router.route("/google").get(
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  }),
+  (req, res) => {
+    res.send("redirecting to google...");
+  }
+);
+
+router
+  .route("/callback/google")
+  .get(passport.authenticate("google", {session : true}), googleLoginCallback);
+
+
 router.route("/update-profile").put(verifyJWT, updateAccountDetails);
 
 router.route("/update-current-password").put(verifyJWT, changeCurrentPassword);
@@ -45,20 +58,9 @@ router.route("/verify-email").post(verifyEmail);
 
 router.route("/verify-email-request").post(verifyEmailRequest);
 
-router.route("/verify-otp").post(verifyJWT, verifyOTP);
+router.route("/forgot-password-request").post(forgetPasswordRequest);
 
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password/:token', resetPassword);
-router.post('/reset-password', resetPassword);
-
-router.route("/google").get(
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-router.route("/callback/google").get(
-  passport.authenticate("google", { session: false }),
-  googleLoginCallback
-);
+router.route("/reset-password/:unHashedToken").post(resetPassword);
 
 //!! =====  DANGER ZONE =====
 router.route("/delete").delete(deleteUser);

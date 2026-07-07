@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { HiOutlineMail } from 'react-icons/hi';
 import athenuraLogo from "../../assets/athenura-logo.png";
@@ -7,193 +7,90 @@ import { FiLock, FiEye, FiEyeOff, FiShield,
          FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import axios from 'axios';
-import toast, { Toaster } from 'react-hot-toast';
 
 export default function ResetPasswordPage() {
-  const { token } = useParams(); // get token from URL
-  const navigate = useNavigate();
+  const { resetPassword, triggerToast } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
+  const navigate = useNavigate();
+  const { token } = useParams();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  // Support fallback state from VerifyEmail flow or direct url tokens
+  const email = location.state?.email || searchParams.get('email') || 'user@example.com';
+  const code = location.state?.code || token || searchParams.get('token') || searchParams.get('code') || '123456';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  // Password strength checks (live)
-  const checks = [
-    { label: 'At least 8 characters', pass: password.length >= 8 },
-    { label: 'Uppercase letter', pass: /[A-Z]/.test(password) },
-    { label: 'Lowercase letter', pass: /[a-z]/.test(password) },
-    { label: 'One number', pass: /[0-9]/.test(password) },
-    { label: 'Special character', pass: /[^A-Za-z0-9]/.test(password) },
+  // Strength calculation
+  const getStrength = (pwd) => {
+    let s = 0;
+    if (pwd.length >= 8) s++;
+    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) s++;
+    if (/[0-9]/.test(pwd)) s++;
+    if (/[^A-Za-z0-9]/.test(pwd)) s++;
+    return s;
+  };
+
+  const strength = getStrength(password);
+  
+  const label = strength === 0 ? '' :
+                strength === 1 ? 'Weak' :
+                strength === 2 ? 'Fair' :
+                strength === 3 ? 'Good' : 'Strong';
+
+  // Requirements checklist validations
+  const requirements = [
+    { label: 'At least 8 characters long', met: password.length >= 8 },
+    { label: 'Include uppercase and lowercase', met: /[A-Z]/.test(password) && /[a-z]/.test(password) },
+    { label: 'Include at least one number', met: /[0-9]/.test(password) },
+    { label: 'Include at least one special character', met: /[^A-Za-z0-9]/.test(password) },
   ];
 
-  const getStrength = () => {
-    const passed = checks.filter(c => c.pass).length;
-    if (passed <= 1) return { label: 'Weak', color: '#ef4444', width: '20%' };
-    if (passed <= 3) return { label: 'Fair', color: '#f59e0b', width: '60%' };
-    if (passed === 4) return { label: 'Good', color: '#3b82f6', width: '80%' };
-    return { label: 'Strong', color: '#22c55e', width: '100%' };
-  };
+  const canSubmit = password && confirmPassword && password === confirmPassword && strength >= 2;
 
-  // Check token ONCE on mount only - stops repeating error
-  useEffect(() => {
-    if (!token) {
-      setError('Invalid reset link. Please request a new one.');
-    }
-  }, []);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    let errs = {};
 
-  const handleReset = async () => {
-    setError(''); 
-    
-    if (!token) {
-      setError('Invalid reset link. Please request a new one.');
-      return;
-    }
+    const meetsRequirements = requirements.every(req => req.met);
     if (!password) {
-      setError('Please enter a new password');
-      return;
+      errs.password = 'Password is required';
+    } else if (!meetsRequirements) {
+      errs.password = 'Password does not meet all security requirements';
     }
-    if (!confirmPassword) {
-      setError('Please confirm your password');
-      return;
-    }
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    if (checks.some(c => !c.pass)) {
-      setError('Password does not meet all requirements');
-      return;
+      errs.confirmPassword = 'Passwords do not match';
     }
 
-    const payload = {
-      token: token,
-      newPassword: password
-    };
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      if (errs.password) triggerToast(errs.password, 'warning');
+      else if (errs.confirmPassword) triggerToast(errs.confirmPassword, 'warning');
+      return;
+    }
 
-    console.log("Token extracted from URL:", token);
-    console.log("Request payload:", payload);
+    setLoading(true);
+    const successResult = await resetPassword(email, code, password);
+    setLoading(false);
 
-    try {
-      setLoading(true);
-      const response = await axios.post(
-        'http://localhost:5000/api/v1/rtcds/auth/reset-password',
-        payload,
-        { withCredentials: true }
-      );
-
-      console.log("API response:", response.data);
-
-      toast.success(response.data?.message || 'Password reset successful!');
+    if (successResult) {
       setSuccess(true);
-      
-      // Redirect to login after 2 seconds
-      setTimeout(() => navigate('/login'), 2000);
-    } catch (err) {
-      console.error("API error response:", err.response?.data || err.message);
-      const msg = err.response?.data?.message || err.message || 'Password reset failed';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
+      triggerToast('Password updated successfully!', 'success');
     }
   };
-
-  // Show invalid link page if no token
-  if (!token) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: '#0f172a'
-      }}>
-        <div style={{
-          background: '#1e293b',
-          border: '1px solid #ef4444',
-          padding: '32px',
-          borderRadius: '16px',
-          textAlign: 'center',
-          maxWidth: '400px',
-          width: '90%'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
-          <h3 style={{ color: '#ef4444', margin: '0 0 8px' }}>
-            Invalid Reset Link
-          </h3>
-          <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 24px' }}>
-            Token is missing from the URL.
-            Please request a new password reset link.
-          </p>
-          <button
-            onClick={() => navigate('/forgot-password')}
-            style={{
-              background: '#1a73e8',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
-          >
-            Request New Reset Link
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show success page
-  if (success) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: '#0f172a'
-      }}>
-        <div style={{
-          background: '#1e293b',
-          padding: '32px',
-          borderRadius: '16px',
-          textAlign: 'center',
-          maxWidth: '400px',
-          width: '90%'
-        }}>
-          <div style={{
-            width: '64px', height: '64px',
-            background: '#d1fae5',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            fontSize: '32px'
-          }}>✅</div>
-          <h3 style={{ color: '#22c55e', margin: '0 0 8px' }}>
-            Password Reset Successful!
-          </h3>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>
-            Redirecting to login page...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#090D16] dark:to-[#04060B] font-sans select-none">
-      <Toaster position="top-center" reverseOrder={false} />
       
       {/* MAIN CARD: same as other auth pages */}
       <div className="w-full max-w-6xl flex flex-col md:flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-[#0F172A]">
@@ -294,154 +191,199 @@ export default function ResetPasswordPage() {
               </p>
             </div>
           </div>
+
         </div>
 
         {/* RIGHT PANEL */}
         <div className="w-full md:w-[52%] bg-white dark:bg-[#1E2535] flex flex-col justify-center overflow-hidden p-8 md:p-10 self-stretch">
           
           <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center h-full select-text">
-            <div className="w-full flex flex-col">
-              
-              {/* Top icon (centered) */}
-              <div className="relative w-16 h-16 bg-[#EBF4FF] dark:bg-blue-900/30 rounded-full mx-auto mb-4 flex items-center justify-center shrink-0">
-                <HiOutlineMail className="text-[#2563EB] text-3xl" />
+            {!success ? (
+              <div className="w-full flex flex-col">
                 
-                {/* Lock badge (bottom-right of circle) */}
-                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-700 rounded-full p-1 text-[#2563EB] text-xs shadow-sm border border-gray-100 dark:border-gray-600">
-                  <FiLock />
-                </div>
-              </div>
-
-              {/* Header */}
-              <div className="text-center">
-                <h2 className="text-2xl font-extrabold text-[#0F172A] dark:text-white text-center">
-                  Set New Password
-                </h2>
-                <p className="text-sm text-[#64748B] dark:text-gray-400 text-center mt-1 mb-5">
-                  Enter your new password below.
-                </p>
-              </div>
-
-              <div className="space-y-3.5 text-left">
-                
-                {/* 1. New Password field */}
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 mb-1 block">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg z-10" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter new password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-11 bg-white dark:bg-[#2D3748] border border-gray-200 dark:border-gray-600 rounded-xl pl-12 pr-12 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all font-medium text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer focus:outline-none hover:text-[#0F172A] dark:hover:text-white transition duration-150 z-10"
-                    >
-                      {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                    </button>
+                {/* Top icon (centered) */}
+                <div className="relative w-16 h-16 bg-[#EBF4FF] dark:bg-blue-900/30 rounded-full mx-auto mb-4 flex items-center justify-center shrink-0">
+                  <HiOutlineMail className="text-[#2563EB] text-3xl" />
+                  
+                  {/* Lock badge (bottom-right of circle) */}
+                  <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-700 rounded-full p-1 text-[#2563EB] text-xs shadow-sm border border-gray-100 dark:border-gray-600">
+                    <FiLock />
                   </div>
+                </div>
 
-                  {/* Password Strength Bar */}
-                  {password.length > 0 && (
-                    <div className="mt-2">
-                      <div style={{ height: '4px', background: '#334155',
-                        borderRadius: '2px', margin: '8px 0' }}>
-                        <div style={{
-                          height: '100%',
-                          width: getStrength().width,
-                          background: getStrength().color,
-                          borderRadius: '2px',
-                          transition: 'all 0.3s ease'
-                        }} />
+                {/* Header */}
+                <div className="text-center">
+                  <h2 className="text-2xl font-extrabold text-[#0F172A] dark:text-white text-center">
+                    Set New Password
+                  </h2>
+                  <p className="text-sm text-[#64748B] dark:text-gray-400 text-center mt-1 mb-5">
+                    Enter your new password below.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-3.5 text-left">
+                  
+                  {/* 1. New Password field */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 mb-1 block">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg z-10" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter new password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full h-11 bg-white dark:bg-[#2D3748] border border-gray-200 dark:border-gray-600 rounded-xl pl-12 pr-12 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all font-medium text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer focus:outline-none hover:text-[#0F172A] dark:hover:text-white transition duration-150 z-10"
+                      >
+                        {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Password Strength Bar */}
+                    {password.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1 flex-1">
+                            {[1, 2, 3, 4].map(level => (
+                              <div 
+                                key={level} 
+                                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                                  strength >= level
+                                    ? level === 1 
+                                      ? 'bg-red-400'
+                                      : level === 2 
+                                        ? 'bg-orange-400'
+                                        : level === 3 
+                                          ? 'bg-yellow-400'
+                                          : 'bg-green-400'
+                                    : 'bg-gray-200 dark:bg-gray-600'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className={`text-xs font-semibold min-w-[40px] ${
+                            strength === 1 ? 'text-red-500' :
+                            strength === 2 ? 'text-orange-500' :
+                            strength === 3 ? 'text-yellow-500' :
+                            strength === 4 ? 'text-green-500' :
+                            'text-gray-400'
+                          }`}>
+                            {strength === 0 ? '' :
+                             strength === 1 ? 'Weak' :
+                             strength === 2 ? 'Fair' :
+                             strength === 3 ? 'Good' : 'Strong'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#64748B] mt-0.5">
+                          Password strength: 
+                          <span className="font-semibold ml-1">
+                            {label}
+                          </span>
+                        </p>
                       </div>
-                      <span style={{ color: getStrength().color, fontSize: '12px' }}>
-                        {getStrength().label}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Confirm New Password field */}
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 mb-1 block">
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg z-10" />
-                    <input
-                      type={showConfirm ? 'text' : 'password'}
-                      placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full h-11 bg-white dark:bg-[#2D3748] border border-gray-200 dark:border-gray-600 rounded-xl pl-12 pr-12 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all font-medium text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer focus:outline-none hover:text-[#0F172A] dark:hover:text-white transition duration-150 z-10"
-                    >
-                      {showConfirm ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                    </button>
+                    )}
                   </div>
-                </div>
 
-                {/* Requirements checklist */}
-                <div className="space-y-1 mt-2">
-                  {checks.map((check, i) => (
-                    <div key={i} style={{
-                      display: 'flex', alignItems: 'center',
-                      gap: '6px', fontSize: '12px', marginBottom: '4px',
-                      color: check.pass ? '#22c55e' : '#94a3b8'
-                    }}>
-                      {check.pass ? '✅' : '⭕'} {check.label}
+                  {/* 2. Confirm New Password field */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 mb-1 block">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg z-10" />
+                      <input
+                        type={showConfirm ? 'text' : 'password'}
+                        placeholder="Confirm new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full h-11 bg-white dark:bg-[#2D3748] border border-gray-200 dark:border-gray-600 rounded-xl pl-12 pr-12 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all font-medium text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer focus:outline-none hover:text-[#0F172A] dark:hover:text-white transition duration-150 z-10"
+                      >
+                        {showConfirm ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                      </button>
                     </div>
-                  ))}
-                </div>
-
-                {/* Error message */}
-                {error && (
-                  <div style={{
-                    background: 'rgba(239,68,68,0.1)',
-                    border: '1px solid #ef4444',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    marginTop: '12px'
-                  }}>
-                    ⚠️ {error}
+                    {errors.confirmPassword && (
+                      <p className="text-red-500 text-xs font-semibold mt-1">{errors.confirmPassword}</p>
+                    )}
                   </div>
-                )}
 
-                {/* Update Password Button */}
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  disabled={loading}
-                  className="w-full h-11 rounded-xl mt-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-base flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
-                >
-                  <FiLock />
-                  {loading ? 'Updating Password...' : 'Update Password'}
-                </button>
+                  {/* Requirements checklist (4 items) */}
+                  <div className="space-y-1 mt-2">
+                    {requirements.map((req, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        {req.met ? (
+                          <FiCheckCircle className="text-green-500 flex-shrink-0 text-sm" />
+                        ) : (
+                          <FiCircle className="text-gray-300 dark:text-gray-600 flex-shrink-0 text-sm" />
+                        )}
+                        <span className={`text-xs ${
+                          req.met 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : 'text-[#64748B] dark:text-gray-400'
+                        }`}>
+                          {req.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
 
-                {/* Back to Login Link */}
-                <div
-                  onClick={() => navigate('/login')}
-                  className="text-[#2563EB] dark:text-blue-400 font-semibold text-sm flex items-center justify-center gap-1 mt-3 hover:underline cursor-pointer"
-                >
-                  <FiArrowLeft className="text-lg" />
-                  Back to Login
-                </div>
+                  {/* Update Password Button */}
+                  <button
+                    type="submit"
+                    disabled={loading || !canSubmit}
+                    className="w-full h-11 rounded-xl mt-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-base flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
+                  >
+                    <FiLock />
+                    Update Password
+                  </button>
+
+                  {/* Back to Login Link */}
+                  <Link
+                    to="/login"
+                    className="text-[#2563EB] dark:text-blue-400 font-semibold text-sm flex items-center justify-center gap-1 mt-3 hover:underline cursor-pointer"
+                  >
+                    <FiArrowLeft className="text-lg" />
+                    Back to Login
+                  </Link>
+
+                </form>
               </div>
-            </div>
+            ) : (
+              /* Success State */
+              <div className="text-center py-4 text-slate-800 dark:text-slate-200">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/35 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FiCheck className="text-green-500 text-3xl" />
+                </div>
+                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white">
+                  Password Updated!
+                </h3>
+                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2">
+                  Your password has been successfully reset.<br />
+                  You can now sign in with your new password.
+                </p>
+                <Link 
+                  to="/login" 
+                  className="mt-4 inline-flex items-center gap-2 w-full h-11 rounded-xl bg-[#2563EB] text-white font-bold justify-center hover:bg-blue-700 cursor-pointer transition-colors shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
+                >
+                  Sign In Now
+                </Link>
+              </div>
+            )}
+
           </div>
         </div>
+
       </div>
     </div>
   );

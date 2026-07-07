@@ -1,5 +1,4 @@
-
-import { apiClient } from "./index"
+import { apiClient, baseAPIURL } from "./index"
 
 // ?? =============================================
 // auth register, login , logout
@@ -21,6 +20,10 @@ export const userLogin = async (data) => {
     return await apiClient.post("/auth/login",data)
 }
 
+// ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
+export const googleLoginApi = `${baseAPIURL}/callback/google`
+
+
 export const userLogout = () => {
     return apiClient.get("/auth/logout")
 }
@@ -34,6 +37,7 @@ export const updateUserProfile = (data) => {
 }
 
 export const userForgetPasswordRequest = (data) => {
+    console.log("data",data)
     return apiClient.post("/auth/forgot-password-request", data)
 }
 
@@ -53,7 +57,6 @@ export const userRefreshTokenRefreshed = (data) => {
     return apiClient.post("/auth/refresh-token-refreshed", data)
 }
 
-
 // ?? =============================================
 // collab invite, accept, declined 
 // ?? =============================================
@@ -68,10 +71,8 @@ export const acceptCollab = (email,tokenId) => {
 }
 
 export const declinedCollab = (email,tokenId) => {
-    return apiClient.post(`collab/decline/email=${email}/join=${tokenId}`)
+    return apiClient.post(`/collab/decline/email=${email}/join=${tokenId}`)
 }
-
-
 
 // ?? =============================================
 // docuement create, read, update, delete
@@ -94,10 +95,13 @@ export const sharedWithMeDocs = () => {
     return apiClient.get("/doc/shared-with-me-docs")
 }
 
+export const fetchTrashFolder = () => {
+    return apiClient.get(`/doc/trash/folder`)
+}
+
 export const restoreDoc = (docId) => {
     return apiClient.put(`/doc/restore-doc/${docId}`)
 }
-
 
 // !! =============================================
 // !!        DENGET ZONE
@@ -108,12 +112,15 @@ export const deleteUserAccount = (userId) => {
     return apiClient.delete(`/auth/delete/${userId}` )
 }
 
-// !! docs
+// !! docs move trash
 export const docMoveToTrash = (docId) => {
     return apiClient.delete(`/doc/move-trash/${docId}`)
 }
 
+// !! docs delete document
 export const deleteDoc = (docId) => {
     return apiClient.delete(`/doc/delete/${docId}`)
 }
+
+
 

@@ -8,11 +8,7 @@ import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
 
 export default function EmailVerificationPage() {
-
   const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
-
-  const { verifyOTP, resendOTP, loading, error, devOTP, setVerificationToken, triggerToast } = useAuth();
-
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -21,24 +17,13 @@ export default function EmailVerificationPage() {
   const token = location.state?.token || '';
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-
   const [loading, setLoading] = useState(false);
   const [verificationError, setVerificationError] = useState(null);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const inputRefs = useRef([]);
-
-  useEffect(() => {
-    if (token) {
-      setVerificationToken(token);
-    }
-  }, [token, setVerificationToken]);
 
   useEffect(() => {
     if (!email) navigate('/forgot-password');
   }, [email, navigate]);
-
 
   // Clear error when OTP changes
   useEffect(() => {
@@ -54,22 +39,17 @@ export default function EmailVerificationPage() {
       return;
     }
 
-  const handleChange = (index, value) => {
-    // Only allow single digit number
-    if (!/^[0-9]$/.test(value) && value !== '') return;
-
-
     const newOtp = [...otp];
-    newOtp[index] = value;
+    newOtp[index] = val.substring(val.length - 1);
     setOtp(newOtp);
 
     // Auto focus next input
-    if (value && index < 5) {
+    if (index < 5) {
       inputRefs.current[index + 1].focus();
     }
   };
 
-  const handleKeyDown = (index, e) => {
+  const handleKeyDown = (e, index) => {
     if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
         const newOtp = [...otp];
@@ -86,7 +66,6 @@ export default function EmailVerificationPage() {
 
   const handlePaste = (e) => {
     e.preventDefault();
-
     const text = e.clipboardData.getData("text").replace(/[^0-9a-zA-Z]/g, "").substring(0, 6);
     if (text.length === 6) {
       const newOtp = text.split("");
@@ -94,37 +73,17 @@ export default function EmailVerificationPage() {
       inputRefs.current[5].focus();
     } else {
       triggerToast("Please paste a 6-digit verification code", "warning");
-
-    const pasteData = e.clipboardData.getData('text').slice(0, 6);
-    
-    // Only allow if pasted value is all numbers
-    if (!/^\d+$/.test(pasteData)) return;
-    
-    const newOtp = [...otp];
-    pasteData.split('').forEach((char, i) => {
-      newOtp[i] = char;
-    });
-    setOtp(newOtp);
-    
-    // Focus last filled input
-    const lastIndex = Math.min(pasteData.length - 1, 5);
-    if (inputRefs.current[lastIndex]) {
-      inputRefs.current[lastIndex].focus();
-
     }
   };
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return;
-
     const code = otp.join("");
 
     if (code.length < 6) {
-      triggerToast("Please enter complete 6-digit OTP", "error");
+      triggerToast("Please enter the full 6-digit code", "warning");
       return;
     }
-
 
     setLoading(true);
     setVerificationError(null);
@@ -161,32 +120,6 @@ export default function EmailVerificationPage() {
     setVerificationError(null);
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
-
-    setIsSubmitting(true);
-    try {
-      const result = await verifyOTP(code);
-      if (result && (result.success || result.statusCode < 400)) {
-        navigate('/login');
-      }
-    } catch (err) {
-      // Handled by context error state
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleResend = async () => {
-    try {
-      const result = await resendOTP(email);
-      if (result.success || result.statusCode < 400) {
-        setOtp(["", "", "", "", "", ""]);
-        if (inputRefs.current[0]) {
-          inputRefs.current[0].focus();
-        }
-      }
-    } catch (err) {
-      // Handled by context error state
-
     }
   };
 
@@ -346,8 +279,8 @@ export default function EmailVerificationPage() {
                     type="text"
                     inputMode="numeric"
                     value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onChange={(e) => handleChange(e.target, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
                     onPaste={handlePaste}
                     className="w-11 h-11 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-center text-lg font-bold bg-white dark:bg-[#2D3748] text-[#0F172A] dark:text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 transition-colors"
                     disabled={loading}
@@ -372,32 +305,6 @@ export default function EmailVerificationPage() {
                 ) : "Verify Code"}
               </button>
             </form>
-
-            {/* Error Message */}
-            {error && (
-              <p style={{ color: 'red', textAlign: 'center', marginTop: '10px' }}>
-                ⚠️ {error}
-              </p>
-            )}
-
-            {/* Show OTP on UI for testing (REMOVE IN PRODUCTION) */}
-            {devOTP && (
-              <div style={{
-                background: '#fff3cd',
-                border: '1px solid #ffc107',
-                padding: '10px',
-                borderRadius: '8px',
-                marginTop: '10px',
-                textAlign: 'center'
-              }}>
-                <p style={{ margin: 0, fontSize: '14px', color: '#856404' }}>
-                  🔐 Development OTP (email disabled):
-                </p>
-                <h2 style={{ margin: '5px 0', color: '#333', letterSpacing: '4px' }} className="font-extrabold">
-                  {devOTP}
-                </h2>
-              </div>
-            )}
 
             {/* Back to Login */}
             <Link

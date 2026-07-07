@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-
 import { FileText, Star, Eye, ShieldAlert, ArrowRight, Users, Calendar, Clock, ChevronRight, Pencil, User, BookOpen } from 'lucide-react';
 import { documentService } from '../../services/documentService';
-
-import { FileText, Star, Eye, ShieldAlert, ArrowRight } from 'lucide-react';
-import { documentService } from '../../utils/documentService';
-
 import { useAuth } from '../../context/AuthContext';
 import { sharedWithMeDocs } from '../../apis/api';
 
