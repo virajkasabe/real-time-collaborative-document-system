@@ -35,5 +35,4 @@ router.route("/delete/:docId").delete(deleteDoc)
 
 
 
-
 export default router;
