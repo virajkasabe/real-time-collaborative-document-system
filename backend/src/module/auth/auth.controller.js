@@ -307,8 +307,7 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
     throw new ApiError(404, "user not found");
   }
 
-  const { unHashedToken, hashedToken, tokenExpiry } =
-    user.generateTemporaryToken(user._id);
+  const { unHashedToken, hashedToken, tokenExpiry } = await user.generateTemporaryToken(user._id);
 
   user.forgetPasswordRequest = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;

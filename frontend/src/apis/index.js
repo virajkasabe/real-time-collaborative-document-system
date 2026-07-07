@@ -34,11 +34,11 @@ export const requestHandler = async (api, setLoading, onSuccess, onError) => {
     onError?.(error?.response?.data || { message: errorMessage });
     console.error("API error:", errorMessage);
 
-    // if ([400, 401, 403].includes(error?.response?.status)) {
+    if ([400, 401, 403].includes(error?.response?.status)) {
       // Optional: handle forced logout
-      // LocalStorage.clear();
-      // window.location.href = "/login";
-    // }
+      LocalStorage.clear();
+      window.location.href = "/login";
+    }
   } finally {
     if (isMounted) setLoading?.(false);
   }
@@ -104,25 +104,25 @@ apiClient.interceptors.response.use(
     // if (error.response?.status === 401 && !originalRequest._retry) {
     //   originalRequest._retry = true;
 
-    //   try {
-    //     // Refresh token endpoint (httpOnly cookie sent automatically)
-    //     const refreshRes = await apiClient.post("/refresh-token");
-    //     const newAccessToken = refreshRes.data.accessToken;
+      // try {
+      //   // Refresh token endpoint (httpOnly cookie sent automatically)
+      //   const refreshRes = await apiClient.post("/refresh-token");
+      //   const newAccessToken = refreshRes.data.accessToken;
 
-    //     if (!newAccessToken) throw new Error("Refresh token failed");
+      //   if (!newAccessToken) throw new Error("Refresh token failed");
 
-    //     // Save new accessToken
-    //     LocalStorage.set("accessToken", newAccessToken);
+      //   // Save new accessToken
+      //   LocalStorage.set("accessToken", newAccessToken);
 
-    //     // Retry original request with new token
-    //     originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-    //     return apiClient(originalRequest);
-    //   } catch (refreshError) {
-    //     // Refresh failed → clear storage + redirect to login
-    //     LocalStorage.clear();
-    //     window.location.href = "/login";
-    //     return Promise.reject(refreshError);
-    //   }
+      //   // Retry original request with new token
+      //   originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+      //   return apiClient(originalRequest);
+      // } catch (refreshError) {
+      //   // Refresh failed → clear storage + redirect to login
+      //   LocalStorage.clear();
+      //   window.location.href = "/login";
+      //   return Promise.reject(refreshError);
+      // }
     // }
 
     return Promise.reject(error.response.data);

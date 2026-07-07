@@ -29,7 +29,7 @@ import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
-import { createDoc, deleteDoc, fetchDocumentFolder } from '../../apis/api';
+import { createDoc, docMoveToTrash, fetchDocumentFolder } from '../../apis/api';
 
 export default function Dashboard() {
   const { user, triggerToast } = useAuth();
@@ -248,7 +248,7 @@ export default function Dashboard() {
   const handleDelete = async (e, docId) => {
     e.stopPropagation();
     console.log("docId", docId)
-    await deleteDoc(docId);
+    await docMoveToTrash(docId);
     triggerToast('Moved file to trash', 'info');
     setRowMenuOpen(null);
     triggerReload();
@@ -274,7 +274,7 @@ export default function Dashboard() {
 
   const handleBulkDelete = async () => {
     for (const id of selectedDocIds) {
-      await deleteDoc(id);
+      await docMoveToTrash(id);
     }
     triggerToast(`Moved ${selectedDocIds.size} files to Trash`, 'success');
     triggerReload();

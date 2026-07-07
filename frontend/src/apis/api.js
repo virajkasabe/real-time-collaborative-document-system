@@ -37,6 +37,7 @@ export const updateUserProfile = (data) => {
 }
 
 export const userForgetPasswordRequest = (data) => {
+    console.log("data",data)
     return apiClient.post("/auth/forgot-password-request", data)
 }
 
@@ -94,10 +95,13 @@ export const sharedWithMeDocs = () => {
     return apiClient.get("/doc/shared-with-me-docs")
 }
 
+export const fetchTrashFolder = () => {
+    return apiClient.get(`/doc/trash/folder`)
+}
+
 export const restoreDoc = (docId) => {
     return apiClient.put(`/doc/restore-doc/${docId}`)
 }
-
 
 // !! =============================================
 // !!        DENGET ZONE

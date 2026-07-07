@@ -18,28 +18,21 @@ export default function NotificationsPage() {
     { id: 'declined', label: 'Declined' }
   ];
 
-
-   const acceptCollab = (acceptNotif) => {
+  const acceptCollab = (acceptNotif) => {
     markAsRead(acceptNotif.id)
-      socket.emit(INVITATION_EVENT.ACCEPT_INVITATION,
-        acceptNotif
-      )
-      triggerToast("user join successfully", 'success')
-      clearNotification(acceptNotif.notificationId)
-    }
-    
-
-    const declinedCollab = (declineNotif) => {
-      markAsRead(declineNotif.id)
-      console.log("notification", notifications)
-      socket.emit(INVITATION_EVENT.DECLINE_INVITATION,
-        declineNotif
-      )
-      triggerToast("user decline the collab", 'fail')
-      clearNotification(declineNotif.notificationId)
+    socket.emit(INVITATION_EVENT.ACCEPT_INVITATION, acceptNotif)
+    triggerToast("User joined successfully", 'success')
+    clearNotification(acceptNotif.notificationId)
   }
 
-  
+  const declinedCollab = (declineNotif) => {
+    markAsRead(declineNotif.id)
+    console.log("notification", notifications)
+    socket.emit(INVITATION_EVENT.DECLINE_INVITATION, declineNotif)
+    triggerToast("User declined the collaboration", 'fail')
+    clearNotification(declineNotif.notificationId)
+  }
+
   const getFilteredNotifications = () => {
     switch (activeTab) {
       case 'unread':
@@ -54,8 +47,6 @@ export default function NotificationsPage() {
         return notifications;
     }
   };
-
-
 
   const getEmptyStateMessage = () => {
     switch (activeTab) {
@@ -90,13 +81,13 @@ export default function NotificationsPage() {
   const getIcon = (type) => {
     switch (type) {
       case 'COLLAB_INVITED':
-        return <FiMail className="text-[#2563EB] dark:text-blue-400 text-xl" />;
+        return <FiMail className="text-[#2563EB] dark:text-blue-400 text-lg sm:text-xl" />;
       case 'COLLAB_ACCEPTED':
-        return <FiUserCheck className="text-green-500 text-xl" />;
+        return <FiUserCheck className="text-green-500 text-lg sm:text-xl" />;
       case 'COLLAB_DECLINED':
-        return <FiUserX className="text-red-500 text-xl" />;
+        return <FiUserX className="text-red-500 text-lg sm:text-xl" />;
       default:
-        return <FiBell className="text-gray-400 text-xl" />;
+        return <FiBell className="text-gray-400 text-lg sm:text-xl" />;
     }
   };
 
@@ -130,17 +121,17 @@ export default function NotificationsPage() {
   const empty = getEmptyStateMessage();
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl w-full mx-auto select-none">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-4xl w-full mx-auto select-none">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] dark:border-white/10 pb-5 transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-[#E5E7EB] dark:border-white/10 pb-4 sm:pb-5 transition-all duration-300">
         <div className="text-left">
-          <div className="flex items-center gap-2.5">
-            <h2 className="font-sans font-extrabold text-xl md:text-2xl text-[#081B3A] dark:text-white tracking-tight">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="font-sans font-extrabold text-lg sm:text-xl md:text-2xl text-[#081B3A] dark:text-white tracking-tight">
               Notifications
             </h2>
             {unreadCount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-red-500 text-white text-[11px] font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] sm:text-[11px] font-bold">
                 {unreadCount} new
               </span>
             )}
@@ -150,11 +141,11 @@ export default function NotificationsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="px-3.5 py-1.5 rounded-lg border border-[#E5E7EB] dark:border-white/10 text-xs font-bold text-[#081B3A] dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-200 cursor-pointer"
+              className="px-3 sm:px-3.5 py-1.5 rounded-lg border border-[#E5E7EB] dark:border-white/10 text-[10px] sm:text-xs font-bold text-[#081B3A] dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-200 cursor-pointer whitespace-nowrap"
             >
               Mark all read
             </button>
@@ -162,22 +153,22 @@ export default function NotificationsPage() {
           {notifications.length > 0 && (
             <button
               onClick={clearAll}
-              className="px-3.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/30 text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/10 transition-all duration-200 cursor-pointer flex items-center gap-1.5"
+              className="px-3 sm:px-3.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/30 text-[10px] sm:text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-950/10 transition-all duration-200 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
             >
               <FiTrash2 size={13} />
-              Clear all
+              <span className="hidden xs:inline">Clear all</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-100 dark:border-white/5 pb-0.5 gap-2 scrollbar-none overflow-x-auto">
+      <div className="flex border-b border-gray-100 dark:border-white/5 pb-0.5 gap-1 sm:gap-2 scrollbar-none overflow-x-auto">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 border-b-2 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 sm:px-4 py-2 border-b-2 text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex-shrink-0 ${
               activeTab === tab.id
                 ? 'border-[#2563EB] text-[#2563EB] dark:text-blue-400'
                 : 'border-transparent text-gray-500 hover:text-slate-800 dark:hover:text-white'
@@ -189,14 +180,14 @@ export default function NotificationsPage() {
       </div>
 
       {/* List Container */}
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {filtered.length === 0 ? (
-          <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-12 text-center flex flex-col items-center justify-center shadow-sm transition-all duration-300">
-            <FiBell className="text-gray-300 dark:text-gray-600 text-5xl mb-4" />
-            <h3 className="text-base font-bold text-[#081B3A] dark:text-white">
+          <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-8 sm:p-12 text-center flex flex-col items-center justify-center shadow-sm transition-all duration-300">
+            <FiBell className="text-gray-300 dark:text-gray-600 text-4xl sm:text-5xl mb-4" />
+            <h3 className="text-sm sm:text-base font-bold text-[#081B3A] dark:text-white">
               {empty.title}
             </h3>
-            <p className="text-xs text-gray-450 dark:text-gray-500 mt-1 max-w-xs">
+            <p className="text-xs text-gray-450 dark:text-gray-500 mt-1 max-w-xs px-4">
               {empty.desc}
             </p>
           </div>
@@ -205,43 +196,43 @@ export default function NotificationsPage() {
             <div
               key={notif.id}
               onClick={() => !notif.read && markAsRead(notif.id)}
-              className={`bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 hover:shadow-md ${
+              className={`bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[16px] sm:rounded-[20px] p-3 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-300 hover:shadow-md ${
                 !notif.read ? 'border-l-4 border-l-[#2563EB]' : ''
               }`}
             >
-              <div className="flex items-start gap-4 text-left">
+              <div className="flex items-start gap-3 sm:gap-4 text-left w-full">
                 {/* Icon Container */}
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${getBg(notif.type)}`}>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${getBg(notif.type)}`}>
                   {getIcon(notif.type)}
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-[#0F172A] dark:text-white leading-snug break-words">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-semibold text-[#0F172A] dark:text-white leading-snug break-words">
                     {getMessage(notif)}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
                     {new Date(notif.expiry).toLocaleString()}
                   </p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <div className="flex items-center gap-2 self-end sm:self-center shrink-0 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
                 {notif.type === 'COLLAB_INVITED' && (
                   <>
                     <button
                       onClick={() => acceptCollab(notif)}
-                      className="px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm flex-1 sm:flex-none justify-center"
                     >
                       <FiCheck size={13} />
-                      Accept
+                      <span className="hidden xs:inline">Accept</span>
                     </button>
                     <button
-                     onClick={() => declinedCollab(notif)}
-                      className="px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      onClick={() => declinedCollab(notif)}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex-1 sm:flex-none justify-center"
                     >
                       <FiX size={13} />
-                      Decline
+                      <span className="hidden xs:inline">Decline</span>
                     </button>
                   </>
                 )}
@@ -251,9 +242,10 @@ export default function NotificationsPage() {
                       e.stopPropagation();
                       markAsRead(notif.id);
                     }}
-                    className="px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex-1 sm:flex-none justify-center"
                   >
-                    Mark read
+                    <span className="hidden xs:inline">Mark read</span>
+                    <span className="xs:hidden">Read</span>
                   </button>
                 )}
               </div>
@@ -261,7 +253,6 @@ export default function NotificationsPage() {
           ))
         )}
       </div>
-
     </div>
   );
 }

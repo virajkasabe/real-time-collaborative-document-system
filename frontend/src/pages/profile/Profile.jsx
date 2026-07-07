@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import {
   Check,
   FileText,
@@ -8,12 +7,17 @@ import {
   User,
   Users,
   X,
+  Mail,
+  Calendar,
+  Award,
+  Settings,
+  Edit2,
+  Shield,
+  Zap,
+  Menu,
+  ChevronRight,
 } from 'lucide-react';
-import {
-  useNavigate,
-  useOutletContext,
-} from 'react-router-dom';
-
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
@@ -23,7 +27,7 @@ export default function Profile() {
   const { user, triggerToast } = useAuth();
   const { sidebarOpen } = useOutletContext();
   const navigate = useNavigate();
-  const [name, setName] = useState(user?.fullName || '');
+  const [name, setName] = useState(user?.fullName || user?.name || '');
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSave = (e) => {
@@ -32,16 +36,14 @@ export default function Profile() {
     }
     if (!name.trim()) return;
 
-    // Update localStorage user so name persists across reloads
     if (user) {
-      const updatedUser = { ...user, name: name.trim() };
+      const updatedUser = { ...user, fullName: name.trim(), name: name.trim() };
       localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
     }
 
     triggerToast('Profile updated successfully!', 'success');
     setIsEditing(false);
 
-    // Short timeout to let the toast render before we refresh to update Navbar user name
     setTimeout(() => {
       window.location.reload();
     }, 500);
@@ -54,163 +56,339 @@ export default function Profile() {
     d.owner?.email === user?.email || d.sharedUsers?.some(u => u.email === user?.email)
   ).length;
 
+  // Get user initials
+  const getInitials = () => {
+    if (user?.fullName) {
+      const names = user.fullName.split(' ');
+      if (names.length >= 2) {
+        return `${names[0].charAt(0)}${names[1].charAt(0)}`.toUpperCase();
+      }
+      return user.fullName.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  };
+
   return (
-    <div className="p-6 space-y-6 max-w-4xl w-full mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#E5E7EB] dark:border-white/10 pb-5 transition-all duration-300 select-none">
-            <div className="text-left">
-              <h2 className="font-sans font-extrabold text-xl md:text-2xl text-[#081B3A] dark:text-white tracking-tight">
-                Profile Settings
-              </h2>
-              <p className="text-xs text-[#6B7280] dark:text-[#94A3B8] font-medium mt-1">
-                Manage your personal information and account preferences
+    <div className="p-4 sm:p-5 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 max-w-5xl w-full mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-gradient-to-r from-[#0D6EFD] to-[#6C63FF] pb-4 sm:pb-5 transition-all duration-300 select-none relative">
+        <div className="absolute bottom-0 left-0 w-20 sm:w-24 md:w-32 h-0.5 bg-gradient-to-r from-[#0D6EFD] to-[#6C63FF] rounded-full"></div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 sm:p-2 bg-gradient-to-br from-[#0D6EFD]/10 to-[#6C63FF]/10 rounded-lg sm:rounded-xl">
+            <User size={16} className="sm:text-[20px] text-[#0D6EFD] dark:text-[#6C63FF]" />
+          </div>
+          <div>
+            <h2 className="font-sans font-extrabold text-base sm:text-xl md:text-2xl text-[#081B3A] dark:text-white tracking-tight">
+              Profile Settings
+            </h2>
+            <p className="text-[10px] sm:text-xs text-[#6B7280] dark:text-[#94A3B8] font-medium mt-0.5 flex items-center gap-1.5">
+              <span className="w-1 h-1 bg-[#0D6EFD] rounded-full inline-block"></span>
+              <span className="hidden xs:inline">Manage your personal information and account preferences</span>
+              <span className="xs:hidden">Manage your profile</span>
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-3 sm:mt-0">
+          {isEditing ? (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => { setIsEditing(false); setName(user?.fullName || user?.name || ''); }} 
+                icon={X}
+                size="sm"
+                className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800/30 dark:text-red-400 dark:hover:bg-red-900/20 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+              >
+                <span className="hidden xs:inline">Cancel</span>
+                <span className="xs:hidden">✕</span>
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                type="submit" 
+                variant="primary" 
+                icon={Check}
+                size="sm"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg hover:shadow-emerald-500/30 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+              >
+                <span className="hidden xs:inline">Save changes</span>
+                <span className="xs:hidden">Save</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/reset-password')} 
+                icon={Lock}
+                size="sm"
+                className="border-amber-200 text-amber-600 hover:bg-amber-50 dark:border-amber-800/30 dark:text-amber-400 dark:hover:bg-amber-900/20 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+              >
+                <span className="hidden sm:inline">Reset Password</span>
+                {/* <Lock size={14} className="sm:hidden" /> */}
+              </Button>
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                icon={Edit2}
+                size="sm"
+                className="bg-gradient-to-r from-[#0D6EFD] to-[#6C63FF] hover:shadow-lg hover:shadow-[#0D6EFD]/30 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+              >
+                <span className="hidden xs:inline">Edit Profile</span>
+                <span className="xs:hidden">Edit</span>
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+        
+        {/* Left: Profile Summary Card */}
+        <div className="lg:col-span-1 bg-gradient-to-br from-[#0F172A] to-[#1A2332] dark:from-[#0F172A] dark:to-[#1A2332] border border-[#E5E7EB] dark:border-white/10 rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 flex flex-col items-center text-center space-y-3 sm:space-y-4 transition-all duration-300 hover:shadow-2xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#0D6EFD] to-[#6C63FF] blur-2xl opacity-20 animate-pulse"></div>
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-[#2563EB] to-[#6C63FF] flex items-center justify-center mx-auto shadow-2xl ring-4 ring-[#0D6EFD]/30 hover:ring-[#6C63FF]/50 transition-all duration-300 overflow-hidden">
+              {user?.avatar && user.avatar !== "" ? (
+                <img 
+                  src={user.avatar} 
+                  alt={user?.fullName || 'User'} 
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <span className="text-white text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase">
+                  {getInitials()}
+                </span>
+              )}
+            </div>
+            <div className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 rounded-full border-2 border-[#0F172A]">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+
+          <div className="space-y-1 sm:space-y-1.5">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-white mt-2 capitalize">
+              {user?.fullName || user?.name || user?.email?.split('@')[0] || 'User'}
+            </h3>
+            <div className="flex items-center justify-center gap-1.5">
+              <Mail size={10} sm:size={12} className="text-[#94A3B8]" />
+              <p className="text-[10px] sm:text-xs text-[#94A3B8] font-medium truncate max-w-[150px] sm:max-w-[200px]">
+                {user?.email}
               </p>
             </div>
-            
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <>
-                  <Button variant="outline" onClick={() => { setIsEditing(false); setName(user?.name || ''); }} icon={X}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSave} type="submit" variant="primary" icon={Check}>
-                    Save changes
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={() => navigate('/reset-password')} icon={Lock}>
-                    Reset Password
-                  </Button>
-                  <Button onClick={() => setIsEditing(true)} icon={User}>
-                    Edit Profile
-                  </Button>
-                </>
+          </div>
+
+          {/* User Info Badges */}
+          <div className="w-full pt-3 border-t border-white/10">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+              {user?.isEmailVerified && (
+                <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[8px] sm:text-[10px] font-semibold">
+                  <Shield size={10} sm:size={12} />
+                  Verified
+                </span>
+              )}
+              {user?.userLoginType && (
+                <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-500/20 text-blue-400 rounded-full text-[8px] sm:text-[10px] font-semibold">
+                  <User size={10} sm:size={12} />
+                  {user.userLoginType}
+                </span>
+              )}
+              {user?.createdAt && (
+                <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-purple-500/20 text-purple-400 rounded-full text-[8px] sm:text-[10px] font-semibold">
+                  <Calendar size={10} sm:size={12} />
+                  {formatDate(user.createdAt)}
+                </span>
               )}
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            
-            {/* Left: Profile Summary Card */}
-            <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-6 shadow-sm flex flex-col items-center text-center space-y-4 transition-all duration-300">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center mx-auto shadow-xl ring-4 ring-blue-500/30">
-                <span className="text-white text-4xl font-extrabold uppercase">
-                {
-                  user.avatar === "" ? (  user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U' ) : ( <img src={user.avatar} alt="" className="rounded-full w-25 h-25 object-cover"  /> )
-                }
-                </span>
+        {/* Right: Information Column */}
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          
+          {/* Personal Information Card */}
+          <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 transition-all duration-300 hover:shadow-xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10">
+            <div className="flex items-center gap-2 pb-3 sm:pb-4 mb-3 sm:mb-4 border-b border-[#E5E7EB] dark:border-white/10">
+              <div className="p-1 bg-gradient-to-br from-emerald-400 to-teal-400 rounded-lg">
+                <Settings size={12} sm:size={14} className="text-white" />
               </div>
-
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold text-white mt-3 capitalize">
-                  {user?.fullName || user?.email?.split('@')[0]}
-                </h3>
-                <p className="text-xs text-[#6B7280] dark:text-[#94A3B8]/80 font-medium truncate">
-                  {user?.email}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-[#E5E7EB] dark:border-white/10 w-full flex items-center justify-center gap-2 text-xs font-semibold text-[#081B3A] dark:text-[#E5E7EB]">
-                <FileText size={14} className="text-[#0D6EFD]" />
-                <span>{ownedDocsCount} {ownedDocsCount === 1 ? 'Document' : 'Documents'} Created</span>
-              </div>
+              <h3 className="text-[10px] sm:text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider">
+                Personal Information
+              </h3>
+              <div className="flex-1 border-b border-dashed border-[#E5E7EB] dark:border-white/5"></div>
             </div>
 
-            {/* Right: Stats & Information Column */}
-            <div className="md:col-span-2 space-y-6">
-              
-              {/* Statistics Section */}
-              <div className="grid grid-cols-3 gap-4">
-                {/* Documents Card */}
-                <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-4 shadow-sm flex flex-col justify-between space-y-3 transition-all duration-300 hover:shadow-md hover:border-slate-300 dark:hover:border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider">Documents</span>
-                    <div className="bg-[#0D6EFD]/10 text-[#0D6EFD] p-1.5 rounded-lg">
-                      <FileText size={14} />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-extrabold text-[#081B3A] dark:text-white mt-1">
-                    {ownedDocsCount}
+            {isEditing ? (
+              <form onSubmit={handleSave} className="space-y-4 sm:space-y-5">
+                <div className="relative">
+                  <Input
+                    label="Full Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder="Enter your full name"
+                    className="border-[#E5E7EB] dark:border-white/10 focus:border-[#0D6EFD] dark:focus:border-[#6C63FF] focus:ring-2 focus:ring-[#0D6EFD]/20 dark:focus:ring-[#6C63FF]/20 text-sm sm:text-base"
+                  />
+                  <div className="absolute right-3 top-8 sm:top-9 text-[#0D6EFD] dark:text-[#6C63FF]">
+                    <Edit2 size={14} sm:size={16} />
                   </div>
                 </div>
 
-                {/* Shared Card */}
-                <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-4 shadow-sm flex flex-col justify-between space-y-3 transition-all duration-300 hover:shadow-md hover:border-slate-300 dark:hover:border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider">Shared</span>
-                    <div className="bg-purple-500/10 text-purple-500 p-1.5 rounded-lg">
-                      <Users size={14} />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-extrabold text-[#081B3A] dark:text-white mt-1">
-                    {sharedDocsCount}
-                  </div>
-                </div>
-
-                {/* Starred Card */}
-                <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-4 shadow-sm flex flex-col justify-between space-y-3 transition-all duration-300 hover:shadow-md hover:border-slate-300 dark:hover:border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider">Starred</span>
-                    <div className="bg-amber-500/10 text-amber-500 p-1.5 rounded-lg">
-                      <Star size={14} />
-                    </div>
-                  </div>
-                  <div className="text-2xl font-extrabold text-[#081B3A] dark:text-white mt-1">
-                    {starredDocsCount}
+                <div className="relative">
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="bg-[#F8FAFC] dark:bg-[#0A0F1A] border-[#E5E7EB] dark:border-white/5 cursor-not-allowed text-sm sm:text-base"
+                  />
+                  <div className="absolute right-3 top-8 sm:top-9 text-[#6B7280]">
+                    <Lock size={14} sm:size={16} />
                   </div>
                 </div>
-              </div>
 
-              {/* Personal Information Card */}
-              <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-6 shadow-sm transition-all duration-300">
-                <h3 className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider border-b border-[#E5E7EB] dark:border-white/10 pb-3 mb-4 select-none">
-                  Personal Information
-                </h3>
-
-                {isEditing ? (
-                  <form onSubmit={handleSave} className="space-y-4">
+                {user?.userLoginType && (
+                  <div className="relative">
                     <Input
-                      label="Full Name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      placeholder="Enter your full name"
-                    />
-
-                    <Input
-                      label="Email Address"
-                      type="email"
-                      value={user?.email || ''}
+                      label="Login Type"
+                      type="text"
+                      value={user.userLoginType}
                       disabled
+                      className="bg-[#F8FAFC] dark:bg-[#0A0F1A] border-[#E5E7EB] dark:border-white/5 cursor-not-allowed text-sm sm:text-base"
                     />
-
-                    <div className="pt-2 flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => { setIsEditing(false); setName(user?.name || ''); }} icon={X}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" variant="primary" icon={Check}>
-                        Save changes
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[#E5E7EB]/50 dark:border-white/5 gap-1">
-                      <span className="text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8]">Full Name</span>
-                      <span className="text-xs font-bold text-[#081B3A] dark:text-white">{name}</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[#E5E7EB]/50 dark:border-white/5 gap-1">
-                      <span className="text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8]">Email Address</span>
-                      <span className="text-xs font-bold text-[#081B3A] dark:text-white truncate max-w-xs">{user?.email}</span>
+                    <div className="absolute right-3 top-8 sm:top-9 text-[#6B7280]">
+                      <User size={14} sm:size={16} />
                     </div>
                   </div>
                 )}
+
+                <div className="pt-2 flex flex-wrap justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => { setIsEditing(false); setName(user?.fullName || user?.name || ''); }} 
+                    icon={X}
+                    size="sm"
+                    className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800/30 dark:text-red-400 dark:hover:bg-red-900/20 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    variant="primary" 
+                    icon={Check}
+                    size="sm"
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg hover:shadow-emerald-500/30 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+                  >
+                    Save changes
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 py-2 sm:py-3 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#0A0F1A] rounded-lg sm:rounded-xl border border-[#E5E7EB] dark:border-white/5 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 transition-all group">
+                  <span className="text-[10px] sm:text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8] flex items-center gap-1.5 sm:gap-2">
+                    <User size={12} sm:size={14} className="text-[#0D6EFD] dark:text-[#6C63FF]" />
+                    <span className="hidden xs:inline">Full Name</span>
+                    <span className="xs:hidden">Name</span>
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white group-hover:text-[#0D6EFD] dark:group-hover:text-[#6C63FF] transition-colors truncate max-w-[150px] sm:max-w-none">
+                    {user?.fullName || user?.name || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 py-2 sm:py-3 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#0A0F1A] rounded-lg sm:rounded-xl border border-[#E5E7EB] dark:border-white/5 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 transition-all group">
+                  <span className="text-[10px] sm:text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8] flex items-center gap-1.5 sm:gap-2">
+                    <Mail size={12} sm:size={14} className="text-purple-500" />
+                    <span className="hidden xs:inline">Email Address</span>
+                    <span className="xs:hidden">Email</span>
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white truncate max-w-[150px] sm:max-w-xs group-hover:text-purple-500 dark:group-hover:text-purple-400 transition-colors">
+                    {user?.email || 'N/A'}
+                  </span>
+                </div>
+                {user?.userLoginType && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 py-2 sm:py-3 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#0A0F1A] rounded-lg sm:rounded-xl border border-[#E5E7EB] dark:border-white/5 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 transition-all group">
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8] flex items-center gap-1.5 sm:gap-2">
+                      <User size={12} sm:size={14} className="text-blue-500" />
+                      <span className="hidden xs:inline">Login Type</span>
+                      <span className="xs:hidden">Login</span>
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                      {user.userLoginType}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 py-2 sm:py-3 px-3 sm:px-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 rounded-lg sm:rounded-xl border border-emerald-200 dark:border-emerald-800/30">
+                  <span className="text-[10px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 sm:gap-2">
+                    <Zap size={12} sm:size={14} />
+                    <span className="hidden xs:inline">Account Status</span>
+                    <span className="xs:hidden">Status</span>
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    {user?.isEmailVerified ? 'Verified' : 'Unverified'}
+                  </span>
+                </div>
+                {user?.createdAt && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 py-2 sm:py-3 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#0A0F1A] rounded-lg sm:rounded-xl border border-[#E5E7EB] dark:border-white/5">
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#6B7280] dark:text-[#94A3B8] flex items-center gap-1.5 sm:gap-2">
+                      <Calendar size={12} sm:size={14} className="text-purple-500" />
+                      <span className="hidden xs:inline">Member Since</span>
+                      <span className="xs:hidden">Joined</span>
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white">
+                      {formatDate(user.createdAt)}
+                    </span>
+                  </div>
+                )}
               </div>
-
-            </div>
-
+            )}
           </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <button 
+              onClick={() => navigate('/documents')}
+              className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 hover:shadow-xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10 transition-all duration-300 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 group"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-[#0D6EFD]/20 to-[#6C63FF]/20 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                  <FileText size={14} sm:size={18} className="text-[#0D6EFD] dark:text-[#6C63FF]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white">My Docs</p>
+                  <p className="text-[8px] sm:text-[10px] text-[#6B7280] dark:text-[#94A3B8] hidden xs:block">View all documents</p>
+                </div>
+              </div>
+            </button>
+            <button 
+              onClick={() => navigate('/shared')}
+              className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-purple-500/5 dark:shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 dark:hover:shadow-purple-500/10 transition-all duration-300 hover:border-purple-500/20 dark:hover:border-purple-500/20 group"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                  <Users size={14} sm:size={18} className="text-purple-500" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white">Shared</p>
+                  <p className="text-[8px] sm:text-[10px] text-[#6B7280] dark:text-[#94A3B8] hidden xs:block">Shared with you</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
     docMoveToTrash, 
     fetchDocument, 
     fetchDocumentFolder, 
+    fetchTrashFolderDocuments, 
     restoreDoc, 
     shareWithMeDocuments
 } from './document.controller.js';
@@ -23,6 +24,8 @@ router.route("/fetch-folder").get(fetchDocumentFolder)
 router.route("/shared-with-me-docs").get(shareWithMeDocuments)
 
 router.route("/restore-doc/:docId").put(restoreDoc)
+
+router.route('/trash/folder').get(fetchTrashFolderDocuments)
 
 // !! DANGER ZONE
 

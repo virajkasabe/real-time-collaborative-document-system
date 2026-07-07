@@ -4,7 +4,7 @@ import { connectDB } from "./db/index.js";
 import { RedisConnect } from "./redis/client.js";
 
 const startServer = () => {
-  httpServer.listen(ENV.PORT, () => {
+  httpServer.listen(ENV.PORT,() => {
     console.log("SERVER CONNECTED SUCESSFULLY : 📡🛰️");
   });
 };

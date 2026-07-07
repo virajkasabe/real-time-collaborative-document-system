@@ -5,13 +5,13 @@ export default function NotificationItem({ notification, onRead }) {
   const getIcon = (type) => {
     switch (type) {
       case 'COLLAB_INVITED':
-        return <FiMail className="text-[#2563EB] text-lg" />;
+        return <FiMail className="text-[#2563EB] text-base sm:text-lg" />;
       case 'COLLAB_ACCEPTED':
-        return <FiUserCheck className="text-emerald-500 text-lg" />;
+        return <FiUserCheck className="text-emerald-500 text-base sm:text-lg" />;
       case 'COLLAB_DECLINED':
-        return <FiUserX className="text-rose-500 text-lg" />;
+        return <FiUserX className="text-rose-500 text-base sm:text-lg" />;
       default:
-        return <FiBell className="text-slate-400 text-lg" />;
+        return <FiBell className="text-slate-400 text-base sm:text-lg" />;
     }
   };
 
@@ -94,47 +94,54 @@ export default function NotificationItem({ notification, onRead }) {
   return (
     <div
       onClick={() => onRead(notification.notificationId || notification.id)}
-      className={`group relative flex items-start gap-4 p-4 cursor-pointer transition-all duration-200 border-b border-slate-100 dark:border-slate-700/30 hover:bg-gradient-to-r hover:from-slate-50/80 hover:to-transparent dark:hover:from-slate-700/20 dark:hover:to-transparent ${
+      className={`group relative flex items-start gap-3 sm:gap-4 p-3 sm:p-4 cursor-pointer transition-all duration-200 border-b border-slate-100 dark:border-slate-700/30 hover:bg-gradient-to-r hover:from-slate-50/80 hover:to-transparent dark:hover:from-slate-700/20 dark:hover:to-transparent ${
         !notification.read 
           ? 'bg-gradient-to-r from-blue-50/80 via-blue-50/40 to-transparent dark:from-blue-500/10 dark:via-blue-500/5 dark:to-transparent' 
           : 'hover:bg-slate-50/50 dark:hover:bg-slate-700/10'
       }`}
     >
       {/* Icon with enhanced styling */}
-      <div className={`relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${getBg(notification.type)}`}>
+      <div className={`relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${getBg(notification.type)}`}>
         {getIcon(notification.type)}
         {!notification.read && (
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#2563EB] rounded-full ring-2 ring-white dark:ring-slate-800 animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-[#2563EB] rounded-full ring-2 ring-white dark:ring-slate-800 animate-pulse" />
         )}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0 text-left">
-        <p className="text-sm text-[#0F172A] dark:text-gray-200 leading-relaxed break-words">
+        <p className="text-xs sm:text-sm text-[#0F172A] dark:text-gray-200 leading-relaxed break-words">
           {getMessage(notification)}
         </p>
         
         {/* Enhanced timestamp with icon */}
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <svg className="w-3 h-3 text-[#94A3B8] dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-1.5 mt-1">
+          <svg className="w-3 h-3 text-[#94A3B8] dark:text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="text-xs text-[#94A3B8] dark:text-gray-500 font-medium">
+          <span className="text-[10px] sm:text-xs text-[#94A3B8] dark:text-gray-500 font-medium truncate">
             {formatExpiry(notification.expiry)}
           </span>
         </div>
       </div>
 
-      {/* Action indicator */}
-      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      {/* Action indicator - hidden on mobile, visible on hover */}
+      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block">
         <svg className="w-5 h-5 text-[#94A3B8] dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+
+      {/* Touch-friendly arrow on mobile */}
+      <div className="flex-shrink-0 sm:hidden text-[#94A3B8] dark:text-gray-500">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
         </svg>
       </div>
 
       {/* Unread dot - moved to right side */}
       {!notification.read && (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#2563EB] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#2563EB] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
       )}
     </div>
   );
