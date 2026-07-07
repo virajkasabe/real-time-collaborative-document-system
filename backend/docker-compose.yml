@@ -1,0 +1,23 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: caffine_and_redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+  mongo:
+    image: mongo:7
+    container_name: caffine_and_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATBASE: caffine_and_redis
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  redis-data:
+  mongo-data:
