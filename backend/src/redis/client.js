@@ -79,7 +79,11 @@ export const getOTP = async (userId) => {
 
 // ?? ===== DOCUMENT =====
 // ***** SET *****
+<<<<<<< HEAD
 export const setDocument = async (docId, payload, expiry = 60) => {
+=======
+export const setDocument = async (docId, payload, expiry = 1800) => {
+>>>>>>> wind-breathing
   if (!client || !isConnected) return null;
   const key = `doc:${docId}`;
   return await client.setex(key, expiry, JSON.stringify(payload));
@@ -87,9 +91,15 @@ export const setDocument = async (docId, payload, expiry = 60) => {
 
 // ***** GET *****
 export const getDocument = async (docId) => {
+<<<<<<< HEAD
   if (!client || !isConnected) return null;
   const key = `doc:${docId}`;
   const payload = await client.get(docId);
+=======
+  if (!client || !isConnected) return [];
+  const key = `doc:${docId}`;
+  const payload = await client.get(key);
+>>>>>>> wind-breathing
   return payload ? JSON.parse(payload) : null;
 };
 
@@ -142,6 +152,7 @@ export const getUpdateDocumentOperation = async (docId) => {
 };
 
 // ?? ===== NOTIFICATION =====
+<<<<<<< HEAD
 // ?? 1. ===== REAL_TIME - NOTIFICATION =====
 // ***** Set real-time notification *****
 export const setrealtimeNotification = async (
@@ -172,28 +183,54 @@ export const deleterealtimeNotification = async (realTimeKey) => {
 // ?? 2. ===== PENDING - NOTIFICATION =====
 export const setPendingNotification = async (
   pendingKey,
+=======
+// ***** SET notification *****
+export const setNotification = async (
+  notifyKey,
+>>>>>>> wind-breathing
   payload,
   expiry = 7 * 24 * 60 * 60
 ) => {
   if (!client || !isConnected) return null;
+<<<<<<< HEAD
   const key = `pending:${pendingKey}`;
+=======
+  const key = `notify:${notifyKey}`;
+>>>>>>> wind-breathing
   await client.rpush(key, JSON.stringify(payload));
   await client.expire(key, expiry);
 };
 
+<<<<<<< HEAD
 // ***** Get real-time notification *****
 export const getPendingNotification = async (pendingKey) => {
   if (!client || !isConnected) return null;
   const key = `pending:${pendingKey}`;
+=======
+// ***** GET notification *****
+export const getNotification = async (notifyKey) => {
+  if (!client || !isConnected) return null;
+  const key = `notify:${notifyKey}`;
+>>>>>>> wind-breathing
   const payloads = await client.lrange(key, 0, -1);
   return payloads ? payloads.map((item) => JSON.parse(item)) : null;
 };
 
+<<<<<<< HEAD
 // ***** delete real-time notification *****
 export const deletePendingNotification = async (pendingKey) => {
   if (!client || !isConnected) return null;
   const key = `pending:${pendingKey}`;
   await client.del(key);
+=======
+// ***** DEL notification *****
+export const deleteNotification = async (notifyKey, notification) => {
+  if (!client || !isConnected) return 0;
+  const key = `notify:${notifyKey}`;
+  console.log("notification delete")
+  const res = await client.lpop(key);
+  return  
+>>>>>>> wind-breathing
 };
 
 // ?? ====== DIRTY DOCUMENT SET ======
@@ -242,11 +279,19 @@ export const appendChats = async(docId, data, expiry = 3600) => {
 }
 
 export const getChats = async(docId) => {
+<<<<<<< HEAD
   if(!client || !isConnected) {
     const key = `chats:${docId}:history`
     const list = await client.lrange(key,0,-1)
     return list ? list.map((item)=> JSON.parse(item)) : []
   }
+=======
+  if(!client || !isConnected) return []
+    const key = `chats:${docId}:history`
+    const list = await client.lrange(key,0,-1)
+    return list ? list.map((item)=> JSON.parse(item)) : []
+
+>>>>>>> wind-breathing
 }
 
 export { Publisher, Subscriber };

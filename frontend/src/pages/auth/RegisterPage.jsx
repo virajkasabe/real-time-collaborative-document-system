@@ -8,9 +8,17 @@ import { useAuth } from '../../context/AuthContext';
 import bgImage from '../../assets/collab-bg.png';
 import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
+<<<<<<< HEAD
 
 export default function RegisterPage() {
   const { register, devOTP, loading, error } = useAuth();
+=======
+import { LocalStorage } from '../../apis';
+import { googleLoginApi } from '../../apis/api';
+
+export default function RegisterPage() {
+  const { register, login, triggerToast } = useAuth();
+>>>>>>> wind-breathing
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -23,6 +31,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+<<<<<<< HEAD
+=======
+  const [loading, setLoading] = useState(false);
+>>>>>>> wind-breathing
   const [errors, setErrors] = useState({});
 
   const handleRegister = async (e) => {
@@ -60,7 +72,10 @@ export default function RegisterPage() {
       return;
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> wind-breathing
     setLoading(true);
     // Call register(email, name, password) matching AuthContext signature
     const res = await register(email.trim(), fullName.trim(), password);
@@ -72,6 +87,7 @@ export default function RegisterPage() {
 
     if (res.success === true) {
       navigate('/verify-email', { state: { email: email, token } });
+<<<<<<< HEAD
 
     try {
       const result = await register({ fullName: fullName.trim(), email: email.trim(), password });
@@ -92,6 +108,18 @@ export default function RegisterPage() {
   const handleGoogleSignup = () => {
     window.location.href = 'http://localhost:5000/api/v1/rtcds/auth/google';
   };
+=======
+    }
+  };
+
+   const handleGoogleSignup = () => {
+         LocalStorage.set("googleAuthReturnUrl", window.location.pathname);
+   
+         const baseApi = import.meta.env.VITE_GOOGLE_CALLBACK_URL || googleLoginApi;
+   
+         window.location.assign(baseApi);
+       };
+>>>>>>> wind-breathing
 
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-[#EEF2F7] dark:bg-[#070B14] p-4 md:p-6 font-sans select-none">
@@ -395,6 +423,7 @@ export default function RegisterPage() {
                 Continue with Google
               </button>
 
+<<<<<<< HEAD
               {/* Show OTP on UI for testing (REMOVE IN PRODUCTION) */}
               {devOTP && (
                 <div style={{
@@ -440,6 +469,8 @@ export default function RegisterPage() {
                 </div>
               )}
 
+=======
+>>>>>>> wind-breathing
               {/* Sign In Link */}
               <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
                 Already have an account?{' '}

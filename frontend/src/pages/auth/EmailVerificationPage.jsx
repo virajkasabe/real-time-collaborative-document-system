@@ -8,11 +8,15 @@ import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
 
 export default function EmailVerificationPage() {
+<<<<<<< HEAD
 
   const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
 
   const { verifyOTP, resendOTP, loading, error, devOTP, setVerificationToken, triggerToast } = useAuth();
 
+=======
+  const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
+>>>>>>> wind-breathing
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -21,6 +25,7 @@ export default function EmailVerificationPage() {
   const token = location.state?.token || '';
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+<<<<<<< HEAD
 
   const [loading, setLoading] = useState(false);
   const [verificationError, setVerificationError] = useState(null);
@@ -40,6 +45,16 @@ export default function EmailVerificationPage() {
   }, [email, navigate]);
 
 
+=======
+  const [loading, setLoading] = useState(false);
+  const [verificationError, setVerificationError] = useState(null);
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    if (!email) navigate('/forgot-password');
+  }, [email, navigate]);
+
+>>>>>>> wind-breathing
   // Clear error when OTP changes
   useEffect(() => {
     setVerificationError(null);
@@ -54,6 +69,7 @@ export default function EmailVerificationPage() {
       return;
     }
 
+<<<<<<< HEAD
   const handleChange = (index, value) => {
     // Only allow single digit number
     if (!/^[0-9]$/.test(value) && value !== '') return;
@@ -65,11 +81,23 @@ export default function EmailVerificationPage() {
 
     // Auto focus next input
     if (value && index < 5) {
+=======
+    const newOtp = [...otp];
+    newOtp[index] = val.substring(val.length - 1);
+    setOtp(newOtp);
+
+    // Auto focus next input
+    if (index < 5) {
+>>>>>>> wind-breathing
       inputRefs.current[index + 1].focus();
     }
   };
 
+<<<<<<< HEAD
   const handleKeyDown = (index, e) => {
+=======
+  const handleKeyDown = (e, index) => {
+>>>>>>> wind-breathing
     if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
         const newOtp = [...otp];
@@ -86,7 +114,10 @@ export default function EmailVerificationPage() {
 
   const handlePaste = (e) => {
     e.preventDefault();
+<<<<<<< HEAD
 
+=======
+>>>>>>> wind-breathing
     const text = e.clipboardData.getData("text").replace(/[^0-9a-zA-Z]/g, "").substring(0, 6);
     if (text.length === 6) {
       const newOtp = text.split("");
@@ -94,6 +125,7 @@ export default function EmailVerificationPage() {
       inputRefs.current[5].focus();
     } else {
       triggerToast("Please paste a 6-digit verification code", "warning");
+<<<<<<< HEAD
 
     const pasteData = e.clipboardData.getData('text').slice(0, 6);
     
@@ -111,11 +143,14 @@ export default function EmailVerificationPage() {
     if (inputRefs.current[lastIndex]) {
       inputRefs.current[lastIndex].focus();
 
+=======
+>>>>>>> wind-breathing
     }
   };
 
   const handleVerify = async (e) => {
     e.preventDefault();
+<<<<<<< HEAD
     if (isSubmitting) return;
 
     const code = otp.join("");
@@ -126,6 +161,15 @@ export default function EmailVerificationPage() {
     }
 
 
+=======
+    const code = otp.join("");
+
+    if (code.length < 6) {
+      triggerToast("Please enter the full 6-digit code", "warning");
+      return;
+    }
+
+>>>>>>> wind-breathing
     setLoading(true);
     setVerificationError(null);
 
@@ -161,6 +205,7 @@ export default function EmailVerificationPage() {
     setVerificationError(null);
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
+<<<<<<< HEAD
 
     setIsSubmitting(true);
     try {
@@ -187,6 +232,8 @@ export default function EmailVerificationPage() {
     } catch (err) {
       // Handled by context error state
 
+=======
+>>>>>>> wind-breathing
     }
   };
 
@@ -346,8 +393,13 @@ export default function EmailVerificationPage() {
                     type="text"
                     inputMode="numeric"
                     value={digit}
+<<<<<<< HEAD
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
+=======
+                    onChange={(e) => handleChange(e.target, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+>>>>>>> wind-breathing
                     onPaste={handlePaste}
                     className="w-11 h-11 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-center text-lg font-bold bg-white dark:bg-[#2D3748] text-[#0F172A] dark:text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 transition-colors"
                     disabled={loading}
@@ -373,6 +425,7 @@ export default function EmailVerificationPage() {
               </button>
             </form>
 
+<<<<<<< HEAD
             {/* Error Message */}
             {error && (
               <p style={{ color: 'red', textAlign: 'center', marginTop: '10px' }}>
@@ -399,6 +452,8 @@ export default function EmailVerificationPage() {
               </div>
             )}
 
+=======
+>>>>>>> wind-breathing
             {/* Back to Login */}
             <Link
               to="/login"

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Clock, Plus, X, RotateCcw } from 'lucide-react';
 import Button from '../../components/common/Button';
+<<<<<<< HEAD
 import { documentService } from '../../utils/documentService';
+=======
+import { documentService } from '../../services/documentService';
+>>>>>>> wind-breathing
 import { useAuth } from '../../context/AuthContext';
 
 export default function VersionHistory({ docId, versions, onRestore, onUpdate, onClose }) {

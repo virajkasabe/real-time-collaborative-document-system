@@ -1,10 +1,18 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+<<<<<<< HEAD
 import { Schema, model } from "mongoose";
 import { ENV } from "../../config/ENV.js";
 
 const userSchema = new Schema(
+=======
+import mongoose from "mongoose";
+import { ENV } from "../../config/ENV.js";
+import { loginType, loginTypeEnum } from "../../utils/constant.js";
+
+const userSchema = new mongoose.Schema(
+>>>>>>> wind-breathing
   {
     fullName: {
       type: String,
@@ -14,7 +22,10 @@ const userSchema = new Schema(
     email: {
       type: String,
       required: true,
+<<<<<<< HEAD
       unique: true,
+=======
+>>>>>>> wind-breathing
       lowercase: true,
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -25,6 +36,14 @@ const userSchema = new Schema(
       type: String,
       default: "",
     },
+<<<<<<< HEAD
+=======
+    userLoginType : {
+      type : String,
+      default : loginType.EMAIL_PASSWORD,
+      enum : loginTypeEnum
+    },
+>>>>>>> wind-breathing
     password: {
       type: String,
       required: true,
@@ -39,24 +58,30 @@ const userSchema = new Schema(
     forgotPasswordExpiry: {
       type: Date,
     },
+<<<<<<< HEAD
     resetPasswordToken: {
       type: String,
     },
     resetPasswordExpiry: {
       type: Date,
     },
+=======
+>>>>>>> wind-breathing
     emailVerificationToken: {
       type: String,
     },
     emailVerificationExpiry: {
       type: Date,
     },
+<<<<<<< HEAD
     otp: {
       type: String,
     },
     otpExpiry: {
       type: Date,
     },
+=======
+>>>>>>> wind-breathing
     refreshToken: {
       type: String,
       default: "",
@@ -74,10 +99,13 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
+<<<<<<< HEAD
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+=======
+>>>>>>> wind-breathing
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
@@ -121,5 +149,9 @@ userSchema.methods.generateTemporaryToken = function () {
   };
 };
 
+<<<<<<< HEAD
 const User = model("User", userSchema);
+=======
+const User = mongoose.model("User", userSchema);
+>>>>>>> wind-breathing
 export default User;

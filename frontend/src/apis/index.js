@@ -1,7 +1,14 @@
 import axios from 'axios'
 
+<<<<<<< HEAD
 export const apiClient = axios.create({
     baseURL : import.meta.env.VITE_SERVER_URI || "http://localhost:5000/api/v1/rtcds",
+=======
+export const baseAPIURL = import.meta.env.VITE_SERVER_URI ||  "http://localhost:5000/api/v1/rtcds"
+
+export const apiClient = axios.create({
+    baseURL : baseAPIURL,
+>>>>>>> wind-breathing
     withCredentials : true,
     timeout : 30000,
     headers :{ 
@@ -32,11 +39,19 @@ export const requestHandler = async (api, setLoading, onSuccess, onError) => {
     onError?.(error?.response?.data || { message: errorMessage });
     console.error("API error:", errorMessage);
 
+<<<<<<< HEAD
     // if ([400, 401, 403].includes(error?.response?.status)) {
       // Optional: handle forced logout
       // LocalStorage.clear();
       // window.location.href = "/login";
     // }
+=======
+    if ([400, 401, 403].includes(error?.response?.status)) {
+      // Optional: handle forced logout
+      LocalStorage.clear();
+      window.location.href = "/login";
+    }
+>>>>>>> wind-breathing
   } finally {
     if (isMounted) setLoading?.(false);
   }
@@ -91,13 +106,22 @@ export class LocalStorage {
 
 apiClient.interceptors.response.use(
   (response) => response,
+<<<<<<< HEAD
   async (error) => {
+=======
+  
+  async (error) => {
+
+
+
+>>>>>>> wind-breathing
     // return error.response.data
 
     // If 401 and request not retried
     // if (error.response?.status === 401 && !originalRequest._retry) {
     //   originalRequest._retry = true;
 
+<<<<<<< HEAD
     //   try {
     //     // Refresh token endpoint (httpOnly cookie sent automatically)
     //     const refreshRes = await apiClient.post("/refresh-token");
@@ -117,6 +141,27 @@ apiClient.interceptors.response.use(
     //     window.location.href = "/login";
     //     return Promise.reject(refreshError);
     //   }
+=======
+      // try {
+      //   // Refresh token endpoint (httpOnly cookie sent automatically)
+      //   const refreshRes = await apiClient.post("/refresh-token");
+      //   const newAccessToken = refreshRes.data.accessToken;
+
+      //   if (!newAccessToken) throw new Error("Refresh token failed");
+
+      //   // Save new accessToken
+      //   LocalStorage.set("accessToken", newAccessToken);
+
+      //   // Retry original request with new token
+      //   originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+      //   return apiClient(originalRequest);
+      // } catch (refreshError) {
+      //   // Refresh failed → clear storage + redirect to login
+      //   LocalStorage.clear();
+      //   window.location.href = "/login";
+      //   return Promise.reject(refreshError);
+      // }
+>>>>>>> wind-breathing
     // }
 
     return Promise.reject(error.response.data);

@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { MessageSquare, Send, X } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+<<<<<<< HEAD
 import { documentService } from '../../utils/documentService';
+=======
+import { documentService } from '../../services/documentService';
+>>>>>>> wind-breathing
 import { useAuth } from '../../context/AuthContext';
 
 export default function Comments({ docId, comments, onUpdate, onClose }) {

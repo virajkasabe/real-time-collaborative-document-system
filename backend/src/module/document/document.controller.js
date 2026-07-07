@@ -60,7 +60,11 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
   const result = await User.aggregate([
     {
       $match: {
+<<<<<<< HEAD
         _id: new mongoose.Types.ObjectId(userId)
+=======
+        _id: new mongoose.Types.ObjectId(userId) 
+>>>>>>> wind-breathing
       },
     },
     {
@@ -70,6 +74,7 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $match: {
+<<<<<<< HEAD
               $expr: {
                 $or: [
                   { $eq: ["$ownerId", "$$userId"] },
@@ -77,6 +82,20 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
                 ]
               }
             }
+=======
+              $and : [
+                {
+                   $expr: {
+                      $or: [
+                        { $eq: ["$ownerId", "$$userId"] },
+                        { $in: ["$$userId", "$users.userId"] }
+                      ]
+                    }
+                },
+                { isTrash: { $ne: true } }
+              ]
+            },
+>>>>>>> wind-breathing
           },
           {
             $addFields: {
@@ -185,6 +204,14 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
 
   const documentFolder = result[0]?.documents || [];
 
+<<<<<<< HEAD
+=======
+  
+  documentFolder.map(async(d)=>{
+    await fetchDoc(d._id)
+  })
+
+>>>>>>> wind-breathing
   return res
     .status(200)
     .json(
@@ -284,6 +311,14 @@ export const shareWithMeDocuments = asyncHandler(async (req, res) => {
     }
   ]);
 
+<<<<<<< HEAD
+=======
+   shareWithMeDocs.map(async(d)=>{
+    await fetchDoc(d._id)
+  })
+
+
+>>>>>>> wind-breathing
   return res.status(200).json(
     new ApiResponse(
       200, 
@@ -354,4 +389,163 @@ export const restoreDoc = asyncHandler(async(req,res)=>{
   await setDocument(docId, document)
 
   return res.status(204).json(new ApiResponse(204, {} , "your document restore successfully"))
+<<<<<<< HEAD
 })
+=======
+})
+
+
+export const fetchTrashFolderDocuments = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const result = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(userId) 
+      },
+    },
+    {
+      $lookup: {
+        from: "documents",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $and : [
+                {
+                   $expr: {
+                      $or: [
+                        { $eq: ["$ownerId", "$$userId"] },
+                        { $in: ["$$userId", "$users.userId"] }
+                      ]
+                    }
+                },
+                { isTrash: { $ne: false } }
+              ]
+            },
+          },
+          {
+            $addFields: {
+              allUserIds: {
+                $cond: {
+                  if: { $isArray: "$users" },
+                  then: "$users.userId",
+                  else: []
+                }
+              }
+            }
+          },
+          {
+            $addFields: {
+              allUserIds: {
+                $concatArrays: [
+                  "$allUserIds",
+                  ["$ownerId"]
+                ]
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: "users",
+              let: { userIds: "$allUserIds" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $in: ["$_id", "$$userIds"]
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    fullName: 1,
+                    email: 1,
+                    avatar: 1
+                  }
+                }
+              ],
+              as: "allUsers"
+            }
+          },
+          {
+            $addFields: {
+              allUsersWithRoles: {
+                $map: {
+                  input: "$allUsers",
+                  as: "user",
+                  in: {
+                    _id: "$$user._id",
+                    fullName: "$$user.fullName",
+                    email: "$$user.email",
+                    avatar: "$$user.avatar",
+                    role: {
+                      $cond: [
+                        { $eq: ["$$user._id", "$ownerId"] },
+                        "Owner",
+                        {
+                          $let: {
+                            vars: {
+                              userDoc: {
+                                $arrayElemAt: [
+                                  {
+                                    $filter: {
+                                      input: "$users",
+                                      as: "u",
+                                      cond: { $eq: ["$$u.userId", "$$user._id"] }
+                                    }
+                                  },
+                                  0
+                                ]
+                              }
+                            },
+                            in: "$$userDoc.role"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              title: 1,
+              updatedAt : 1,
+              allUsers: "$allUsersWithRoles"
+            }
+          }
+        ],
+        as: "documents"
+      }
+    },
+    {
+      $project: {
+        documents: 1
+      }
+    }
+  ]);
+
+  const documentFolder = result[0]?.documents || [];
+
+  
+  documentFolder.map(async(d)=>{
+    await fetchDoc(d._id)
+  })
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          documentFolder
+        },
+        "Fetched TrashFolder Documents"
+      )
+    );
+});
+>>>>>>> wind-breathing

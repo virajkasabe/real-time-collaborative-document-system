@@ -1,6 +1,9 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+<<<<<<< HEAD
 import bcrypt from "bcryptjs";
+=======
+>>>>>>> wind-breathing
 import { uploadCloudinary } from "../../config/cloudinary.js";
 import { ENV } from "../../config/ENV.js";
 import { deleteuser, getOTP, getUser, setOTP, setUser } from "../../redis/client.js";
@@ -33,11 +36,15 @@ export const generateAccessRefreshToken = async (userId) => {
 };
 
 export const registerUser = asyncHandler(async (req, res) => {
+<<<<<<< HEAD
   // console.log(req.body);
+=======
+>>>>>>> wind-breathing
   const { fullName, email, password } = req.body;
 
   requiredField([fullName, email, password]);
 
+<<<<<<< HEAD
   const avatar = req.files?.avatar?.[0]?.path;
 
   let avatarURI;
@@ -54,12 +61,21 @@ export const registerUser = asyncHandler(async (req, res) => {
     });
   }
 
+=======
+  const alreadyExist = await User.findOne({ email });
+
+  if (alreadyExist) {
+    throw new ApiError(400, `${email} already exist`);
+  }
+  
+>>>>>>> wind-breathing
   const user = await User.create({
     fullName,
     password,
     email,
   });
 
+<<<<<<< HEAD
   const { unHashedToken, hashedToken, tokenExpiry } =
     user.generateTemporaryToken();
 
@@ -68,10 +84,24 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   const otp = otpGenerator();
 
+=======
+  // Laxman Shinde
+
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+  user.generateTemporaryToken();
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+  
+
+  const otp = otpGenerator();
+>>>>>>> wind-breathing
   await setOTP(user._id, { otp: otp, emailToken : unHashedToken });
   console.log({
     otp,
   });
+<<<<<<< HEAD
 
   const hashedOtp = await bcrypt.hash(otp.toString(), 10);
   user.otp = hashedOtp;
@@ -79,6 +109,13 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 
   console.log("Generated OTP:", otp);
+=======
+  
+
+  await User.findById(user._id).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+>>>>>>> wind-breathing
 
   await user.save({ validateBeforeSave: false });
 
@@ -86,6 +123,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     user._id
   );
 
+<<<<<<< HEAD
 
   console.log("OTP", otp);
 
@@ -104,6 +142,17 @@ export const registerUser = asyncHandler(async (req, res) => {
 
       new ApiResponse(201, responseData, `user created  successfully`)
 
+=======
+  console.log("OTP", otp);
+
+  // TODO : SEND EMAIL FOR OTP
+
+  console.log("user register");
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, {}, `user created  successfully`)
+>>>>>>> wind-breathing
     );
 });
 
@@ -140,6 +189,11 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   await setUser(secureUSER._id, secureUSER);
 
+<<<<<<< HEAD
+=======
+  console.log(`🏃‍➡️ ${secureUSER.fullName} login successufully`)
+
+>>>>>>> wind-breathing
   return res
     .status(200)
     .cookie("accessToken", accessToken, option)
@@ -148,9 +202,13 @@ export const loginUser = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
+<<<<<<< HEAD
           user: secureUSER,
           accessToken: accessToken,
           refreshToken: refreshToken,
+=======
+          user: secureUSER
+>>>>>>> wind-breathing
         },
         `user logged in successfully`
       )
@@ -171,9 +229,17 @@ export const logoutUser = asyncHandler(async (req, res) => {
     },
     { new: true }
   );
+<<<<<<< HEAD
 
   req.user = ""
 
+=======
+  
+  console.log(`🏃 ${req.user.fullName} logout successufully`)
+  req.user = ""
+
+
+>>>>>>> wind-breathing
   return res
     .status(200)
     .cookie("accessToken", "", option)
@@ -325,8 +391,12 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
     throw new ApiError(404, "user not found");
   }
 
+<<<<<<< HEAD
   const { unHashedToken, hashedToken, tokenExpiry } =
     user.generateTemporaryToken(user._id);
+=======
+  const { unHashedToken, hashedToken, tokenExpiry } = await user.generateTemporaryToken(user._id);
+>>>>>>> wind-breathing
 
   user.forgetPasswordRequest = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;
@@ -346,6 +416,7 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
     );
 });
 
+<<<<<<< HEAD
 // FORGOT PASSWORD
 export const forgotPassword = async (req, res) => {
   try {
@@ -435,6 +506,44 @@ export const resetPassword = async (req, res) => {
     });
   }
 };
+=======
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { unHashedToken } = req.params;
+
+  const { newPassword , confirmPassword} = req.body;
+
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(400, "New Password and Confirm Password can't be same");
+  }
+
+  if (!unHashedToken) {
+    throw new ApiError(400, "Email verification token missing");
+  }
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(unHashedToken)
+    .digest("hex");
+
+  const user = await User.findOne({
+    forgotPasswordToken: hashedToken,
+    forgotPasswordExpiry: { $gt: Date.now() },
+  }).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+  );
+
+  user.password = newPassword;
+
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordExpiry = undefined;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Your password was changed successfully"));
+});
+>>>>>>> wind-breathing
 
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
@@ -479,6 +588,7 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
     user.generateTemporaryToken(user._id);
 
   const otp = otpGenerator();
+<<<<<<< HEAD
   console.log("Resent OTP:", otp);
 
 
@@ -495,10 +605,21 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
 
+=======
+
+  await setOTP(user._id, { otp: otp, emailToken : unHashedToken });
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpiry = tokenExpiry;
+
+  await user.save({ validateBeforeSave: false });
+
+>>>>>>> wind-breathing
   console.log("OTP", otp);
 
   // TODO : SEND EMAIL FOR OTP
 
+<<<<<<< HEAD
   const responseData = { token: unHashedToken };
   if (process.env.NODE_ENV === "development" || ENV.NODE_ENV === "development") {
     responseData.otp = otp; // REMOVE IN PRODUCTION
@@ -513,26 +634,43 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 
       new ApiResponse(200, responseData, `New OTP sent successfully`)
 
+=======
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { }, `user verify emailId`)
+>>>>>>> wind-breathing
     );
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { otp, email } = req.body;
+<<<<<<< HEAD
   console.log("otp",email)
   console.log("otp", req.body)
 
   const findUser = await User.findOne({ email });
 
 
+=======
+  // console.log("otp",otp)
+  // console.log("otp", req.body)
+
+  const findUser = await User.findOne({ email });
+
+>>>>>>> wind-breathing
   const redisOTPData = await getOTP(findUser._id)
 
   console.log("unHashedToken",redisOTPData.emailToken)
   console.log("otp",otp)
 
+<<<<<<< HEAD
   console.log("unHashedToken", unHashedToken)
   console.log("otp", otp)
 
 
+=======
+>>>>>>> wind-breathing
   if (!redisOTPData.emailToken) {
     throw new ApiError(400, "Email verification token missing");
   }
@@ -545,20 +683,27 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     emailVerificationToken: hashedToken,
     emailVerificationExpiry: { $gt: Date.now() },
+<<<<<<< HEAD
 
+=======
+>>>>>>> wind-breathing
   }).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
+<<<<<<< HEAD
   console.log("user", user)
 
   });
 
 
+=======
+>>>>>>> wind-breathing
   if (!user) {
     throw new ApiError(400, "Invalid or expired verification token");
   }
 
+<<<<<<< HEAD
 
   if (redisOTPData.otp !== otp) {
     throw new ApiError(401, "OTP INVALID");
@@ -573,11 +718,16 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   if (!isMatch) {
     throw new ApiError(400, "Invalid or expired OTP");
 
+=======
+  if (redisOTPData.otp !== otp) {
+    throw new ApiError(401, "OTP INVALID");
+>>>>>>> wind-breathing
   }
 
   await setUser(user._id, user);
   user.isEmailVerified = true;
 
+<<<<<<< HEAD
   // Clear verification & OTP fields after success
   user.emailVerificationToken = undefined;
   user.emailVerificationExpiry = undefined;
@@ -587,6 +737,13 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   /*  
 
 
+=======
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  /*  
+
+>>>>>>> wind-breathing
       //   .cookie("accessToken", accessToken, option)
       //   .cookie("refreshToken", refreshToken, option)
       // {
@@ -599,7 +756,10 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> wind-breathing
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Email verified successfully"));
@@ -616,13 +776,24 @@ export const googleLoginCallback = asyncHandler(async (req, res) => {
     user._id
   );
 
+<<<<<<< HEAD
   const redirectUrl = "http://localhost:5173/auth/google/callback";
+=======
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const redirectUrl = "http://localhost:5173/dashboard";
+
+  const secureUSER = await secureUser(user._id);
+>>>>>>> wind-breathing
 
   return res
     .status(200)
     .cookie("accessToken", accessToken, option)
     .cookie("refreshToken", refreshToken, option)
     .redirect(
+<<<<<<< HEAD
       `${redirectUrl}?token=${accessToken}`
     );
 });
@@ -662,6 +833,10 @@ export const verifyOTP = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Email verified successfully"));
+=======
+      `${redirectUrl}`
+    )
+>>>>>>> wind-breathing
 });
 
 // !! ==== DANGER ZONE ====
@@ -671,9 +846,12 @@ export const deleteUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "User DELETE Successfully"));
 });
+<<<<<<< HEAD
 
 // Aliases for routing consistency
 export const register = registerUser;
 export const login = loginUser;
 export const logout = logoutUser;
 
+=======
+>>>>>>> wind-breathing

@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> wind-breathing
 import React, { 
   createContext, 
   useContext, 
@@ -20,6 +23,7 @@ import {
   userAccessTokenRefreshed,
   userRefreshTokenRefreshed
 } from '../apis/api';
+<<<<<<< HEAD
 import { LocalStorage } from '../apis/index';
 
 import axios from 'axios';
@@ -36,10 +40,22 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState('');
   const [devOTP, setDevOTP] = useState('');
   const [devResetURL, setDevResetURL] = useState('');
+=======
+
+import { LocalStorage } from '../apis/index';
+
+const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+>>>>>>> wind-breathing
   const [toast, setToast] = useState(null);
   const [error, setError] = useState(null);
 
 
+<<<<<<< HEAD
 
   useEffect(() => {
     const initializeAuth = () => {
@@ -54,6 +70,26 @@ export const AuthProvider = ({ children }) => {
           LocalStorage.remove("user");
           LocalStorage.remove("accessToken");
         }
+=======
+  useEffect(() => {
+    const initializeAuth = async() => {
+      try {
+        if(!user) {
+            const res = await getUser()
+              const user = res.data.data.user
+              console.log("user",res.data.data.user)
+              LocalStorage.set("user", user);
+              const savedUser = LocalStorage.get("user");
+
+              if (savedUser) {
+                setUser(savedUser);
+                setIsAuthenticated(true);
+              } else {
+                LocalStorage.remove("user");
+              }
+        }
+        
+>>>>>>> wind-breathing
       } catch (error) {
         console.error("Auth initialization error:", error);
       } finally {
@@ -121,6 +157,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(res.data.message || "Login failed");
       }
 
+<<<<<<< HEAD
       const { user, accessToken } = res.data.data;
       
       if (!user || !accessToken) {
@@ -128,6 +165,14 @@ export const AuthProvider = ({ children }) => {
       }
 
       LocalStorage.set("accessToken", accessToken);
+=======
+      const { user } = res.data.data;
+      
+      if (!user ) {
+        throw new Error("Invalid login response: missing user or access token");
+      }
+
+>>>>>>> wind-breathing
       LocalStorage.set("user", user);
       setUser(user);
       setIsAuthenticated(true);
@@ -146,7 +191,10 @@ export const AuthProvider = ({ children }) => {
       const res = await userLogout();
       if (res.data.success) {
         LocalStorage.remove("user");
+<<<<<<< HEAD
         LocalStorage.remove("accessToken");
+=======
+>>>>>>> wind-breathing
         setUser(null);
         setIsAuthenticated(false);
         return res.data;
@@ -155,7 +203,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error.message);
       LocalStorage.remove("user");
+<<<<<<< HEAD
       LocalStorage.remove("accessToken");
+=======
+>>>>>>> wind-breathing
       setUser(null);
       setIsAuthenticated(false);
       throw error;
@@ -249,6 +300,7 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+<<<<<<< HEAD
 }
 
   // Helper to trigger UI toasts
@@ -564,3 +616,6 @@ export function useAuth() {
   );
 };
 
+=======
+}
+>>>>>>> wind-breathing

@@ -1,15 +1,21 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Landing from '../pages/landing/Landing';
+<<<<<<< HEAD
 import AboutUs from '../pages/aboutus';
 import ContactUs from '../pages/contactus';
 import HelpPage from '../pages/help';
+=======
+>>>>>>> wind-breathing
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import EmailVerificationPage from '../pages/auth/EmailVerificationPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
+<<<<<<< HEAD
 import GoogleCallbackPage from '../pages/auth/GoogleCallbackPage';
+=======
+>>>>>>> wind-breathing
 import Dashboard from '../pages/dashboard/Dashboard';
 import Documents from '../pages/dashboard/Documents';
 import SharedDocuments from '../pages/dashboard/SharedDocuments';
@@ -21,8 +27,17 @@ import NotificationsPage from '../pages/NotificationsPage';
 
 
 import Layout from '../components/layout/Layout';
+<<<<<<< HEAD
 import ProtectedRoute from './ProtectedRoute';
 import ToastNotification from '../components/notifications/ToastNotification';
+=======
+import ProtectedRoute from '../components/layout/ProtectedRoute';
+import ToastNotification from '../components/notifications/ToastNotification';
+import AboutUs from '../pages/About';
+import ContactUs from '../pages/Contact';
+import HelpPage from '../pages/Help';
+import PublicLayout from './PublicLayout';
+>>>>>>> wind-breathing
 
 const DashboardLayout = ({ children }) => {
   return (
@@ -36,17 +51,32 @@ const DashboardLayout = ({ children }) => {
 export default function AppRoutes() {
   return (
     <Routes>
+<<<<<<< HEAD
       <Route path="/" element={<Landing />} />
       <Route path="/about" element={<AboutUs />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/help" element={<HelpPage />} />
+=======
+      
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/help" element={<HelpPage />} />
+      </Route>
+
+>>>>>>> wind-breathing
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/verify-email/" element={<EmailVerificationPage />} />
       <Route path="/set-new-password" element={<ResetPasswordPage />} />
+<<<<<<< HEAD
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+=======
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+>>>>>>> wind-breathing
 
       <Route element={
         <ProtectedRoute>

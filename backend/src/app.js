@@ -10,16 +10,24 @@ import { rateLimit } from 'express-rate-limit'
 import ApiError from "./utils/ApiError.js";
 import requestIp from 'request-ip'
 import { instrument } from "@socket.io/admin-ui";
+<<<<<<< HEAD
 
 import ApiResponse from "./utils/ApiResponse.js";
 
 import passport from "passport";
 import "./passport/index.js";
 
+=======
+import ApiResponse from "./utils/ApiResponse.js";
+import passport from "passport";
+import session from 'express-session'
+import './passport/index.js'
+>>>>>>> wind-breathing
 
 const app = express();
 const httpServer = createServer(app);
 
+<<<<<<< HEAD
 // Apply CORS middleware before all routes and other middleware
 app.use(cors({
   origin: [
@@ -29,6 +37,8 @@ app.use(cors({
   ].filter(Boolean),
   credentials: true
 }));
+=======
+>>>>>>> wind-breathing
 
 const io = new Server(httpServer, {
   pingTimeout: 60000,
@@ -37,6 +47,7 @@ const io = new Server(httpServer, {
       ENV.CORS_ORIGIN,
       ENV.CLIENT_URL,
       "https://admin.socket.io"
+<<<<<<< HEAD
 d
     ],
     credentials : true,
@@ -45,6 +56,11 @@ d
     ].filter(Boolean),
     credentials: true,
 
+=======
+    ],
+    credentials : true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+>>>>>>> wind-breathing
   },
 });
 
@@ -56,7 +72,11 @@ app.use(requestIp.mw());
 
 const limit = rateLimit({
   windowMs : 15 * 60 * 1000,
+<<<<<<< HEAD
   max : 500,
+=======
+  max : 5000,
+>>>>>>> wind-breathing
   standardHeaders : true,
   legacyHeaders : false,
   keyGenerator : (req,res) => {
@@ -79,10 +99,15 @@ app.use(express.static("public"));
 app.use(express.json({ extended: true, limit: "40kb" }));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 
+<<<<<<< HEAD
 
 app.use(cookieParser());
 app.use(helmet());
 
+=======
+app.use(cookieParser());
+app.use(helmet());
+>>>>>>> wind-breathing
 app.use(cors({
     origin : [
       ENV.CORS_ORIGIN,
@@ -97,8 +122,19 @@ app.use(cors({
     ]
 }))
 
+<<<<<<< HEAD
 app.use(passport.initialize());
 
+=======
+app.use(session({
+  secret : ENV.EXPRESS_SESSION_SECRET,
+  resave : true,
+  saveUninitialized : true
+}))
+
+app.use(passport.initialize());
+app.use(passport.session());
+>>>>>>> wind-breathing
 
 // TODO : FIRST CHECK THE HEALTH ROUTE
 
@@ -113,17 +149,28 @@ import CollabRouter from "./module/collaboration/collab.route.js";
 import ChatRouter from './module/chats/chat.route.js'
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> wind-breathing
 // TODO : USE ALL ROUTES HERE
 app.use("/api/v1/rtcds/auth", AuthRouter);
 app.use("/api/v1/rtcds/doc", DocRouter);
 app.use("/api/v1/rtcds/collab", CollabRouter);
 app.use("/api/v1/rtcds/chats", ChatRouter)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> wind-breathing
 app.use("/", (req,res)=>{
     res.status(200).json(new ApiResponse(400, { success : false}, "PAGE NOT FOUND"))
 })
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> wind-breathing
 app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({
     success: false,
@@ -133,6 +180,7 @@ app.use((err, req, res, next) => {
 });
 
 
+<<<<<<< HEAD
 
 // Global error handler middleware (Always returns JSON)
 app.use((err, req, res, next) => {
@@ -151,6 +199,8 @@ app.use((err, req, res, next) => {
   });
 });
 
+=======
+>>>>>>> wind-breathing
 initializeSocketIO(io);
 
 export {

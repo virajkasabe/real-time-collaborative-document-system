@@ -3,7 +3,11 @@ import { FileEdit } from 'lucide-react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
+<<<<<<< HEAD
 import { documentService } from '../../utils/documentService';
+=======
+import { documentService } from '../../services/documentService';
+>>>>>>> wind-breathing
 import { useAuth } from '../../context/AuthContext';
 
 export default function RenameDocumentModal({
