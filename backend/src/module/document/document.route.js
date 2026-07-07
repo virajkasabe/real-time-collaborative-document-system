@@ -6,10 +6,7 @@ import {
     docMoveToTrash, 
     fetchDocument, 
     fetchDocumentFolder, 
-<<<<<<< HEAD
-=======
     fetchTrashFolderDocuments, 
->>>>>>> wind-breathing
     restoreDoc, 
     shareWithMeDocuments
 } from './document.controller.js';
@@ -28,11 +25,8 @@ router.route("/shared-with-me-docs").get(shareWithMeDocuments)
 
 router.route("/restore-doc/:docId").put(restoreDoc)
 
-<<<<<<< HEAD
-=======
 router.route('/trash/folder').get(fetchTrashFolderDocuments)
 
->>>>>>> wind-breathing
 // !! DANGER ZONE
 
 router.route("/move-trash/:docId").delete(docMoveToTrash)

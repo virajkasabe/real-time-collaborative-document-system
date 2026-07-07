@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-
-import { apiClient } from "./index"
-=======
 import { apiClient, baseAPIURL } from "./index"
->>>>>>> wind-breathing
 
 // ?? =============================================
 // auth register, login , logout
@@ -25,13 +20,10 @@ export const userLogin = async (data) => {
     return await apiClient.post("/auth/login",data)
 }
 
-<<<<<<< HEAD
-=======
 // ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
 export const googleLoginApi = `${baseAPIURL}/callback/google`
 
 
->>>>>>> wind-breathing
 export const userLogout = () => {
     return apiClient.get("/auth/logout")
 }
@@ -45,10 +37,7 @@ export const updateUserProfile = (data) => {
 }
 
 export const userForgetPasswordRequest = (data) => {
-<<<<<<< HEAD
-=======
     console.log("data",data)
->>>>>>> wind-breathing
     return apiClient.post("/auth/forgot-password-request", data)
 }
 
@@ -68,10 +57,6 @@ export const userRefreshTokenRefreshed = (data) => {
     return apiClient.post("/auth/refresh-token-refreshed", data)
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> wind-breathing
 // ?? =============================================
 // collab invite, accept, declined 
 // ?? =============================================
@@ -86,17 +71,9 @@ export const acceptCollab = (email,tokenId) => {
 }
 
 export const declinedCollab = (email,tokenId) => {
-<<<<<<< HEAD
-    return apiClient.post(`collab/decline/email=${email}/join=${tokenId}`)
-}
-
-
-
-=======
     return apiClient.post(`/collab/decline/email=${email}/join=${tokenId}`)
 }
 
->>>>>>> wind-breathing
 // ?? =============================================
 // docuement create, read, update, delete
 // ??  =============================================
@@ -118,21 +95,14 @@ export const sharedWithMeDocs = () => {
     return apiClient.get("/doc/shared-with-me-docs")
 }
 
-<<<<<<< HEAD
-=======
 export const fetchTrashFolder = () => {
     return apiClient.get(`/doc/trash/folder`)
 }
 
->>>>>>> wind-breathing
 export const restoreDoc = (docId) => {
     return apiClient.put(`/doc/restore-doc/${docId}`)
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> wind-breathing
 // !! =============================================
 // !!        DENGET ZONE
 // !! =============================================
@@ -142,25 +112,15 @@ export const deleteUserAccount = (userId) => {
     return apiClient.delete(`/auth/delete/${userId}` )
 }
 
-<<<<<<< HEAD
-// !! docs
-=======
 // !! docs move trash
->>>>>>> wind-breathing
 export const docMoveToTrash = (docId) => {
     return apiClient.delete(`/doc/move-trash/${docId}`)
 }
 
-<<<<<<< HEAD
-=======
 // !! docs delete document
->>>>>>> wind-breathing
 export const deleteDoc = (docId) => {
     return apiClient.delete(`/doc/delete/${docId}`)
 }
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> wind-breathing

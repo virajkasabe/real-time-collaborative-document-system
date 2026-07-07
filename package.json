@@ -1,0 +1,26 @@
+{
+  "name": "real-time-collaborative-document-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time collaborative document system monorepo",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "build:frontend": "npm run build -w frontend",
+    "build": "npm run build --workspaces --if-present",
+    "start:backend": "npm run start -w backend",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.9.4"
+  },
+  "dependencies": {
+    "uuid": "^14.0.1"
+  }
+}

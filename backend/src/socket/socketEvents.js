@@ -21,8 +21,6 @@ export const COLLABORATION_EVENT = Object.freeze({
   DECLINE_COLLABORATION: "declineCollaborationRequest",
 });
 
-<<<<<<< HEAD
-=======
 export const COLLABORATION_ERROR_EVENT = Object.freeze({
   ERROR_ACCEPT_COLLABORATION: "errorAcceptCollaborationRequest",
   ERROR_DECLINE_COLLABORATION: "errorDeclineCollaborationRequest",
@@ -32,20 +30,11 @@ export const SEND_COLLABORATION_ERROR_EVENT = Object.freeze({
   SEND_COLLAB_ERROR : "sendCollabError"
 })
 
->>>>>>> wind-breathing
 export const NOTIFICATION_EVENT = Object.freeze({
   NOTIFICATION_SEND: "notificationSend",
   NOTIFICATION_RECIVED: "notificationRecived",
   SEND_REAL_TIME_NOTIFICATION: "sendRealTimeNotification",
   RECIVED_REAL_TIME_NOTIFICATION: "recivedRealTimeNotification",
-<<<<<<< HEAD
-  NOTIFICATION_RECEIVED: 'notification:received',
-  COLLAB_INVITE: 'collab:invite',
-  INVITE_ACCEPTED: 'invite:accepted',
-  INVITE_REJECTED: 'invite:rejected',
-});
-
-=======
 });
 
 
@@ -53,7 +42,6 @@ export const NOTIFICATION_ERROR = Object.freeze({
   
 })
 
->>>>>>> wind-breathing
 export const INVITATION_EVENT = Object.freeze({
   ACCEPT_INVITATION: "acceptIneInvitation",
   DECLINE_INVITATION: "declineInvitation",

@@ -1,11 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
-<<<<<<< HEAD
-import { NOTIFICATION_EVENT } from '../utils/constants';
-=======
 import { COLLABORATION_ERROR_EVENT, INVITATION_EVENT, NOTIFICATION_EVENT } from '../utils/constants';
->>>>>>> wind-breathing
 
 const NotificationContext = createContext();
 
@@ -17,50 +13,6 @@ export function NotificationProvider({ children }) {
   const { user } = useAuth();
 
   const dismissToast = useCallback((id) => {
-<<<<<<< HEAD
-    setToasts(prev => prev.filter(t => t.id !== id));
-  }, []);
-
-  const showToast = useCallback((data) => {
-    if(data.length !== 0) {
-      const id = 'r'; // Date.now();
-      setToasts(prev => [...prev, { ...data, id }]);
-      setTimeout(() => {
-        dismissToast(id);
-      }, 2000);
-    }
-  }, [dismissToast]);
-
-  const addNotification = useCallback((notification) => {
-
-    if (!notification) return;
-    
-    // Convert to array if single notification
-    const notificationsArray = Array.isArray(notification) 
-      ? notification 
-      : [notification];
-    
-    // Filter out empty notifications
-    const validNotifications = notificationsArray.filter(n => 
-      n && Object.keys(n).length > 0
-    );
-    
-    if (validNotifications.length === 0) return;
-    
-    // Create new notifications with IDs
-    const newNotifications = validNotifications.map(n => ({
-      ...n,
-      id: Date.now() + Math.random() + Math.random(),
-      read: false
-    }));
-    
-    // Update state
-      setNotifications(prev => [...newNotifications, ...prev]);
-      setUnreadCount(prev => prev + newNotifications.length);
-  }, []);
-
-  // Listen for real-time notifications via Socket.IO
-=======
     setToasts(prev => prev.filter(t => t.id!== id));
   }, []);
 
@@ -102,28 +54,15 @@ export function NotificationProvider({ children }) {
   }, []);
 
   // Listen for real-time notifications
->>>>>>> wind-breathing
   useEffect(() => {
     if (!socket) return;
 
     const handleNotification = (data) => {
-<<<<<<< HEAD
-=======
       console.log("handleNotification", data)
->>>>>>> wind-breathing
       addNotification(data);
       showToast(data);
     };
 
-<<<<<<< HEAD
-    socket.on(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
-    socket.on(NOTIFICATION_EVENT.NOTIFICATION_RECIVED , handleNotification);
-
-
-    return () => {
-      socket.off(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
-      socket.off(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, handleNotification);
-=======
     const handleError = (data) => {
       console.error("Socket Error:", data)
       // Error ko bhi notification me daal de
@@ -152,30 +91,17 @@ export function NotificationProvider({ children }) {
       socket.off(INVITATION_EVENT.ACCEPT_INVITATION, handleNotification);
       socket.off(INVITATION_EVENT.DECLINE_INVITATION, handleNotification);
       socket.off(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, handleError);
->>>>>>> wind-breathing
     }
   }, [socket, addNotification, showToast]);
 
   const markAsRead = (id) => {
     setNotifications(prev => {
-<<<<<<< HEAD
-      const updated = prev.map(n => n.id === id ? { ...n, read: true } : n);
-      const unread = updated.filter(n => !n.read).length;
-=======
       const updated = prev.map(n => n.id === id? {...n } : n);
       const unread = updated.filter(n =>!n.read).length;
->>>>>>> wind-breathing
       setUnreadCount(unread);
       return updated;
     });
   };
-<<<<<<< HEAD
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, read: true }))
-    );
-=======
   
   const clearNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id))                              
@@ -185,7 +111,6 @@ export function NotificationProvider({ children }) {
 
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({...n, read: true })))
->>>>>>> wind-breathing
     setUnreadCount(0);
   };
 
@@ -202,10 +127,7 @@ export function NotificationProvider({ children }) {
       addNotification,
       markAsRead,
       markAllAsRead,
-<<<<<<< HEAD
-=======
       clearNotification,
->>>>>>> wind-breathing
       clearAll,
       showToast,
       dismissToast
@@ -215,8 +137,4 @@ export function NotificationProvider({ children }) {
   );
 }
 
-<<<<<<< HEAD
 export const useNotifications = () => useContext(NotificationContext);
-=======
-export const useNotifications = () => useContext(NotificationContext);
->>>>>>> wind-breathing

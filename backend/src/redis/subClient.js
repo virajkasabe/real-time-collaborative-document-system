@@ -20,11 +20,7 @@ import { Subscriber } from "./client.js";
 export const subscribeToDocument = async (docId, io) => {
   await Subscriber.subscribe(docId, (message) => {
     const payload = JSON.parse(message);
-<<<<<<< HEAD
-    console.log("message", payload)
-=======
     // console.log("message", payload)
->>>>>>> wind-breathing
 
     io.to(docId).emit(
       CURSOR_EVENT.CURSOR_UPDATE,

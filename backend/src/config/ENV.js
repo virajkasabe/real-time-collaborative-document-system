@@ -13,10 +13,7 @@ export const ENV = {
   CLIENT_URL: process.env.CLIENT_URL,
   BACKEND_URI: process.env.BACKEND_URI,
   RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL,
-<<<<<<< HEAD
-=======
   EXPRESS_SESSION_SECRET: process.env.EXPRESS_SESSION_SECRET,
->>>>>>> wind-breathing
 
   // TOKEN SECRET AND EXPIRY,
 

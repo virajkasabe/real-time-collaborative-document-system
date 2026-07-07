@@ -21,13 +21,8 @@ import {
   Play
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-<<<<<<< HEAD
-import { documentService } from '../../utils/documentService';
-import { socketService } from '../../utils/socketService';
-=======
 import { documentService } from '../../services/documentService';
 import { socketService } from '../../services/socketService';
->>>>>>> wind-breathing
 import Navbar from '../../components/layout/Navbar';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import Comments from './Comments';

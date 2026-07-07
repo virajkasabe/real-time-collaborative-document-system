@@ -5,11 +5,7 @@ import ApiError from "./ApiError.js";
 
 export const secureUser = async (userId) => {
   let user = null;
-<<<<<<< HEAD
-  user = await getUser(userId)
-=======
   user = await getUser(userId.toString())
->>>>>>> wind-breathing
   if(!user) {
        user = await User.findById(userId).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
@@ -22,44 +18,26 @@ export const secureUser = async (userId) => {
 };
 
 export const fetchDoc = async (docId) => {
-<<<<<<< HEAD
-  let document = null;
-  document = await getDocument(docId);
-  if (!document) {
-    document = await Doc.findById(docId);
-    if (document) {
-      await setDocument(docId, document);
-    }
-=======
   const DOCID = docId.toString()
   let document = null;
   document = await getDocument(DOCID);
   if (!document) {
     document = await Doc.findById(DOCID);
       await setDocument(DOCID, document);
->>>>>>> wind-breathing
   }
   if(!document) {
     throw new ApiError(400, "Document not exists")
   }
-<<<<<<< HEAD
-
-=======
->>>>>>> wind-breathing
   return document;
 };
 
 export const otpGenerator = () => {
-<<<<<<< HEAD
-  return Math.floor(100000 + Math.random() * 900000).toString();
-=======
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let otp = "";
   for (let i = 0; i < 6; i++) {
     otp += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return otp;
->>>>>>> wind-breathing
 };
 
 export const requiredField = (required = []) => {
@@ -67,8 +45,6 @@ export const requiredField = (required = []) => {
     throw new ApiError(400, "all field are required");
   }
 };
-<<<<<<< HEAD
-=======
 
 export const htmlToTextConvertor = (htmlString) => {
   return htmlString.replace(/<[^>]+>/g, "")
@@ -105,4 +81,3 @@ export const textToHtmlConvertor = (textString) => {
   
   return content;
 };
->>>>>>> wind-breathing

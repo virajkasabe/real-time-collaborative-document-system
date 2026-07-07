@@ -259,45 +259,7 @@ export default function Landing() {
       <div className="absolute bottom-[28%] right-[10%] text-[#0D6EFD]/20 dark:text-white/5 animate-float-slow z-0 pointer-events-none hidden md:block">
         <PenTool size={38} className="drop-shadow-lg" />
       </div>
-<<<<<<< HEAD
-
-      {/* STICKY GLASS NAVIGATION NAVBAR */}
-      <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
-        <div className="max-w-[1280px] mx-auto px-[24px] h-[72px] flex items-center justify-between">
-          <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
-            <img 
-              src={athenuraLogo}
-              alt="Athenura"
-              className="h-10 w-auto object-contain"
-              style={{ 
-                maxWidth: '160px',
-                filter: isDark 
-                  ? 'brightness(10)' 
-                  : 'brightness(0.2)',
-                opacity: '0.95'
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Link to="/about" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
-              About Us
-            </Link>
-            <Link to="/help" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
-              Help
-            </Link>
-            <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
-              Sign In
-            </Link>
-            <Button size="md" variant="primary" onClick={() => navigate('/register')} className="btn-shine shadow-md shadow-blue-500/10">
-              Sign Up Free
-            </Button>
-          </div>
-        </div>
-      </header>
-=======
       
->>>>>>> wind-breathing
 
       {/* CORE CONTAINER */}
       <main className="flex-1 w-full z-10">

@@ -1,20 +1,4 @@
 import React, { useState } from 'react';
-<<<<<<< HEAD
-import { useNavigate, useParams } from 'react-router-dom';
-import { FiLock, FiEye, FiEyeOff, FiCheckCircle, FiCircle } from 'react-icons/fi';
-import { Check, X } from 'lucide-react';
-import Button from '../../components/common/Button';
-import axios from 'axios';
-import toast, { Toaster } from 'react-hot-toast';
-
-export default function ResetPassword() {
-  const navigate = useNavigate();
-  const { unHashedToken } = useParams();
-
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-=======
 import { useNavigate } from 'react-router-dom';
 import { FiLock, FiEye, FiEyeOff, FiCheckCircle, FiCircle } from 'react-icons/fi';
 import { Check, X } from 'lucide-react';
@@ -30,7 +14,6 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
->>>>>>> wind-breathing
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -85,32 +68,17 @@ export default function ResetPassword() {
   };
 
   const canSubmit = 
-<<<<<<< HEAD
-    newPassword && 
-    confirmPassword && 
-    newPassword === confirmPassword && 
-    requirements.every(req => req.test);
-=======
     currentPassword && 
     newPassword && 
     confirmPassword && 
     newPassword === confirmPassword && 
     getStrengthLevel() >= 2;
->>>>>>> wind-breathing
 
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     setErrors({});
     let errs = {};
 
-<<<<<<< HEAD
-    if (!newPassword) {
-      errs.newPassword = 'Password is required';
-    }
-
-    if (!confirmPassword) {
-      errs.confirmPassword = 'Confirm password is required';
-=======
     if (!currentPassword) {
       errs.currentPassword = 'Current password is required';
     }
@@ -120,61 +88,22 @@ export default function ResetPassword() {
       errs.newPassword = 'New password is required';
     } else if (!meetsRequirements) {
       errs.newPassword = 'Password does not meet all security requirements';
->>>>>>> wind-breathing
     }
 
     if (newPassword !== confirmPassword) {
       errs.confirmPassword = 'Passwords do not match';
     }
 
-<<<<<<< HEAD
-    const meetsRequirements = requirements.every(req => req.test);
-    if (newPassword && !meetsRequirements) {
-      errs.newPassword = 'Password does not meet all security requirements';
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      const firstError = Object.values(errs)[0];
-      toast.error(firstError);
-      return;
-    }
-
-    if (!unHashedToken) {
-      toast.error('Reset token is missing from the URL');
-=======
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       if (errs.currentPassword) triggerToast(errs.currentPassword, 'warning');
       else if (errs.newPassword) triggerToast(errs.newPassword, 'warning');
       else if (errs.confirmPassword) triggerToast(errs.confirmPassword, 'warning');
->>>>>>> wind-breathing
       return;
     }
 
     setLoading(true);
 
-<<<<<<< HEAD
-    try {
-      const response = await axios.post(
-        `http://localhost:5000/api/v1/rtcds/auth/reset-password/${unHashedToken}`,
-        {
-          newPassword,
-          confirmPassword
-        }
-      );
-
-      toast.success(response.data?.message || 'Password reset successful!');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to reset password. Please try again.';
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-=======
     /* 
       API Integration Structure Preparation:
       try {
@@ -205,16 +134,10 @@ export default function ResetPassword() {
 
     triggerToast('Password updated successfully', 'success');
     navigate('/profile');
->>>>>>> wind-breathing
   };
 
   return (
     <div className="p-6 space-y-6 max-w-xl w-full mx-auto select-none">
-<<<<<<< HEAD
-      <Toaster position="top-center" reverseOrder={false} />
-      
-=======
->>>>>>> wind-breathing
       {/* Header */}
       <div className="border-b border-[#E5E7EB] dark:border-white/10 pb-5 transition-all duration-300 text-left">
         <h2 className="font-sans font-extrabold text-xl md:text-2xl text-[#081B3A] dark:text-white tracking-tight">
@@ -229,8 +152,6 @@ export default function ResetPassword() {
       <div className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[20px] p-6 shadow-sm transition-all duration-300">
         <form onSubmit={handleUpdatePassword} className="space-y-4 text-left">
           
-<<<<<<< HEAD
-=======
           {/* Current Password */}
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider block">
@@ -260,7 +181,6 @@ export default function ResetPassword() {
             )}
           </div>
 
->>>>>>> wind-breathing
           {/* New Password */}
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-[#6B7280] dark:text-[#94A3B8] uppercase tracking-wider block">
@@ -359,11 +279,7 @@ export default function ResetPassword() {
 
           {/* Action Buttons */}
           <div className="pt-4 flex justify-end gap-2 border-t border-[#E5E7EB]/50 dark:border-white/5 mt-4">
-<<<<<<< HEAD
-            <Button variant="outline" onClick={() => navigate('/login')} icon={X}>
-=======
             <Button variant="outline" onClick={() => navigate('/profile')} icon={X}>
->>>>>>> wind-breathing
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={loading || !canSubmit} loading={loading} icon={Check}>

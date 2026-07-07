@@ -41,20 +41,12 @@ passport.use(
         let user = await User.findOne({ email });
 
         if (user) {
-<<<<<<< HEAD
-          if (user.loginType !== loginType.GOOGLE) {
-            return done(
-              new ApiError(
-                400,
-                `Please login using ${user.loginType.toLowerCase().replace("_", " ")}`
-=======
           if (user.userLoginType !== loginType.GOOGLE) {
             console.log("userlogintype", user.userLoginType)
             return done(  
               new ApiError(
                 400,
                 `Please login using ${user.userLoginType.toLowerCase().replace("_", " ")}`
->>>>>>> wind-breathing
               ),
               null
             );
@@ -70,11 +62,7 @@ passport.use(
           password : profile.id,
           isEmailVerified: true,
           avatar: profile.photos?.[0]?.value,
-<<<<<<< HEAD
-          loginType: loginType.GOOGLE
-=======
           userLoginType : loginType.GOOGLE
->>>>>>> wind-breathing
         });
 
         return done(null, newUser);

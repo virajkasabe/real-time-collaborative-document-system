@@ -60,11 +60,7 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
   const result = await User.aggregate([
     {
       $match: {
-<<<<<<< HEAD
-        _id: new mongoose.Types.ObjectId(userId)
-=======
         _id: new mongoose.Types.ObjectId(userId) 
->>>>>>> wind-breathing
       },
     },
     {
@@ -74,15 +70,6 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $match: {
-<<<<<<< HEAD
-              $expr: {
-                $or: [
-                  { $eq: ["$ownerId", "$$userId"] },
-                  { $in: ["$$userId", "$users.userId"] }
-                ]
-              }
-            }
-=======
               $and : [
                 {
                    $expr: {
@@ -95,7 +82,6 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
                 { isTrash: { $ne: true } }
               ]
             },
->>>>>>> wind-breathing
           },
           {
             $addFields: {
@@ -204,14 +190,11 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
 
   const documentFolder = result[0]?.documents || [];
 
-<<<<<<< HEAD
-=======
   
   documentFolder.map(async(d)=>{
     await fetchDoc(d._id)
   })
 
->>>>>>> wind-breathing
   return res
     .status(200)
     .json(
@@ -311,14 +294,11 @@ export const shareWithMeDocuments = asyncHandler(async (req, res) => {
     }
   ]);
 
-<<<<<<< HEAD
-=======
    shareWithMeDocs.map(async(d)=>{
     await fetchDoc(d._id)
   })
 
 
->>>>>>> wind-breathing
   return res.status(200).json(
     new ApiResponse(
       200, 
@@ -389,9 +369,6 @@ export const restoreDoc = asyncHandler(async(req,res)=>{
   await setDocument(docId, document)
 
   return res.status(204).json(new ApiResponse(204, {} , "your document restore successfully"))
-<<<<<<< HEAD
-})
-=======
 })
 
 
@@ -548,4 +525,3 @@ export const fetchTrashFolderDocuments = asyncHandler(async (req, res) => {
       )
     );
 });
->>>>>>> wind-breathing

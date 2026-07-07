@@ -27,15 +27,9 @@ import {
 } from 'lucide-react';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
-<<<<<<< HEAD
-import { documentService } from '../../utils/documentService';
-import { useAuth } from '../../context/AuthContext';
-import { createDoc, deleteDoc, fetchDocumentFolder } from '../../apis/api';
-=======
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import { createDoc, docMoveToTrash, fetchDocumentFolder } from '../../apis/api';
->>>>>>> wind-breathing
 
 export default function Dashboard() {
   const { user, triggerToast } = useAuth();
@@ -253,12 +247,8 @@ export default function Dashboard() {
 
   const handleDelete = async (e, docId) => {
     e.stopPropagation();
-<<<<<<< HEAD
-    await deleteDoc(docId);
-=======
     console.log("docId", docId)
     await docMoveToTrash(docId);
->>>>>>> wind-breathing
     triggerToast('Moved file to trash', 'info');
     setRowMenuOpen(null);
     triggerReload();
@@ -269,13 +259,10 @@ export default function Dashboard() {
     setSelectedDoc(doc);
     setShareOpen(true);
     setRowMenuOpen(null);
-<<<<<<< HEAD
-=======
 
     console.log("doc",doc)
 
 
->>>>>>> wind-breathing
   };
 
   const openRename = (e, doc) => {
@@ -287,11 +274,7 @@ export default function Dashboard() {
 
   const handleBulkDelete = async () => {
     for (const id of selectedDocIds) {
-<<<<<<< HEAD
-      await deleteDoc(id);
-=======
       await docMoveToTrash(id);
->>>>>>> wind-breathing
     }
     triggerToast(`Moved ${selectedDocIds.size} files to Trash`, 'success');
     triggerReload();
@@ -826,22 +809,14 @@ export default function Dashboard() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-<<<<<<< HEAD
-                                setRowMenuOpen(rowMenuOpen === doc.id ? null : doc.id);
-=======
                                 setRowMenuOpen(rowMenuOpen === doc._id ? null : doc._id);
->>>>>>> wind-breathing
                               }}
                               className="p-1 rounded hover:bg-[#E5E7EB]/40 dark:hover:bg-[#0F172A] text-[#6B7280] transition-colors"
                             >
                               <MoreVertical size={14} />
                             </button>
 
-<<<<<<< HEAD
-                            {rowMenuOpen === doc.id && (
-=======
                             {rowMenuOpen === doc._id && (
->>>>>>> wind-breathing
                               <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 shadow-lg p-1 z-50 rounded-lg text-xs font-semibold select-none text-left">
                                 <button
                                   onClick={(e) => openRename(e, doc)}
@@ -865,11 +840,7 @@ export default function Dashboard() {
                                   <span>Duplicate</span>
                                 </button>
                                 <button
-<<<<<<< HEAD
-                                  onClick={(e) => handleDelete(e, doc.id)}
-=======
                                   onClick={(e) => handleDelete(e, doc._id)}
->>>>>>> wind-breathing
                                   className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 border-t border-[#E5E7EB] dark:border-white/10 mt-0.5"
                                 >
                                   <Trash2 size={11} />

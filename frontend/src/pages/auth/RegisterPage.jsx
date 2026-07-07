@@ -8,17 +8,11 @@ import { useAuth } from '../../context/AuthContext';
 import bgImage from '../../assets/collab-bg.png';
 import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
-<<<<<<< HEAD
-
-export default function RegisterPage() {
-  const { register, devOTP, loading, error } = useAuth();
-=======
 import { LocalStorage } from '../../apis';
 import { googleLoginApi } from '../../apis/api';
 
 export default function RegisterPage() {
   const { register, login, triggerToast } = useAuth();
->>>>>>> wind-breathing
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -31,10 +25,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-<<<<<<< HEAD
-=======
   const [loading, setLoading] = useState(false);
->>>>>>> wind-breathing
   const [errors, setErrors] = useState({});
 
   const handleRegister = async (e) => {
@@ -72,10 +63,6 @@ export default function RegisterPage() {
       return;
     }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> wind-breathing
     setLoading(true);
     // Call register(email, name, password) matching AuthContext signature
     const res = await register(email.trim(), fullName.trim(), password);
@@ -87,28 +74,6 @@ export default function RegisterPage() {
 
     if (res.success === true) {
       navigate('/verify-email', { state: { email: email, token } });
-<<<<<<< HEAD
-
-    try {
-      const result = await register({ fullName: fullName.trim(), email: email.trim(), password });
-      if (result && result.success) {
-        navigate('/verify-email', { 
-          state: { 
-            email: email.trim(),
-            token: result.token 
-          } 
-        });
-      }
-    } catch (err) {
-      // Handled by context error state
-
-    }
-  };
-
-  const handleGoogleSignup = () => {
-    window.location.href = 'http://localhost:5000/api/v1/rtcds/auth/google';
-  };
-=======
     }
   };
 
@@ -119,7 +84,6 @@ export default function RegisterPage() {
    
          window.location.assign(baseApi);
        };
->>>>>>> wind-breathing
 
   return (
     <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-[#EEF2F7] dark:bg-[#070B14] p-4 md:p-6 font-sans select-none">
@@ -423,54 +387,6 @@ export default function RegisterPage() {
                 Continue with Google
               </button>
 
-<<<<<<< HEAD
-              {/* Show OTP on UI for testing (REMOVE IN PRODUCTION) */}
-              {devOTP && (
-                <div style={{
-                  background: '#fff3cd',
-                  border: '1px solid #ffc107',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  marginTop: '10px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ margin: 0, fontSize: '14px', color: '#856404' }}>
-                    🔐 Development OTP (email disabled):
-                  </p>
-                  <h2 style={{ margin: '5px 0', color: '#333', letterSpacing: '4px' }} className="font-extrabold">
-                    {devOTP}
-                  </h2>
-                </div>
-              )}
-
-              {/* Show error message on UI */}
-              {error && (
-                <div style={{
-                  background: '#ffe0e0',
-                  border: '1px solid #ff4444',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  color: '#cc0000',
-                  marginTop: '10px',
-                  fontSize: '14px',
-                  textAlign: 'center'
-                }}>
-                  ⚠️ {error}
-                </div>
-              )}
-
-              {loading && (
-                <div style={{
-                  textAlign: 'center',
-                  marginTop: '10px',
-                  color: '#1a73e8'
-                }}>
-                  Please wait...
-                </div>
-              )}
-
-=======
->>>>>>> wind-breathing
               {/* Sign In Link */}
               <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
                 Already have an account?{' '}
