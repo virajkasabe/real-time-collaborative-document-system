@@ -1,6 +1,5 @@
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
-<<<<<<< HEAD
 
 import { ENV } from "../config/ENV.js";
 import ApiError from "../utils/ApiError.js";
@@ -31,33 +30,6 @@ export const initializeSocketIO = (io) => {
       }  
       if (!token) {
         token = token.handshake.auth?.token;
-=======
-import { ENV } from "../config/ENV.js";
-import { getUser, setUser } from "../redis/client.js";
-import ApiError from "../utils/ApiError.js";
-import { CONNECT_DISCONNET_EVENT, DOCUMENT_EVENT } from "./socketEvents.js";
-
-const mountJoinDocumentEvent = (socket) => {
-  socket.on(DOCUMENT_EVENT.JOIN_DOCUMENT, (docId) => {
-    console.log("USER JOIN THE DOCUMENT ⚓, DOC ID", docId);
-    socket.join(docId);
-  });
-
-  //  TODO : NOTIFY OTHER USER TO JOIN NEW USERS JOIN IN DOCUMENT
-  // ** : WRITE HERE THIS LOGIC
-};
-
-export const initializeSocketIO = (io) => {
-  return io.on(CONNECT_DISCONNET_EVENT.CONNECTION, async (socket) => {
-    try {
-      const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
-
-      let token = cookies?.accessToken;
-
-      if (!token) {
-        token = token.handshake.auth?.token;
-        console.log("TOKEN FOUND IN HANDSHAKE AUTH 🛜", token);
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
       }
 
       if (!token) {
@@ -68,30 +40,12 @@ export const initializeSocketIO = (io) => {
       }
 
       const decodedToken = jwt.verify(token, ENV.ACCESS_TOKEN_SECRET);
-<<<<<<< HEAD
       if (!decodedToken) {
         throw new ApiError(401, "Token Expired or Invalid 🤳");
       }
 
       // TODO : USER SEARCH ON REDIS OR MONGO
       let user = await secureUser(decodedToken._id);
-=======
-
-      // TODO : USER SEARCH ON REDIS OR MONGO
-      let user;
-
-      //  ?? user serach in redis
-      user = await getUser(decodedToken._id);
-
-      // ?? when not find in redis then search on mongo
-      if (!user) {
-        user = await User.findById(decodedToken._id);
-        //  ** user find in mongo then add on redis
-        if (user) {
-          await setUser(decodedToken._id, user);
-        }
-      }
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 
       // ?? when didn't didn't find anywhere then token invalid or un-authorized
       if (!user) {
@@ -100,7 +54,6 @@ export const initializeSocketIO = (io) => {
 
       socket.user = user;
 
-<<<<<<< HEAD
       socket.join(socket.user._id.toString());
       socket.emit(CONNECT_DISCONNET_EVENT.CONNECTED);
       console.log(`🤝 USER CONNECTED | USER : ${socket.user.fullName}`);
@@ -126,20 +79,6 @@ export const initializeSocketIO = (io) => {
           });
         }
         socket.leave(socket.user._id.toString());
-=======
-      socket.join(user._id.toString());
-      socket.emit(CONNECT_DISCONNET_EVENT.CONNECT);
-      console.log("🤝🌐🔗 USER CONNECTED USER ID : ", user._id.toString());
-
-      // common event mounted here
-      mountJoinDocumentEvent(socket);
-
-      socket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, () => {
-        console.log("⛓️‍💥🚨 USER DISS-CONNECTED USER ID : ", user._id.toString());
-        if (socket.user._id) {
-          socket.leave(socket.user._id);
-        }
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
       });
     } catch (error) {
       socket.emit(

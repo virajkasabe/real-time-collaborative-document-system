@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import path from 'path';
 import multer from 'multer';
 import fs from 'fs';
@@ -49,15 +48,3 @@ export const uploadAvatar = multer({
     fileSize: 2 * 1024 * 1024
   }
 });
-=======
-
-/*
-
-      create like file handling
-
-      avatar,
-      images
-      etc
-
- */
->>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)

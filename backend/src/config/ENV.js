@@ -8,20 +8,12 @@ export const ENV = {
   PORT: process.env.PORT,
   MONGODB_URI: process.env.MONGODB_URI,
   REDIS_URI: process.env.REDIS_URI,
-<<<<<<< HEAD
-=======
-  RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
-  RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX,
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
   DEFAULT_ROUTE: process.env.DEFAULT_ROUTE,
   CORS_ORIGIN: process.env.CORS_ORIGIN,
   CLIENT_URL: process.env.CLIENT_URL,
   BACKEND_URI: process.env.BACKEND_URI,
-<<<<<<< HEAD
   RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL,
   EXPRESS_SESSION_SECRET: process.env.EXPRESS_SESSION_SECRET,
-=======
->>>>>>> f7ad83d (feat(backend): implement core backend functionality with environment configuration, database connection, and socket integration)
 
   // TOKEN SECRET AND EXPIRY,
 

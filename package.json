@@ -17,14 +17,10 @@
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
-<<<<<<< HEAD
     "concurrently": "^9.1.2",
     "prettier": "^3.9.4"
   },
   "dependencies": {
     "uuid": "^14.0.1"
-=======
-    "concurrently": "^9.1.2"
->>>>>>> ff9374c (feat: initialize project structure with Tailwind CSS, custom SaaS theme, and editing page components)
   }
 }

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 import { Router } from "express";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
 import passport  from 'passport';
@@ -10,19 +8,10 @@ import {
   deleteUser,
   forgetPasswordRequest,
   googleLoginCallback,
-=======
-import { Router } from "express";
-import { verifyJWT } from "../../middleware/auth.middleware.js";
-import {
-  changeCurrentPassword,
-  currentUser,
-  deleteUser,
->>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
   loginUser,
   logoutUser,
   refreshTokenHandler,
   registerUser,
-<<<<<<< HEAD
   resetPassword,
   updateAccountDetails,
   verifyEmail,
@@ -77,38 +66,3 @@ router.route("/reset-password/:unHashedToken").post(resetPassword);
 router.route("/delete").delete(deleteUser);
 
 export default router;
-=======
-/*
-=======
-  updateAccountDetails,
-  verifyEmail,
-} from "./auth.controller.js";
->>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
-
-const router = Router();
-
-router.route("/register").post(registerUser);
-
-router.route("/login").post(loginUser);
-
-router.route("/logout").get(verifyJWT, logoutUser);
-
-router.route("/refresh-token").post(refreshTokenHandler);
-
-<<<<<<< HEAD
-*/
->>>>>>> 49577a8 (docs(backend): add initial documentation comments for modules and utilities)
-=======
-router.route("/getme").get(verifyJWT, currentUser);
-
-router.route("/profile").put(verifyJWT, updateAccountDetails);
-
-router.route("/password").put(verifyJWT, changeCurrentPassword);
-
-router.route("/verify-email/:unHashedToken").get(verifyEmail);
-
-//!! =====  DANGER ZONE =====
-router.route("/delete/:email").delete(deleteUser);
-
-export default router;
->>>>>>> c2efc11 (feat(auth): implement user registration, login, and JWT verification with Redis caching)
