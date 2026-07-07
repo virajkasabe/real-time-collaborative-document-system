@@ -8,8 +8,8 @@ describe("Auth Routes", () => {
     const res = await request(app)
       .post("/api/v1/rtcds/auth/login")
       .send({
-        email: "laxmanshinde@gmail.com",
-        password: "shinde@gmail.com",
+        email: "example@gmail.com",
+        password: "password@gmail.com",
       });
     expect(res.statusCode).toBe(200);
   });
