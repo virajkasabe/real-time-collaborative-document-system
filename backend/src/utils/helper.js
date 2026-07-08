@@ -10,6 +10,12 @@ export const secureUser = async (userId) => {
        user = await User.findById(userId).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
       );
+      const refreshToken = user.refreshToken
+      if(refreshToken === "") {
+
+        throw new ApiError(401, "LOGIN FIRST")
+      }
+      console.log("refreshToken", refreshToken);
       if(user) {
             await setUser(userId, user)
       }

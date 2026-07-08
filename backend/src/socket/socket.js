@@ -86,6 +86,7 @@ export const initializeSocketIO = (io) => {
         }
         socket.leave(socket.user._id.toString());
       });
+
     } catch (error) {
       socket.emit(
         CONNECT_DISCONNET_EVENT.SOCKET_ERROR,

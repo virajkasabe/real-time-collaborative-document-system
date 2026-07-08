@@ -118,6 +118,7 @@ docker start redis-stack
 
 emit - sender
 on - reciver
+<<<<<<< HEAD
 
 
 ## YOU CAN TEST A SERVER LIKE MULTIPLES
@@ -126,3 +127,5 @@ on - reciver
 export PORT=5000 && node backend/src/server.js
 
 ```
+=======
+>>>>>>> 1eb60bf (feat: add cursor and notification socket functionality)
