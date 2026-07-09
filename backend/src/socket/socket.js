@@ -19,11 +19,7 @@ import {
   DOCUMENT_EVENT,
 } from "./socketEvents.js";
 
-const mountNotificationEvent = (socket) => {
-  socket.on("notification"), async(data)=> {
-      socket.user = 
-  }
-}
+
 
 export const initializeSocketIO = (io) => {
   startDocumentFlushScheduler()

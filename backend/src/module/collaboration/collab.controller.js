@@ -95,10 +95,7 @@ export const sendCollaboration = asyncHandler(async(req,res) => {
         senderName : inviter.fullName
       }
 
-  const userId = user._id.toString();
-  const socketsInRoom = await io.in(userId).fetchSockets();
-  const isOnline = socketsInRoom.length > 0;
-  console.log("isOnline", isOnline);
+ 
 
       const realTimeNotificationData = {
         type :"COLLAB_INVITED",
@@ -125,8 +122,12 @@ export const sendCollaboration = asyncHandler(async(req,res) => {
        return res.status(200).json(new ApiResponse(200, {}, "user not register then send invite link using the email"))
      }
    
-     const socketsInRoom = await io.in(accepter._id.toString()).fetchSockets();
-     const isOnline = socketsInRoom.length > 0;
+      // const userId = user._id.toString();
+      // const socketsInRoom = await io.in(userId).fetchSockets();
+      // const isOnline = socketsInRoom.length > 0;
+      // console.log("isOnline", isOnline);
+      const socketsInRoom = await io.in(accepter._id.toString()).fetchSockets();
+      const isOnline = socketsInRoom.length > 0;
    
      if(isOnline) {
        await onlineUser(io,realTimeNotificationData, collabData, email)
