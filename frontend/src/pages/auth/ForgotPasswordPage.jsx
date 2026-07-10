@@ -8,12 +8,11 @@ import { useAuth } from "../../context/AuthContext";
 import { FiLock, FiSend, FiShield, FiUsers,
          FiClock, FiRefreshCw, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
-import { userForgetPassword, userForgetPasswordRequest } from '../../apis/api';
+import { userForgetPasswordRequest } from '../../apis/api';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { forgetPasswordRequest } = useAuth();  
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,14 +43,17 @@ export default function ForgotPasswordPage() {
       
       // Simulate API call
       // await new Promise(resolve => setTimeout(resolve, 1500));
-      const res = await userForgetPasswordRequest(email)
+      console.log("email", email)
+      const res = await userForgetPasswordRequest({email})
+      console.log("res",res)
       setSent(true);
     } catch (err) {
       console.log("error", err)
       setError('Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
-    }
+    } 
+    setEmail('')
   };
 
   const features = [
