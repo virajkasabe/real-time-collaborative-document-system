@@ -173,20 +173,17 @@ export default function Documents() {
     try {
       if (filter === 'trash') {
         const res = await fetchTrashFolder();
-        console.log("trash res", res.data.data);
         // Handle different possible response structures
         const trashData = res.data.data?.trashFolder || res.data.data?.documentFolder || res.data.data || [];
         setTrashDocs(Array.isArray(trashData) ? trashData : []);
         setRawDocs([]);
       } else {
         const res = await fetchDocumentFolder();
-        console.log("res", res.data.data);
         const docData = res.data.data?.documentFolder || res.data.data || [];
         setRawDocs(Array.isArray(docData) ? docData : []);
         setTrashDocs([]);
       }
     } catch (error) {
-      console.log("err", error.message);
       triggerToast(error.message, 'warning');
     }
   }

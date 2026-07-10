@@ -25,7 +25,6 @@ export default function SharedDocuments() {
     setLoading(true);
     try {
       let res = await sharedWithMeDocs()
-      console.log("shared DATA",res.data.data)
       let list = res.data.data.documents
       setSharedDocs(list)
       if (searchQuery.trim()) {

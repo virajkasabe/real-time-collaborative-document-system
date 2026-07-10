@@ -19,7 +19,6 @@ export default function ShareDocumentModal({
 
   if (!document) return null;
 
-  console.log("doc", document)
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`https://collabdocs.io/editor/${document.id}`);

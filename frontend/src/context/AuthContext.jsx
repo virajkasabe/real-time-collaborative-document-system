@@ -38,7 +38,6 @@ export function AuthProvider({ children }) {
         if(!user) {
             const res = await getUser()
               const user = res.data.data.user
-              console.log("user",res.data.data.user)
               LocalStorage.set("user", user);
               const savedUser = LocalStorage.get("user");
 

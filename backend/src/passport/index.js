@@ -42,7 +42,7 @@ passport.use(
 
         if (user) {
           if (user.userLoginType !== loginType.GOOGLE) {
-            console.log("userlogintype", user.userLoginType)
+            // console.log("userlogintype", user.userLoginType)
             return done(  
               new ApiError(
                 400,

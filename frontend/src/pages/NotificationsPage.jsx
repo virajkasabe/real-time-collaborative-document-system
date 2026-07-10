@@ -27,7 +27,6 @@ export default function NotificationsPage() {
 
   const declinedCollab = (declineNotif) => {
     markAsRead(declineNotif.id)
-    console.log("notification", notifications)
     socket.emit(INVITATION_EVENT.DECLINE_INVITATION, declineNotif)
     triggerToast("User declined the collaboration", 'fail')
     clearNotification(declineNotif.notificationId)

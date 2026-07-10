@@ -300,6 +300,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
 
 export const forgetPasswordRequest = asyncHandler(async (req, res) => {
   const { email } = req.body;
+  console.log("email", email)
 
   const user = await User.findOne({ email });
 
@@ -309,7 +310,7 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
 
   const { unHashedToken, hashedToken, tokenExpiry } = await user.generateTemporaryToken(user._id);
 
-  user.forgetPasswordRequest = hashedToken;
+  user.forgotPasswordToken = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;
 
   await user.save({ validateBeforeSave: false });
@@ -330,15 +331,15 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
 export const resetPassword = asyncHandler(async (req, res) => {
   const { unHashedToken } = req.params;
 
-  const { newPassword , confirmPassword} = req.body;
-
-  if (newPassword !== confirmPassword) {
-    throw new ApiError(400, "New Password and Confirm Password can't be same");
-  }
+  const { newPassword } = req.body;
 
   if (!unHashedToken) {
     throw new ApiError(400, "Email verification token missing");
   }
+
+  console.log("password",newPassword)
+  console.log("unHashedToken",unHashedToken)
+
 
   const hashedToken = crypto
     .createHash("sha256")
@@ -351,6 +352,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   }).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
+  console.log("user", user)
 
   user.password = newPassword;
 

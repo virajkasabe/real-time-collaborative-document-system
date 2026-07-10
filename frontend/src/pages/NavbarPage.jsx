@@ -68,12 +68,12 @@ const NavbarPage = () => {
 
                 {/* Navigation Links - Center */}
                 <div className="hidden md:flex items-center gap-6">
-                    <Link 
+                    {/* <Link 
                         to="/dashboard" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
                     >
                         Dashboard
-                    </Link>
+                    </Link> */}
                     <Link 
                         to="/about" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
@@ -142,7 +142,7 @@ const NavbarPage = () => {
                                         </p>
                                     </div>
                                     
-                                    <Link 
+                                    {/* <Link 
                                         to="/dashboard" 
                                         className="flex items-center gap-2 px-4 py-2 text-sm text-[#1F2937] dark:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                                         onClick={() => setIsDropdownOpen(false)}
@@ -151,7 +151,7 @@ const NavbarPage = () => {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                         </svg>
                                         Dashboard
-                                    </Link>
+                                    </Link> */}
                                     
                                     <Link 
                                         to="/profile" 

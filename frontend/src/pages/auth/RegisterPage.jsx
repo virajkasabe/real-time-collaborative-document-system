@@ -68,8 +68,6 @@ export default function RegisterPage() {
     const res = await register(email.trim(), fullName.trim(), password);
     
     const { token } = res.data
-
-    console.log("success", res.success)
     setLoading(false);
 
     if (res.success === true) {

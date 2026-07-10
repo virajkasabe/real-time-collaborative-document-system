@@ -37,12 +37,11 @@ export const updateUserProfile = (data) => {
 }
 
 export const userForgetPasswordRequest = (data) => {
-    console.log("data",data)
     return apiClient.post("/auth/forgot-password-request", data)
 }
 
 export const userForgetPassword = (unHashedToken, data) => {
-    return apiClient.post(`/auth/reset-password/${unHashedToken}`,data)
+    return apiClient.post(`/auth/reset-password/${unHashedToken.unHashedToken}`,data)
 }
 
 export const changeUserCurrentPassword = (data) => {
@@ -62,7 +61,6 @@ export const userRefreshTokenRefreshed = (data) => {
 // ?? =============================================
 
 export const inviteCollab = ( { docId, ...data}) => {
-    console.log("docId", docId, "data", data)
     return apiClient.post(`/collab/send-collab/${docId}`,data)
 }
 
@@ -79,7 +77,6 @@ export const declinedCollab = (email,tokenId) => {
 // ??  =============================================
 
 export const createDoc = (data) => {
-    console.log("data", data)
     return apiClient.post("/doc/create-doc", data)
 }
 

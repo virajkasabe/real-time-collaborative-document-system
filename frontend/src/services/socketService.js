@@ -3,7 +3,6 @@
 export const socketService = {
   // Simulates connecting to socket room
   joinRoom: (docId, userName) => {
-    console.log(`[Socket] Room joined: doc-room-${docId} for user ${userName}`);
     return {
       room: `doc-room-${docId}`,
       activeUsers: 3

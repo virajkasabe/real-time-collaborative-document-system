@@ -40,7 +40,6 @@ export default function LoginPage() {
 
     setLoading(true);
     const res = await login(email.trim(), password);
-    console.log("Login response:", res);
 
     if (res?.success === false) {
       setErrors({ 

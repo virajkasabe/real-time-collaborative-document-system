@@ -49,7 +49,7 @@ export default function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/verify-email/" element={<EmailVerificationPage />} />
       <Route path="/set-new-password" element={<ResetPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/reset-password/:unHashedToken" element={<ResetPasswordPage />} />
 
       <Route element={
         <ProtectedRoute>

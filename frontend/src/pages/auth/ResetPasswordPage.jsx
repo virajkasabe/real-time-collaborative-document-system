@@ -7,9 +7,10 @@ import { FiLock, FiEye, FiEyeOff, FiShield,
          FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { userForgetPassword } from '../../apis/api';
 
 export default function ResetPasswordPage() {
-  const { resetPassword, triggerToast } = useAuth();
+  const { triggerToast } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState({});
+  const param = useParams()
 
   // Strength calculation
   const getStrength = (pwd) => {
@@ -80,7 +82,11 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true);
-    const successResult = await resetPassword(email, code, password);
+    const payload = {
+      newPassword : password,
+      unHashedToken : param
+    }
+    const successResult = await userForgetPassword(payload.unHashedToken, payload);
     setLoading(false);
 
     if (successResult) {

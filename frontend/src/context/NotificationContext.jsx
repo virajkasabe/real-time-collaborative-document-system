@@ -58,7 +58,6 @@ export function NotificationProvider({ children }) {
     if (!socket) return;
 
     const handleNotification = (data) => {
-      console.log("handleNotification", data)
       addNotification(data);
       showToast(data);
     };
@@ -105,7 +104,6 @@ export function NotificationProvider({ children }) {
   
   const clearNotification = (id) => {
     setNotifications(prev => prev.filter(n => n.id !== id))                              
-    console.log("clearNotification", id)
   }
 
 
