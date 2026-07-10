@@ -222,7 +222,7 @@ export default function HelpPage() {
   return (
     <div
       onPointerMove={handlePointerMove}
-      className={`min-h-screen font-sans relative dot-grid-bg transition-colors duration-300 overflow-x-hidden ${isDark ? 'bg-[#070B14] text-[#E5E7EB]' : 'bg-[#F7FAFF] text-[#081B3A]'}`}
+      className={`min-h-[calc(100vh-72px)] font-sans relative dot-grid-bg transition-colors duration-300 overflow-x-hidden ${isDark ? 'bg-[#070B14] text-[#E5E7EB]' : 'bg-[#F7FAFF] text-[#081B3A]'}`}
     >
       {/* Gradient glows */}
       <div className="absolute top-1/4 left-1/4 w-[20rem] sm:w-[35rem] h-[20rem] sm:h-[35rem] rounded-full bg-blue-500/10 dark:bg-blue-600/5 blur-3xl pointer-events-none animate-pulse-slow z-0" />
@@ -234,7 +234,7 @@ export default function HelpPage() {
       <div className="absolute bottom-[40%] left-[6%] text-cyan-500/20 dark:text-white/5 animate-float-fast z-0 pointer-events-none hidden lg:block"><Shield size={36} /></div>
       <div className="absolute bottom-[28%] right-[8%] text-blue-500/20 dark:text-white/5 animate-float-slow z-0 pointer-events-none hidden lg:block"><Clock size={38} /></div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-12 relative z-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-2 sm:pt-4 relative z-10">
 
         {/* Header */}
         <RevealOnScroll>
