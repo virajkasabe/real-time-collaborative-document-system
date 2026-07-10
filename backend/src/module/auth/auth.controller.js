@@ -300,6 +300,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
 
 export const forgetPasswordRequest = asyncHandler(async (req, res) => {
   const { email } = req.body;
+  console.log("email", email)
 
   const user = await User.findOne({ email });
 

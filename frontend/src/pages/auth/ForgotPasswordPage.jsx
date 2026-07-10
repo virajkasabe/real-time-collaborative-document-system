@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { FiLock, FiSend, FiShield, FiUsers,
          FiClock, FiRefreshCw, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
-import { userForgetPassword, userForgetPasswordRequest } from '../../apis/api';
+import { userForgetPasswordRequest } from '../../apis/api';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
       
       // Simulate API call
       // await new Promise(resolve => setTimeout(resolve, 1500));
-      const res = await userForgetPasswordRequest(email)
+      const res = await userForgetPasswordRequest({email})
       setSent(true);
     } catch (err) {
       console.log("error", err)

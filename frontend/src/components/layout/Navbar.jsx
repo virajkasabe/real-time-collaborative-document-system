@@ -62,9 +62,9 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
   };
 
   const handleCreateDocument = async() => {
-    let title = "new doc";
     try {
-      const newDoc = await createDoc();
+      let title = "new doc";
+      const newDoc = await createDoc(title);
       console.log(`new doc`, newDoc)
       if (newDoc.data.data) {
         triggerToast('Document created successfully!', 'success');
