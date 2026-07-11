@@ -353,6 +353,7 @@ function useDocumentLoader(id, socket, navigate, showToast, currentUser) {
       try {
         const response = await fetchDoc(id);
         const responseData = response.data.data; // { document, role }
+        console.log("res", responseData)
         if (!responseData?.document) {
           showToast('Document not found', 'warning');
           navigate('/dashboard');
@@ -1433,6 +1434,7 @@ function EditingPageContent({
           docId={doc._id}
           copied={copied}
           onCopyLink={handleCopyLink}
+          otherUser={users}
         />
       )}
     </div>
@@ -2398,92 +2400,6 @@ function ShareModal({
                 <strong style={{ color: '#667eea' }}>Tip:</strong> Enter the email address of the person you'd like to invite. They'll receive an email with access instructions.
               </p>
             </div>
-
-            {/* Copy Link Section - Optional but nice to have */}
-            {/* <div style={{
-              marginTop: '20px',
-              paddingTop: '20px',
-              borderTop: '1px solid #e2e8f0'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  flex: 1,
-                  minWidth: 0
-                }}>
-                  <div style={{
-                    background: '#f1f5f9',
-                    padding: '6px',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                    </svg>
-                  </div>
-                  <span style={{
-                    fontSize: '13px',
-                    color: '#475569',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    Share via link
-                  </span>
-                </div>
-                <button 
-                  onClick={onCopyLink}
-                  style={{
-                    padding: '6px 16px',
-                    background: 'transparent',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f8fafc';
-                    e.currentTarget.style.borderColor = '#cbd5e1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.borderColor = '#e2e8f0';
-                  }}
-                >
-                  {copied ? (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      <span style={{ color: '#10b981' }}>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                      <span>Copy Link</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>
@@ -2491,26 +2407,3 @@ function ShareModal({
   );
 }
 
-
-
-/**
- * 
- * <div className="form-group" style={{ marginTop: '8px' }}>
-            <label className="form-label">Workspace Shareable Link</label>
-            <div className="copy-row mt-2">
-              <input
-                type="text"
-                className="copy-input"
-                readOnly
-                value={`https://quillsuite.collab/docs/${docId}`}
-              />
-              <button className="btn-copy m-4" onClick={onCopyLink}>
-                {copied ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaCheck size={14} /> Copied!</span>
-                ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaCopy size={14} /> Copy Link</span>
-                )}
-              </button>
-            </div>
-          </div>
- */
