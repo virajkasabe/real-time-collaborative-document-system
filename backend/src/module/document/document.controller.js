@@ -195,6 +195,8 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
     await fetchDoc(d._id)
   })
 
+  console.log("doc", documentFolder)
+
   return res
     .status(200)
     .json(
@@ -315,10 +317,10 @@ export const docMoveToTrash = asyncHandler(async(req,res)=>{
   
   const { docId } = req.params
 
-  verifyDocumentAdmin(docId, req.user)
+  const role = await verifyDocumentAdmin(docId, req.user)
+  console.log("role", role)
 
   requiredField([docId])
-
 
   const document = await Doc.findByIdAndUpdate( docId, {
     $set : {
@@ -328,49 +330,8 @@ export const docMoveToTrash = asyncHandler(async(req,res)=>{
 
   await deleteDocumet(docId)
 
-  return res.status(204).json(new ApiResponse(204, {} , "your document move to trash successfully"))
+  return res.status(200).json(new ApiResponse(200, {} , "your document move to trash successfully"))
 })
-
-export const deleteDoc = asyncHandler(async(req,res)=>{
-
-  const { docId } = req.params
-
-  verifyDocumentAdmin(docId, req.user)
-
-  requiredField([docId])
-
-
-  await Doc.findByIdAndDelete( docId, {
-    $set : {
-      isTrash : true
-    }
-  }, { new : true } )
-
-  await deleteDocumet(docId)
-
-
-  return res.status(204).json(new ApiResponse(204, {} , "your document deleted successfully"))
-})
-
-export const restoreDoc = asyncHandler(async(req,res)=>{
-  const { docId } = req.params
-
-  verifyDocumentAdmin(docId, req.user)
-
-  requiredField([docId])
-
-
-  const document = await Doc.findByIdAndUpdate( docId, {
-    $set : {
-      isTrash : false
-    }
-  }, { new : true } )
-
-  await setDocument(docId, document)
-
-  return res.status(204).json(new ApiResponse(204, {} , "your document restore successfully"))
-})
-
 
 export const fetchTrashFolderDocuments = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -525,3 +486,43 @@ export const fetchTrashFolderDocuments = asyncHandler(async (req, res) => {
       )
     );
 });
+
+export const restoreDoc = asyncHandler(async(req,res)=>{
+  const { docId } = req.params
+
+  verifyDocumentAdmin(docId, req.user)
+
+  requiredField([docId])
+
+
+  const document = await Doc.findByIdAndUpdate( docId, {
+    $set : {
+      isTrash : false
+    }
+  }, { new : true } )
+
+  await setDocument(docId, document)
+
+  return res.status(204).json(new ApiResponse(204, {} , "your document restore successfully"))
+})
+
+export const deleteDoc = asyncHandler(async(req,res)=>{
+
+  const { docId } = req.params
+
+  verifyDocumentAdmin(docId, req.user)
+
+  requiredField([docId])
+
+
+  await Doc.findByIdAndDelete( docId, {
+    $set : {
+      isTrash : true
+    }
+  }, { new : true } )
+
+  await deleteDocumet(docId)
+
+
+  return res.status(204).json(new ApiResponse(204, {} , "your document deleted successfully"))
+})
