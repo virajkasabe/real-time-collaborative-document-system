@@ -52,6 +52,9 @@ export default function LoginPage() {
     if (res?.success) {
       navigate('/dashboard');
     }
+
+      setEmail("")
+      setPassword("")
   };
 
   const handleGoogleLogin = () => {
