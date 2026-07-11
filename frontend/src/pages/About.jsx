@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, Star, Lightbulb, FileText, Shield, Clock, MessageSquare } from "lucide-react";
+import { Users, Star, Lightbulb, FileText, Shield, MessageSquare } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 function RevealOnScroll({ children, delay = 0 }) {
@@ -177,18 +177,6 @@ export default function AboutUs() {
           </div>
         </div>
       </main>
-
-      {/* CTA */}
-      <section className={`py-12 sm:py-14 transition-colors duration-300 ${isDark ? "bg-gradient-to-r from-zinc-900 to-black" : "bg-gradient-to-r from-blue-700 to-indigo-700"}`}>
-        <RevealOnScroll>
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-4xl text-white mb-4">Join Our Journey</h2>
-            <p className={`max-w-xl mx-auto leading-8 text-sm sm:text-base ${isDark ? "text-zinc-400" : "text-blue-100"}`}>
-              Join us to build the future of engineering collaboration. We're growing fast and looking for driven, thoughtful engineers and designers.
-            </p>
-          </div>
-        </RevealOnScroll>
-      </section>
     </div>
   );
 }
