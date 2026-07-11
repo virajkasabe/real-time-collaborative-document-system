@@ -91,15 +91,17 @@ export const declineCollab = async(io,socket,data) => {
     const collabData = await getCollaboration(collabId);
     const inviter = await secureUser(senderId)
 
+    
     if (!collabData) {
-         io
-         .to(user._id)
-         .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
+      io
+      .to(user._id)
+      .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
            notificationId: uuidv4(),
            message : "Token Expirted or used",
            type : "error"
-         });
-       }
+          });
+        }
+      
 
       if(collabData) {
           const doc = await fetchDoc(collabData.docId);
@@ -120,7 +122,7 @@ export const declineCollab = async(io,socket,data) => {
         console.log("data",data)
         await deleteNotification(user.email, data)
 
-        console.log("declineCollabData",declineCollabData)
+        console.log("inviter._id",inviter._id)
 
         io.to(inviter._id).emit(COLLABORATION_EVENT.DECLINE_COLLABORATION, declineCollabData);
     }

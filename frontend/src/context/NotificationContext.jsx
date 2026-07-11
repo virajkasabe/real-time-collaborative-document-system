@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
-import { COLLABORATION_ERROR_EVENT, INVITATION_EVENT, NOTIFICATION_EVENT } from '../utils/constants';
+import { COLLABORATION_ERROR_EVENT, COLLABORATION_EVENT, INVITATION_EVENT, NOTIFICATION_EVENT } from '../utils/constants';
 
 const NotificationContext = createContext();
 
@@ -58,6 +58,7 @@ export function NotificationProvider({ children }) {
     if (!socket) return;
 
     const handleNotification = (data) => {
+      console.log("incoming notification",data)
       addNotification(data);
       showToast(data);
     };
@@ -79,17 +80,25 @@ export function NotificationProvider({ children }) {
     // Sab listeners ek sath
     socket.on(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
     socket.on(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, handleNotification);
-    socket.on(INVITATION_EVENT.ACCEPT_INVITATION, handleNotification);
-    socket.on(INVITATION_EVENT.DECLINE_INVITATION, handleNotification);
-    socket.on(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, handleError); // error handler
+
+    socket.on(COLLABORATION_EVENT.ACCEPT_COLLABORATION , handleNotification);
+    socket.on(COLLABORATION_EVENT.DECLINE_COLLABORATION, handleNotification);
+
+    socket.on(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, handleError); 
+    socket.on(COLLABORATION_ERROR_EVENT.ERROR_ACCEPT_COLLABORATION, handleError);
+    
 
     return () => {
       // Cleanup: same function reference pass karna zaroori
       socket.off(NOTIFICATION_EVENT.RECIVED_REAL_TIME_NOTIFICATION, handleNotification);
       socket.off(NOTIFICATION_EVENT.NOTIFICATION_RECIVED, handleNotification);
-      socket.off(INVITATION_EVENT.ACCEPT_INVITATION, handleNotification);
-      socket.off(INVITATION_EVENT.DECLINE_INVITATION, handleNotification);
+
+      socket.off(COLLABORATION_EVENT.ACCEPT_INVITATION, handleNotification);
+      socket.off(COLLABORATION_EVENT.DECLINE_INVITATION, handleNotification);
+
       socket.off(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, handleError);
+      socket.off(COLLABORATION_ERROR_EVENT.ERROR_ACCEPT_COLLABORATION, handleError);
+      
     }
   }, [socket, addNotification, showToast]);
 
