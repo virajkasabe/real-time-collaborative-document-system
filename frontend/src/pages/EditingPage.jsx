@@ -71,8 +71,8 @@ const SIMULATED_TEAM_MEMBERS = ['Lisa Chen', 'Alex Johnson', 'Team Member'];
 const FONT_SIZE_GROW = { small: 'medium', medium: 'large', large: 'huge', huge: 'huge' };
 const FONT_SIZE_SHRINK = { huge: 'large', large: 'medium', medium: 'small', small: 'small' };
 
-const AUTOSAVE_DEBOUNCE_MS = 20;
-const CURSOR_SEND_DEBOUNCE_MS = 20;
+const AUTOSAVE_DEBOUNCE_MS = 80;
+const CURSOR_SEND_DEBOUNCE_MS = 70;
 // How long a remote cursor flag stays on screen after the last update we heard
 // for that user. This was previously 50ms, which meant a cursor flag would
 // vanish almost immediately after being drawn — it needs to comfortably
@@ -82,8 +82,8 @@ const REMOTE_CURSOR_TTL_MS = 500;
 // the user is actively typing (not just when they click/select), so remote
 // viewers see the caret advance as characters are typed.
 const TYPING_CURSOR_BROADCAST_DEBOUNCE_MS = 15;
-const OPERATION_DEDUPE_WINDOW_MS = 50;
-const TITLE_SAVE_DEBOUNCE_MS = 30;
+const OPERATION_DEDUPE_WINDOW_MS = 80;
+const TITLE_SAVE_DEBOUNCE_MS = 100;
 const TOAST_DURATION_MS = 1500;
 const MOBILE_BREAKPOINT = 768;
 const MAX_UNDO_STACK = 100;
