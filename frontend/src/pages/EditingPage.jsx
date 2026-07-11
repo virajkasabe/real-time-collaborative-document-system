@@ -1434,7 +1434,7 @@ function EditingPageContent({
           docId={doc._id}
           copied={copied}
           onCopyLink={handleCopyLink}
-          otherUser={users}
+          // otherUser={users}
         />
       )}
     </div>
