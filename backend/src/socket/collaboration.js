@@ -84,7 +84,6 @@ export const acceptCollab = async(io,socket,data) => {
       .emit(COLLABORATION_EVENT.ACCEPT_COLLABORATION, acceptCollabData);
 }
 
-
 export const declineCollab = async(io,socket,data) => {
     const user = await secureUser(socket.user._id);
     const { collabId, senderId} = data
