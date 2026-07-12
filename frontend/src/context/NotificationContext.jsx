@@ -58,6 +58,11 @@ export function NotificationProvider({ children }) {
     if (!socket) return;
 
     const handleNotification = (data) => {
+      // Guard: data may be undefined/null
+      if (!data) return;
+      const incoming = Array.isArray(data) ? data : [data];
+      setNotifications(prev => [...incoming, ...prev]);
+      setUnreadCount(prev => prev + incoming.length);
       console.log("handleNotification", data)
       addNotification(data);
       showToast(data);
@@ -96,21 +101,20 @@ export function NotificationProvider({ children }) {
 
   const markAsRead = (id) => {
     setNotifications(prev => {
-      const updated = prev.map(n => n.id === id? {...n } : n);
-      const unread = updated.filter(n =>!n.read).length;
+      const updated = prev.map(n => n.id === id ? { ...n, read: true } : n);
+      const unread = updated.filter(n => !n.read).length;
       setUnreadCount(unread);
       return updated;
     });
   };
   
   const clearNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))                              
-    console.log("clearNotification", id)
-  }
-
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    console.log("clearNotification", id);
+  };
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({...n, read: true })))
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };
 

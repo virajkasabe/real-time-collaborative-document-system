@@ -48,14 +48,14 @@ const NavbarPage = () => {
     };
 
     return (
-        <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
+        <header className="w-full bg-white dark:bg-[#0B0F19] border-b border-[#E5E7EB] dark:border-white/5 shadow-sm transition-colors duration-300 sticky top-0 z-50">
             <div className="max-w-[1280px] mx-auto px-[24px] h-[72px] flex items-center justify-between">
                 {/* Logo */}
                 <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
                     <img 
                         src={athenuraLogo}
                         alt="Athenura"
-                        className="h-10 w-auto object-contain"
+                        className="h-10 w-auto object-contain text-[#081B3A] dark:text-white"
                         style={{ 
                             maxWidth: '160px',
                             filter: isDark 
@@ -70,25 +70,25 @@ const NavbarPage = () => {
                 <div className="hidden md:flex items-center gap-6">
                     <Link 
                         to="/dashboard" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                        className="text-sm font-medium text-[#374151] dark:text-[#94A3B8] hover:text-[#1a56db] dark:hover:text-white transition-colors"
                     >
                         Dashboard
                     </Link>
                     <Link 
                         to="/about" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                        className="text-sm font-medium text-[#374151] dark:text-[#94A3B8] hover:text-[#1a56db] dark:hover:text-white transition-colors"
                     >
                         About
                     </Link>
                     <Link 
                         to="/contact" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                        className="text-sm font-medium text-[#374151] dark:text-[#94A3B8] hover:text-[#1a56db] dark:hover:text-white transition-colors"
                     >
                         Contact
                     </Link>
                     <Link 
                         to="/help" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                        className="text-sm font-medium text-[#374151] dark:text-[#94A3B8] hover:text-[#1a56db] dark:hover:text-white transition-colors"
                     >
                         Help
                     </Link>
@@ -179,7 +179,7 @@ const NavbarPage = () => {
                     ) : (
                         // User not logged in
                         <>
-                            <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
+                            <Link to="/login" className="text-xs font-bold text-[#374151] dark:text-[#94A3B8] hover:text-[#1a56db] dark:hover:text-white transition-colors mr-1">
                                 Sign In
                             </Link>
                             <Button size="md" variant="primary" onClick={() => navigate('/register')} className="btn-shine shadow-md shadow-blue-500/10">

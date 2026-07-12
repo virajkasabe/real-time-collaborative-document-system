@@ -1,21 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Check,
   FileText,
   Lock,
-  Star,
   User,
   Users,
   X,
   Mail,
   Calendar,
-  Award,
   Settings,
   Edit2,
   Shield,
   Zap,
-  Menu,
-  ChevronRight,
+  Camera,
 } from 'lucide-react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import Button from '../../components/common/Button';
@@ -24,11 +21,61 @@ import { useAuth } from '../../context/AuthContext';
 import { documentService } from '../../services/documentService';
 
 export default function Profile() {
-  const { user, triggerToast } = useAuth();
+  const { user, updateUser, triggerToast } = useAuth();
   const { sidebarOpen } = useOutletContext();
   const navigate = useNavigate();
-  const [name, setName] = useState(user?.fullName || user?.name || '');
+  const [name, setName] = useState(user?.fullName || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || '');
+
+  useEffect(() => {
+    setName(user?.fullName || '');
+    setAvatarPreview(user?.avatar || '');
+  }, [user]);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      triggerToast('Please select an image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      triggerToast('Image must be less than 2MB', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result;
+
+      // Show preview immediately
+      setAvatarPreview(base64);
+
+      // Save to localStorage
+      const stored = JSON.parse(
+        localStorage.getItem('collabdocs_user') || '{}'
+      );
+      const updatedUser = { ...stored, avatar: base64 };
+      localStorage.setItem(
+        'collabdocs_user',
+        JSON.stringify(updatedUser)
+      );
+
+      // Update AuthContext so Navbar avatar updates too
+      if (user) {
+        const newUser = { ...user, avatar: base64 };
+        updateUser(newUser);
+      }
+
+      triggerToast('Avatar updated successfully!', 'success');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = (e) => {
     if (e && e.preventDefault) {
@@ -36,25 +83,15 @@ export default function Profile() {
     }
     if (!name.trim()) return;
 
-    if (user) {
-      const updatedUser = { ...user, fullName: name.trim(), name: name.trim() };
-      localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
-    }
+    updateUser({ fullName: name.trim() });
 
     triggerToast('Profile updated successfully!', 'success');
     setIsEditing(false);
-
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
   };
 
   const allDocs = documentService.getAll();
   const ownedDocsCount = allDocs.filter(d => d.owner?.email === user?.email).length;
   const sharedDocsCount = documentService.getShared(user?.email).length;
-  const starredDocsCount = documentService.getStarred().filter(d => 
-    d.owner?.email === user?.email || d.sharedUsers?.some(u => u.email === user?.email)
-  ).length;
 
   // Get user initials
   const getInitials = () => {
@@ -108,7 +145,7 @@ export default function Profile() {
             <>
               <Button 
                 variant="outline" 
-                onClick={() => { setIsEditing(false); setName(user?.fullName || user?.name || ''); }} 
+                onClick={() => { setIsEditing(false); setName(user?.fullName || ''); }} 
                 icon={X}
                 size="sm"
                 className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800/30 dark:text-red-400 dark:hover:bg-red-900/20 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
@@ -122,7 +159,7 @@ export default function Profile() {
                 variant="primary" 
                 icon={Check}
                 size="sm"
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg hover:shadow-emerald-500/30 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg hover:shadow-emerald-500/30 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 animate-pulse-slow"
               >
                 <span className="hidden xs:inline">Save changes</span>
                 <span className="xs:hidden">Save</span>
@@ -138,7 +175,6 @@ export default function Profile() {
                 className="border-amber-200 text-amber-600 hover:bg-amber-50 dark:border-amber-800/30 dark:text-amber-400 dark:hover:bg-amber-900/20 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
               >
                 <span className="hidden sm:inline">Reset Password</span>
-                {/* <Lock size={14} className="sm:hidden" /> */}
               </Button>
               <Button 
                 onClick={() => setIsEditing(true)} 
@@ -160,19 +196,69 @@ export default function Profile() {
         <div className="lg:col-span-1 bg-gradient-to-br from-[#0F172A] to-[#1A2332] dark:from-[#0F172A] dark:to-[#1A2332] border border-[#E5E7EB] dark:border-white/10 rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 flex flex-col items-center text-center space-y-3 sm:space-y-4 transition-all duration-300 hover:shadow-2xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#0D6EFD] to-[#6C63FF] blur-2xl opacity-20 animate-pulse"></div>
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-[#2563EB] to-[#6C63FF] flex items-center justify-center mx-auto shadow-2xl ring-4 ring-[#0D6EFD]/30 hover:ring-[#6C63FF]/50 transition-all duration-300 overflow-hidden">
-              {user?.avatar && user.avatar !== "" ? (
-                <img 
-                  src={user.avatar} 
-                  alt={user?.fullName || 'User'} 
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <span className="text-white text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase">
-                  {getInitials()}
-                </span>
-              )}
-            </div>
+            
+            {/* Clickable Avatar Upload */}
+            <label className="cursor-pointer group relative w-24 h-24 rounded-full overflow-hidden mx-auto block shadow-xl ring-4 ring-blue-500/30">
+              {/* Avatar image or initial */}
+              <div className="w-full h-full rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center">
+                {avatarPreview || (user?.avatar && user.avatar !== '') ? (
+                  <img
+                    src={avatarPreview || user.avatar}
+                    alt={user?.fullName || 'Avatar'}
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <span className="text-white text-4xl font-extrabold uppercase">
+                    {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </span>
+                )}
+              </div>
+
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex flex-col items-center justify-center gap-1">
+                <Camera size={20} className="text-white" />
+                <span className="text-white text-[10px] font-medium">Change</span>
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </label>
+
+            {/* Helper text below avatar */}
+            <p className="text-[10px] text-gray-500 mt-2 text-center">
+              Click avatar to change photo
+            </p>
+
+            {/* Remove avatar button */}
+            {(avatarPreview || user?.avatar) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAvatarPreview('');
+                  updateUser({ avatar: '' });
+                  const stored = JSON.parse(
+                    localStorage.getItem('collabdocs_user') || '{}'
+                  );
+                  localStorage.setItem(
+                    'collabdocs_user',
+                    JSON.stringify({ ...stored, avatar: '' })
+                  );
+                  triggerToast('Avatar removed', 'success');
+                }}
+                className="text-[10px] text-red-400 hover:text-red-300 transition-colors mt-1 block text-center w-full cursor-pointer"
+              >
+                Remove photo
+              </button>
+            )}
+
             <div className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 rounded-full border-2 border-[#0F172A]">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse"></div>
             </div>
@@ -180,7 +266,7 @@ export default function Profile() {
 
           <div className="space-y-1 sm:space-y-1.5">
             <h3 className="text-base sm:text-lg md:text-xl font-bold text-white mt-2 capitalize">
-              {user?.fullName || user?.name || user?.email?.split('@')[0] || 'User'}
+              {user?.fullName || user?.email?.split('@')[0] || 'User'}
             </h3>
             <div className="flex items-center justify-center gap-1.5">
               <Mail size={10} sm:size={12} className="text-[#94A3B8]" />
@@ -277,7 +363,7 @@ export default function Profile() {
                 <div className="pt-2 flex flex-wrap justify-end gap-2">
                   <Button 
                     variant="outline" 
-                    onClick={() => { setIsEditing(false); setName(user?.fullName || user?.name || ''); }} 
+                    onClick={() => { setIsEditing(false); setName(user?.fullName || ''); }} 
                     icon={X}
                     size="sm"
                     className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800/30 dark:text-red-400 dark:hover:bg-red-900/20 text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5"
@@ -304,7 +390,7 @@ export default function Profile() {
                     <span className="xs:hidden">Name</span>
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-[#081B3A] dark:text-white group-hover:text-[#0D6EFD] dark:group-hover:text-[#6C63FF] transition-colors truncate max-w-[150px] sm:max-w-none">
-                    {user?.fullName || user?.name || 'N/A'}
+                    {user?.fullName || 'N/A'}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 py-2 sm:py-3 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#0A0F1A] rounded-lg sm:rounded-xl border border-[#E5E7EB] dark:border-white/5 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 transition-all group">
@@ -360,7 +446,7 @@ export default function Profile() {
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <button 
               onClick={() => navigate('/documents')}
-              className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 hover:shadow-xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10 transition-all duration-300 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 group"
+              className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 hover:shadow-xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10 transition-all duration-300 hover:border-[#0D6EFD]/20 dark:hover:border-[#6C63FF]/20 group cursor-pointer"
             >
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-1.5 sm:p-2 bg-gradient-to-br from-[#0D6EFD]/20 to-[#6C63FF]/20 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
@@ -374,7 +460,7 @@ export default function Profile() {
             </button>
             <button 
               onClick={() => navigate('/shared')}
-              className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-purple-500/5 dark:shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 dark:hover:shadow-purple-500/10 transition-all duration-300 hover:border-purple-500/20 dark:hover:border-purple-500/20 group"
+              className="bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-purple-500/5 dark:shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 dark:hover:shadow-purple-500/10 transition-all duration-300 hover:border-purple-500/20 dark:hover:border-purple-500/20 group cursor-pointer"
             >
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-1.5 sm:p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">

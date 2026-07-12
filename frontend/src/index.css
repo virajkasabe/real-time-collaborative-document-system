@@ -4,3 +4,11 @@
   color: #94a3b8 !important;
   opacity: 1 !important;
 }
+
+html, body, #root {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #060D1A;
+  margin: 0;
+  padding: 0;
+}

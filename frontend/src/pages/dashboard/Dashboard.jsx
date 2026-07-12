@@ -1,5 +1,6 @@
-import  { useState, useEffect, useMemo } from 'react';
+import  { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
+import mammoth from 'mammoth';
 import { 
   Plus, 
   FileText, 
@@ -37,6 +38,11 @@ export default function Dashboard() {
   const { sidebarOpen, searchQuery } = useOutletContext();
   
   // State
+  const importInputRef = useRef(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const uploadInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [rawDocs, setRawDocs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dbVer, setDbVer] = useState(0);
@@ -289,12 +295,206 @@ export default function Dashboard() {
   };
 
   const createDocumentWithType = async (name, type, cat) => {
-    const doc = await createDoc(name, cat, user?.email, user?.fullName);
-    if (doc) {
+    try {
+      const response = await createDoc({ title: name, type, category: cat });
+
+      // Guard against undefined response
+      if (!response || !response.data) {
+        triggerToast('Failed to create document. Please try again.', 'error');
+        return;
+      }
+
+      const doc = response.data?.data?.doc || response.data?.data || response.data;
+      if (!doc?._id) {
+        triggerToast('Unexpected server response.', 'error');
+        return;
+      }
+
       triggerToast(`Created new ${type} Document`, 'success');
       navigate(`/editor/${doc._id}`);
+
+    } catch (err) {
+      console.error('Create doc error:', err);
+
+      if (err?.code === 'ERR_NETWORK' || err?.message?.includes('CORS') || err?.name === 'TypeError') {
+        triggerToast(
+          'Cannot connect to server. Make sure backend is running on port 5000.',
+          'error'
+        );
+      } else {
+        triggerToast(
+          err?.response?.data?.message || 'Failed to create document.',
+          'error'
+        );
+      }
     }
   };
+
+  // Import Document Handlers
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['doc', 'docx', 'md', 'html', 'txt'].includes(ext || '')) {
+      triggerToast('Supported: .docx .doc .md .html .txt', 'error');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      triggerToast('File must be less than 10MB', 'error');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      let content = '';
+      const title = file.name
+        .replace(/\.(doc|docx|md|html|txt)$/i, '')
+        .replace(/[-_]/g, ' ')
+        .trim();
+
+      if (ext === 'docx' || ext === 'doc') {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        content = result.value;
+      } else if (ext === 'html') {
+        content = await file.text();
+      } else if (ext === 'md') {
+        const text = await file.text();
+        content = text
+          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/\n/g, '<br/>');
+      } else {
+        const text = await file.text();
+        content = `<p>${text.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br/>')}</p>`;
+      }
+
+      // Try API first, fall back to localStorage
+      try {
+        const response = await createDoc({
+          title,
+          content,
+          type: 'imported'
+        });
+        const doc = response?.data?.data?.doc || response?.data?.data || response?.data;
+        if (doc?._id) {
+          triggerToast(`"${title}" imported!`, 'success');
+          navigate(`/editor/${doc._id}`);
+          return;
+        }
+      } catch (apiErr) {
+        console.warn('API unavailable, saving locally:', apiErr);
+      }
+
+      // Fallback: save to localStorage
+      const docs = JSON.parse(
+        localStorage.getItem('collabdocs_documents') || '[]'
+      );
+      const newDoc = {
+        id: crypto.randomUUID(),
+        _id: crypto.randomUUID(),
+        title,
+        content,
+        owner: { name: user?.fullName, email: user?.email },
+        isImported: true,
+        originalFileName: file.name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      docs.push(newDoc);
+      localStorage.setItem(
+        'collabdocs_documents',
+        JSON.stringify(docs)
+      );
+      triggerToast(`"${title}" imported locally!`, 'success');
+      navigate(`/editor/${newDoc._id}`);
+
+    } catch (err) {
+      console.error('Import error:', err);
+      triggerToast('Failed to import. Please try again.', 'error');
+    } finally {
+      setIsImporting(false);
+      if (importInputRef.current) importInputRef.current.value = '';
+    }
+  };
+
+  // Upload File Handlers
+  const handleUploadClick = () => {
+    uploadInputRef.current?.click();
+  };
+
+  const handleUploadFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      triggerToast('File must be under 5MB', 'error');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const uploads = JSON.parse(
+          localStorage.getItem('collabdocs_uploads') || '[]'
+        );
+        uploads.unshift({
+          id: crypto.randomUUID(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          data: reader.result,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: user?.email,
+        });
+        // Keep max 20 uploads in localStorage
+        localStorage.setItem(
+          'collabdocs_uploads',
+          JSON.stringify(uploads.slice(0, 20))
+        );
+        triggerToast(`"${file.name}" uploaded!`, 'success');
+        setIsUploading(false);
+        if (uploadInputRef.current) uploadInputRef.current.value = '';
+      };
+      reader.onerror = () => {
+        triggerToast('Failed to read file', 'error');
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      triggerToast('Upload failed', 'error');
+      setIsUploading(false);
+    }
+  };
+
+  // Status Icons
+  const ImportIcon = () => isImporting ? (
+    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+    </svg>
+  ) : (
+    <Download size={14} />
+  );
+
+  const UploadIcon = () => isUploading ? (
+    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+    </svg>
+  ) : (
+    <Upload size={14} />
+  );
 
   // Quick Action Cards
   const quickActionCards = [
@@ -313,18 +513,18 @@ export default function Dashboard() {
       action: () => createDocumentWithType('Untitled Document', 'DOCX', 'blank')
     },
     {
-      title: 'Import Document',
+      title: isImporting ? 'Importing...' : 'Import Document',
       desc: 'Import markdown/HTML specs',
-      icon: Download,
+      icon: ImportIcon,
       color: 'text-amber-500 bg-amber-500/10',
-      action: () => triggerToast('Select Markdown or HTML file to import', 'info')
+      action: handleImportClick
     },
     {
-      title: 'Upload File',
+      title: isUploading ? 'Uploading...' : 'Upload File',
       desc: 'Store cloud backups',
-      icon: Upload,
+      icon: UploadIcon,
       color: 'text-emerald-500 bg-emerald-500/10',
-      action: () => triggerToast('Upload document files (PDF/DOCX)', 'info')
+      action: handleUploadClick
     },
     {
       title: 'Shared Documents',
@@ -926,6 +1126,21 @@ export default function Dashboard() {
           onRename={triggerReload}
         />
       )}
+
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".doc,.docx,.md,.html,.txt"
+        className="hidden"
+        onChange={handleImportFile}
+      />
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="*/*"
+        className="hidden"
+        onChange={handleUploadFile}
+      />
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default function ThemeToggle({ className = '' }) {
         console.log("ThemeToggle: Button clicked. Current theme state:", theme);
         toggleTheme();
       }}
-      className={`inline-flex items-center justify-center p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-300 dark:hover:border-white/20 text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${className}`}
+      className={`inline-flex items-center justify-center bg-[#f4f6fa] dark:bg-[#1e293b] border border-[#E5E7EB] dark:border-white/10 text-[#374151] dark:text-white rounded-lg p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-none ${className}`}
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >

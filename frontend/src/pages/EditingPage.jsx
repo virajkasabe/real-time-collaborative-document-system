@@ -19,6 +19,8 @@ import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { documentService } from '../services/documentService';
 import { CURSOR_EVENT, DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
+import ChatPanel from '../components/editor/ChatPanel';
+import CommentsPanel from '../components/editor/CommentsPanel';
 
 import {
   FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaHistory,
@@ -347,10 +349,26 @@ function useDocumentLoader(id, socket, navigate, showToast, currentUser) {
   const [docUserRole, setDocUserRole] = useState(null);
 
   useEffect(() => {
-    if (!socket) return undefined;
-
     const loadDocument = async () => {
       try {
+        // STEP 1: Check localStorage first (for imported docs)
+        const localDocs = JSON.parse(
+          localStorage.getItem('collabdocs_documents') || '[]'
+        );
+        const localDoc = localDocs.find(
+          d => d.id === id || d._id === id
+        );
+
+        if (localDoc) {
+          console.log('Loading local document:', localDoc.title || localDoc.name);
+          setDoc(localDoc);
+          setDocUserRole('owner');
+          showToast('Document loaded locally', 'success');
+          return; // ← stop here, don't call API
+        }
+
+        // STEP 2: Not in localStorage — try API
+        if (!socket) return;
         const response = await fetchDoc(id);
         const responseData = response.data.data; // { document, role }
         if (!responseData?.document) {
@@ -363,9 +381,24 @@ function useDocumentLoader(id, socket, navigate, showToast, currentUser) {
         socket.emit(DOCUMENT_EVENT.USER_JOIN, { docId: responseData.document._id || id });
         showToast('Document loaded successfully', 'success');
       } catch (error) {
-        console.error('Error fetching document:', error);
-        showToast('Failed to load document', 'error');
-        navigate('/dashboard');
+        console.error('Failed to load document:', error);
+
+        // Last resort: check localStorage again
+        const localDocs = JSON.parse(
+          localStorage.getItem('collabdocs_documents') || '[]'
+        );
+        const fallback = localDocs.find(
+          d => d.id === id || d._id === id
+        );
+
+        if (fallback) {
+          setDoc(fallback);
+          setDocUserRole('owner');
+          showToast('Document loaded locally (fallback)', 'info');
+        } else {
+          showToast('Could not load document', 'error');
+          navigate('/dashboard');
+        }
       }
     };
 
@@ -433,7 +466,7 @@ function useActiveCollaborators(socket, currentUser, showToast) {
 // debounced autosave.
 // ============================================================
 function useCollaborativeQuill({
-  quillRef, doc, docId, canEdit, socket, user, title, onSave, onOutlineChange, onWordCountChange, onSyncingChange,
+  quillRef, doc, docId, canEdit, socket, user, title, onSave, onOutlineChange, onWordCountChange, onSyncingChange, onContentChange, setSaveStatus,
 }) {
   const quillInstanceRef = useRef(null);
   const [remoteCursors, setRemoteCursors] = useState({});
@@ -596,6 +629,7 @@ function useCollaborativeQuill({
     };
 
     const handleCursorUpdate = (cursorData) => {
+      if (!cursorData || !cursorData.userId) return;
       renderRemoteCursorFlag(quill, cursorData);
       remoteCursorsRef.current = { ...remoteCursorsRef.current, [cursorData.userId]: cursorData };
       setRemoteCursors(remoteCursorsRef.current);
@@ -639,6 +673,9 @@ function useCollaborativeQuill({
       onOutlineChange();
       const words = countWords(quill.getText());
       onWordCountChange(words);
+      if (onContentChange) {
+        onContentChange(quill.root.innerHTML);
+      }
 
       const operations = convertDeltaToWireOperations(delta);
       if (operations.length > 0) {
@@ -657,13 +694,31 @@ function useCollaborativeQuill({
         typingCursorTimeoutId = null;
       }, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS);
 
-      onSyncingChange(true);
-      clearTimeout(saveTimeoutId);
-      saveTimeoutId = setTimeout(() => {
-        onSave(title, quillDeltaToCustomDelta(quill.getContents()), words);
-        onSyncingChange(false);
-        saveTimeoutId = null;
-      }, AUTOSAVE_DEBOUNCE_MS);
+      // Save to localStorage for local docs
+      const localDocs = JSON.parse(
+        localStorage.getItem('collabdocs_documents') || '[]'
+      );
+      const index = localDocs.findIndex(
+        d => d.id === docId || d._id === docId
+      );
+      if (index !== -1) {
+        localDocs[index].content = quill.root.innerHTML;
+        localDocs[index].updatedAt = new Date().toISOString();
+        localStorage.setItem(
+          'collabdocs_documents',
+          JSON.stringify(localDocs)
+        );
+        if (setSaveStatus) setSaveStatus('Saved locally');
+      } else {
+        // API save for backend docs (existing logic)
+        onSyncingChange(true);
+        clearTimeout(saveTimeoutId);
+        saveTimeoutId = setTimeout(() => {
+          onSave(title, quillDeltaToCustomDelta(quill.getContents()), words);
+          onSyncingChange(false);
+          saveTimeoutId = null;
+        }, AUTOSAVE_DEBOUNCE_MS);
+      }
     };
 
     const handleSelectionChange = (range, _oldRange, source) => {
@@ -783,6 +838,10 @@ function resolveClickPosition(quill, _event) {
 // keystroke from a remote collaborator; reusing the node plus a short CSS
 // transition makes the flag glide smoothly to its new position instead.
 function renderRemoteCursorFlag(quill, cursorData) {
+  if (!cursorData) return null;
+  if (!cursorData.userId) return null;
+  if (cursorData.position === undefined || cursorData.position === null) return null;
+
   const {
     userId, userName, position, color, avatar,
   } = cursorData;
@@ -923,6 +982,96 @@ function EditingPageContent({
 
   const [title, setTitle] = useState(doc.title || 'Untitled Document');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('Saved');
+  const [content, setContent] = useState(doc.content || '');
+
+  useEffect(() => {
+    setSaveStatus('Saving...');
+    const t = setTimeout(() => {
+      documentService.update(docId, { content });
+      setSaveStatus('Saved to Cloud');
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [content]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCommentAdded = (comment) => {
+      setComments(prev => {
+        const cid = comment._id || comment.id;
+        if (prev.some(c => c._id === cid || c.id === cid)) return prev;
+        return [...prev, {
+          _id: comment._id || comment.id,
+          id: comment.id || comment._id,
+          author: comment.user || comment.author || 'Anonymous',
+          text: comment.text,
+          time: comment.time || 'Just now',
+          resolved: comment.resolved || false
+        }];
+      });
+    };
+
+    const handleCommentResolved = ({ commentId }) => {
+      setComments(prev => prev.map(c =>
+        c._id === commentId || c.id === commentId ? { ...c, resolved: true } : c
+      ));
+    };
+
+    const handleCommentDeleted = ({ commentId }) => {
+      setComments(prev => prev.filter(c => c._id !== commentId && c.id !== commentId));
+    };
+
+    const handleChatReceived = (msg) => {
+      setChatMessages(prev => {
+        if (prev.some(m => m.id === msg.id)) return prev;
+        return [...prev, {
+          id: msg.id || Date.now() + Math.random(),
+          sender: msg.user?.name || msg.sender || 'System',
+          text: msg.message || msg.text || '',
+          time: msg.time || new Date().toLocaleTimeString(),
+          type: msg.user?.email === user?.email ? 'sent' : 'received'
+        }];
+      });
+    };
+
+    socket.on('comment-added', handleCommentAdded);
+    socket.on('comment-resolved', handleCommentResolved);
+    socket.on('comment-deleted', handleCommentDeleted);
+    socket.on('chat-received', handleChatReceived);
+
+    return () => {
+      socket.off('comment-added', handleCommentAdded);
+      socket.off('comment-resolved', handleCommentResolved);
+      socket.off('comment-deleted', handleCommentDeleted);
+      socket.off('chat-received', handleChatReceived);
+    };
+  }, [socket, user]);
+
+  const addComment = (text, position) => {
+    if (!socket) return;
+    const newComment = {
+      _id: 'comment-' + Math.random().toString(36).substr(2, 5),
+      user: user?.fullName || user?.name || 'Anonymous',
+      text,
+      time: 'Just now'
+    };
+    setComments(prev => [...prev, newComment]);
+    socket.emit('add-comment', {
+      documentId: docId,
+      comment: { text, position },
+      user: { name: user?.fullName || user?.name, email: user?.email, avatar: user?.avatar }
+    });
+  };
+
+  const sendMessage = (message) => {
+    if (!socket) return;
+    socket.emit('send-chat', {
+      documentId: docId,
+      message,
+      user: { name: user?.fullName || user?.name, email: user?.email, avatar: user?.avatar }
+    });
+  };
 
   const isOwner = docUserRole === DOCUMENT_ROLES.OWNER;
   const isEditor = docUserRole === DOCUMENT_ROLES.EDITOR;
@@ -1043,6 +1192,8 @@ function EditingPageContent({
     onOutlineChange: () => updateOutline(quillInstanceRef.current),
     onWordCountChange: setWordCount,
     onSyncingChange: setIsSyncing,
+    onContentChange: setContent,
+    setSaveStatus,
   });
   const quillInstance = quillInstanceRef.current;
 
@@ -1397,21 +1548,33 @@ function EditingPageContent({
           isMobile={isMobile}
         />
 
-        <RightSidebar
-          collapsed={rightSidebarCollapsed}
-          rightTab={rightTab}
-          setRightTab={setRightTab}
-          chatMessages={chatMessages}
-          chatInputText={chatInputText}
-          setChatInputText={setChatInputText}
-          onSendMessage={handleSendMessage}
-          chatBottomRef={chatBottomRef}
-          comments={comments}
-          newCommentText={newCommentText}
-          setNewCommentText={setNewCommentText}
-          onAddComment={handleAddComment}
-          isMobile={isMobile}
-        />
+        <aside className={`editor-sidebar right-sidebar ${rightSidebarCollapsed ? 'collapsed' : ''}`} style={(!rightSidebarCollapsed && isMobile) ? { position: 'fixed', top: 0, bottom: 0, right: 0, width: '85vw', maxWidth: '320px', zIndex: 1500, boxShadow: '0 0 24px rgba(0,0,0,0.35)' } : undefined}>
+          <div className="sidebar-header"><span>Collaborations</span></div>
+          <div className="sidebar-tabs">
+            <button className={`sidebar-tab ${rightTab === 'chat' ? 'active' : ''}`} onClick={() => setRightTab('chat')}>
+              <LuMessageSquare size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Team Chat
+            </button>
+            <button className={`sidebar-tab ${rightTab === 'comments' ? 'active' : ''}`} onClick={() => setRightTab('comments')}>
+              <FaUsers size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> Comments
+            </button>
+          </div>
+          <div className="sidebar-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 100px)' }}>
+            {rightTab === 'chat' ? (
+              <ChatPanel socket={socket} documentId={docId} user={user} />
+            ) : (
+              <CommentsPanel
+                comments={comments}
+                onAddComment={(text) => addComment(text, null)}
+                onResolveComment={(commentId) => {
+                  socket.emit('resolve-comment', { documentId: docId, commentId });
+                  setComments(prev => prev.map(c => c._id === commentId || c.id === commentId ? { ...c, resolved: true } : c));
+                }}
+                onClose={() => setRightSidebarCollapsed(true)}
+                user={user}
+              />
+            )}
+          </div>
+        </aside>
       </main>
 
       <StatusBar
@@ -1420,6 +1583,7 @@ function EditingPageContent({
         zoomPercent={zoomPercent}
         setZoomPercent={setZoomPercent}
         isMobile={isMobile}
+        saveStatus={saveStatus}
       />
 
       {showShareModal && canShare && (
@@ -2031,7 +2195,7 @@ function RightSidebar({
 }
 
 function StatusBar({
-  wordCount, isSyncing, zoomPercent, setZoomPercent, isMobile,
+  wordCount, isSyncing, zoomPercent, setZoomPercent, isMobile, saveStatus,
 }) {
   return (
     <footer className="word-status-bar" style={isMobile ? { flexWrap: 'wrap', gap: '6px', fontSize: '11px' } : undefined}>
@@ -2053,9 +2217,8 @@ function StatusBar({
         )}
       </div>
       <div className="status-bar-center">
-        <div className={`sync-badge ${isSyncing ? 'syncing' : ''}`} style={{ border: 'none', background: 'transparent', padding: 0 }}>
-          <span className="sync-dot" />
-          <span>{isSyncing ? 'AutoSave: Syncing...' : 'Saved to Cloud'}</span>
+        <div className="sync-badge animate-fade-in" style={{ border: 'none', background: 'transparent', padding: 0 }}>
+          <span className="text-xs text-gray-400">{saveStatus}</span>
         </div>
       </div>
       <div className="status-bar-right">

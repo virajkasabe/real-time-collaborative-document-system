@@ -8,10 +8,12 @@ import React, {
 } from "react";
 import { io } from "socket.io-client";
 import { CONNECT_DISCONNET_EVENT } from "../utils/constants";
+import { useSocketStore } from '../stores/socketStore';
 
 const SocketContext = createContext();
 
 export function SocketProvider({ children }) {
+  const { setConnection } = useSocketStore();
   const [isConnected, setIsConnected] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const [socket, setSocket] = useState(null);
@@ -27,45 +29,60 @@ export function SocketProvider({ children }) {
 
     console.log("🔌 Connecting socket...");
 
-    const newSocket = io(
-      import.meta.env.VITE_SOCKET_URL || "http://localhost:5000",
-      {
-        withCredentials: true,
-        transports: ["websocket"],
-        autoConnect: true,
-        reconnection: true,
-        reconnectionDelay: 500,
-        reconnectionAttempts: 5,
-      }
-    );
-
-    socketRef.current = newSocket;
-    setSocket(newSocket);
-
-    newSocket.on(CONNECT_DISCONNET_EVENT.CONNECT, () => {
-      console.log("✅ Socket Connected:", newSocket.id);
-      setIsConnected(true);
-      setSocketReady(true);
-    });
-
-    newSocket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (reason) => {
-      console.log("❌ Socket Disconnected:", reason);
-      setIsConnected(false);
-      setSocketReady(false);
-    });
-
-    newSocket.on(CONNECT_DISCONNET_EVENT.CONNECT_ERROR, (err) => {
-      console.log("🚫 Socket Error:", err.message);
-      setIsConnected(false);
-      setSocketReady(false);
-
-      if (err.message === "Authentication error") {
-        // Avoid redirect loops
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = "/login";
+    let newSocket;
+    try {
+      newSocket = io(
+        import.meta.env.VITE_SOCKET_URL || "/",
+        {
+          path: "/socket.io",
+          withCredentials: true,
+          transports: ["websocket", "polling"],
+          autoConnect: true,
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: 3,
+          timeout: 5000,
         }
-      }
-    });
+      );
+
+      newSocket.on(CONNECT_DISCONNET_EVENT.CONNECT, () => {
+        console.log("✅ Socket Connected:", newSocket.id);
+        setIsConnected(true);
+        setSocketReady(true);
+        setConnection({ isConnected: true, socketReady: true });
+      });
+
+      newSocket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (reason) => {
+        console.log("❌ Socket Disconnected:", reason);
+        console.warn('Socket disconnected:', reason);
+        setIsConnected(false);
+        setSocketReady(false);
+        if (reason === 'io server disconnect') {
+          newSocket.connect(); // reconnect if server dropped connection
+        }
+      });
+
+      newSocket.on(CONNECT_DISCONNET_EVENT.CONNECT_ERROR, (err) => {
+        console.log("🚫 Socket Error:", err.message);
+        console.warn('Socket connection failed:', err.message);
+        console.warn('Socket unavailable:', err.message);
+        setIsConnected(false);
+        setSocketReady(false);
+
+        if (err.message === "Authentication error") {
+          // Avoid redirect loops
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = "/login";
+          }
+        }
+      });
+
+      socketRef.current = newSocket;
+      setSocket(newSocket);
+
+    } catch (err) {
+      console.warn('Socket init failed:', err);
+    }
 
     return newSocket;
   }, []);
@@ -82,6 +99,7 @@ export function SocketProvider({ children }) {
     
     setIsConnected(false);
     setSocketReady(false);
+    setConnection({ isConnected: false, socketReady: false });
   }, []);
 
   useEffect(() => {

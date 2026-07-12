@@ -78,9 +78,15 @@ export const declinedCollab = (email,tokenId) => {
 // docuement create, read, update, delete
 // ??  =============================================
 
-export const createDoc = (data) => {
-    console.log("data", data)
-    return apiClient.post("/doc/create-doc", data)
+export const createDoc = (dataOrTitle) => {
+    let payload = {};
+    if (dataOrTitle && typeof dataOrTitle === 'object') {
+        payload = { title: dataOrTitle.title || 'Untitled Document' };
+    } else {
+        payload = { title: dataOrTitle || 'Untitled Document' };
+    }
+    console.log("createDoc payload", payload);
+    return apiClient.post("/doc/create-doc", payload);
 }
 
 export const fetchDocumentFolder = () => {

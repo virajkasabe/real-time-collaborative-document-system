@@ -236,7 +236,7 @@ export default function Landing() {
   return (
     <div 
       onPointerMove={handlePointerMove}
-      className="min-h-screen relative dot-grid-bg bg-[#F7FAFF] dark:bg-[#070B14] text-[#081B3A] dark:text-[#E5E7EB] transition-colors duration-300 flex flex-col justify-between overflow-x-hidden select-none"
+      className="min-h-screen relative dot-grid-bg bg-white dark:bg-[#070B14] text-[#081B3A] dark:text-[#E5E7EB] transition-colors duration-300 flex flex-col justify-between overflow-x-hidden select-none"
     >
       
       {/* HIGH-PERFORMANCE RADIAL SPOTLIGHT OVERLAY */}
@@ -272,18 +272,18 @@ export default function Landing() {
             <div className="w-full lg:w-[45%] text-left flex flex-col items-start justify-center">
               
               {/* Badge directly above headline */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0D6EFD]/8 dark:bg-[#0D6EFD]/12 border border-[#0D6EFD]/20 text-[#0D6EFD] text-[10px] font-bold rounded-full uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EEF2FF] dark:bg-[#1e293b] border border-[#C7D7FA] dark:border-white/10 text-[#1a56db] dark:text-[#60a5fa] text-[10px] font-bold rounded-full uppercase tracking-wider">
                 <Sparkles size={11} className="animate-spin-slow" />
                 <span>Real-time co-authoring workspace</span>
               </div>
 
               {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px, gap to badge = 16px */}
-              <h1 className="font-sans hero-headline-clamp text-[#0F172A] dark:text-white mt-[16px] max-w-[650px]">
+              <h1 className="font-sans hero-headline-clamp text-[#081B3A] dark:text-white mt-[16px] max-w-[650px]">
                 The collaborative canvas for <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0D6EFD] to-indigo-500 dark:from-[#3FA3FF] dark:to-cyan-400">modern</span> engineering teams.
               </h1>
 
               {/* Description: font-size 18px, line-height 1.7, max-width 560px, color #64748b, gap to headline = 20px */}
-              <p className="hero-description-clamp dark:text-[#94A3B8] font-normal mt-[20px]">
+              <p className="hero-description-clamp text-[#6B7280] dark:text-[#94A3B8] font-normal mt-[20px]">
                 Co-edit architecture proposals, engineering specifications, sprint documents, and team briefings in real-time. Experience lightning-fast typing synchronization, custom cursor indicators, and a powerful Notion-inspired canvas.
               </p>
 
@@ -298,7 +298,7 @@ export default function Landing() {
                 </button>
                 <button 
                   onClick={() => navigate('/login')} 
-                  className="inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold border border-[#E2E8F0] dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-[#081B3A] dark:text-[#E5E7EB] rounded-xl transition-all backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98] shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold bg-white dark:bg-[#1e293b] border border-[#E5E7EB] dark:border-white/10 hover:bg-[#f4f6fa] dark:hover:bg-[#0f172a] text-[#081B3A] dark:text-white rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
                 >
                   <Play size={14} className="fill-current mr-0.5" />
                   <span>Watch Demo</span>
