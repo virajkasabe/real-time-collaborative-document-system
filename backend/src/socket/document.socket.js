@@ -213,7 +213,7 @@ export const mountDocumentRecivedOperation = (socket, io) => {
 
 
 export const startDocumentFlushScheduler = () => {
-  console.log("Auto-sync to MongoDB every 10s ⚡💾");
+  console.log("Auto-sync to MongoDB every 10s 🛜 💾");
 
   setInterval(async () => {
     try {
@@ -240,7 +240,7 @@ export const startDocumentFlushScheduler = () => {
             { new: true, runValidators: true }
           );
 
-          console.log(`Flushed ${docId} [v${document.version}] ⚓`);
+          console.log(`Flushed ${docId} [v${document.version}] 👍`);
         } catch (dbErr) {
           console.error("MongoDB flush failed:", dbErr.message);
           // Put it back in the dirty set so it retries next tick
