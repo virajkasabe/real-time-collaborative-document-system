@@ -10,7 +10,6 @@ import { NotificationProvider } from './context/NotificationContext';
 
 export default function App() {
   const { toast } = useAuth();
-
   return (
       <NotificationProvider>
         <AppRoutes />
