@@ -48,8 +48,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     email,
   });
 
-  // Laxman Shinde
-
 
   const { unHashedToken, hashedToken, tokenExpiry } =
   user.generateTemporaryToken();
@@ -109,7 +107,9 @@ export const loginUser = asyncHandler(async (req, res) => {
   const passwordValid = await user.isPasswordCorrect(password);
 
   if (!passwordValid) {
-    throw new ApiError(403, "Please check credentials");
+    throw new ApiError(
+      403, "Please check credentials"
+    );
   }
 
   const { refreshToken, accessToken } = await generateAccessRefreshToken(
