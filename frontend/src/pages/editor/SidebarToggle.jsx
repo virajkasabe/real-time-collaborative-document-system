@@ -1,4 +1,6 @@
 import { FaPlus, FaUsers } from "react-icons/fa6";
+import { LuX } from "react-icons/lu";
+
 
 export default function SidebarToggle({
   side, collapsed, onClick, isMobile,
