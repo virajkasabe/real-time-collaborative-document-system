@@ -1,5 +1,6 @@
 
-
+import {ATHENURA_CIRCLE_IMAGE} from '../../assets/index'
+import { DOCUMENT_ROLES } from '../../utils/constants';
 
 export default function ShareModal({
   onClose, shareEmail, setShareEmail, shareRole, setShareRole, onInvite, docId, copied, onCopyLink,

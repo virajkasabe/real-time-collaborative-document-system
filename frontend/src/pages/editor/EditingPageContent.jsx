@@ -15,6 +15,10 @@ import LeftSidebar from '../editor/LeftSidebar'
 import RightSidebar from '../editor/RightSidebar'
 import StatusBar from '../editor/StatusBar'
 import CommentPopup from '../editor/CommentPopup'
+import ShareModal from '../editor/ShareModal'
+import { inviteCollab } from '../../apis/api';
+import { useParams } from 'react-router-dom'
+
 
 
 export default function EditingPageContent({
@@ -117,6 +121,7 @@ export default function EditingPageContent({
   const [shareEmail, setShareEmail] = useState('');
   const [shareRole, setShareRole] = useState(DOCUMENT_ROLES.VIEWER);
   const [copied, setCopied] = useState(false);
+  const params = useParams()
 
   const quillRef = useRef(null);
   const chatBottomRef = useRef(null);
@@ -145,6 +150,7 @@ export default function EditingPageContent({
     onOutlineChange: () => updateOutline(quillInstanceRef.current),
     onWordCountChange: setWordCount,
     onSyncingChange: setIsSyncing,
+    params : params
   });
   const quillInstance = quillInstanceRef.current;
 

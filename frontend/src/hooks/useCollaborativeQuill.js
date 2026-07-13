@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CURSOR_EVENT, DOCUMENT_EVENT } from "../utils/constants";
 import Quill from "quill";
-import { AUTOSAVE_DEBOUNCE_MS, colorForUserId, convertDeltaToWireOperations, countWords, CURSOR_SEND_DEBOUNCE_MS, customDeltaToQuillDelta, deltaChangesContent, MAX_UNDO_STACK, OPERATION_DEDUPE_WINDOW_MS, quillDeltaToCustomDelta, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS } from "../utils/editingpage.helper";
+import { AUTOSAVE_DEBOUNCE_MS, colorForUserId, convertDeltaToWireOperations, countWords, CURSOR_SEND_DEBOUNCE_MS, customDeltaToQuillDelta, deltaChangesContent, MAX_UNDO_STACK, OPERATION_DEDUPE_WINDOW_MS, quillDeltaToCustomDelta, REMOTE_CURSOR_TTL_MS, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS } from "../utils/editingpage.helper";
 import { randomUser } from '../../public/index'
 
  
 export function useCollaborativeQuill({
-  quillRef, doc, docId, canEdit, socket, user, title, onSave, onOutlineChange, onWordCountChange, onSyncingChange,
+  quillRef, doc, docId, canEdit, socket, user, title, onSave, onOutlineChange, onWordCountChange, onSyncingChange, params
 }) {
   const quillInstanceRef = useRef(null);
   const [remoteCursors, setRemoteCursors] = useState({});
@@ -150,6 +150,7 @@ export function useCollaborativeQuill({
     };
 
     const handleCursorUpdate = (cursorData) => {
+      if(cursorData.docId !== params.id) return {}      
       renderRemoteCursorFlag(quill, cursorData);
       remoteCursorsRef.current = { ...remoteCursorsRef.current, [cursorData.userId]: cursorData };
       setRemoteCursors(remoteCursorsRef.current);
