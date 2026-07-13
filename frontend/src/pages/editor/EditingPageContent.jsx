@@ -4,7 +4,7 @@ import { DOCUMENT_ROLES } from '../../utils/constants';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { useIsMobile } from '../../hooks/useIsMobil'
-import { PAGE_LAYOUTS } from '../../utils/editingpage.helper';
+import { countWords, PAGE_LAYOUTS, quillDeltaToCustomDelta, TITLE_SAVE_DEBOUNCE_MS } from '../../utils/editingpage.helper';
 import { useActiveCollaborators } from '../../hooks/useActiveCollaborators'
 import { useCollaborativeQuill } from '../../hooks/useCollaborativeQuill'
 import EditorHeader from '../editor/EditorHeader'
@@ -252,6 +252,7 @@ export default function EditingPageContent({
       const quillDelta = quillInstance?.getContents();
       const customDelta = quillDelta ? quillDeltaToCustomDelta(quillDelta) : { ops: [] };
       const words = quillInstance ? countWords(quillInstance.getText()) : 0;
+      console.log("newTitle", newTitle)
       onSave(newTitle, customDelta, words);
       setIsSyncing(false);
     }, TITLE_SAVE_DEBOUNCE_MS);
@@ -519,14 +520,14 @@ export default function EditingPageContent({
       )}
 
       {/* Comment Popup */}
-      {commentPopup.visible && (
+      {/* {commentPopup.visible && (
         <CommentPopup
           position={commentPopup.position}
           selectedText={commentPopup.selectedText}
           onSubmit={handleCommentFromPopup}
           onClose={() => setCommentPopup(prev => ({ ...prev, visible: false }))}
         />
-      )}
+      )} */}
 
       <main className="editor-workspace" style={isMobile ? { position: 'relative' } : undefined}>
         <SidebarToggle

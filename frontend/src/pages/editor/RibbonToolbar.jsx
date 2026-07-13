@@ -1,5 +1,6 @@
 import { FaBookOpen, FaCheck, FaList, FaSun, FaUserSecret } from "react-icons/fa6";
 import { ACCENT_SWATCHES, PAGE_LAYOUTS, STYLE_CARDS } from "../../utils/editingpage.helper";
+import { FaMoon } from "react-icons/fa";
 
 export default function RibbonToolbar({
   activeRibbonTab, canEdit, formatPainterActive, onFormatPainterClick, onGrowFont, onShrinkFont,

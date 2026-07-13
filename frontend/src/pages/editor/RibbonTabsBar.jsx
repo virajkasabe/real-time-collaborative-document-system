@@ -1,4 +1,4 @@
-import { RIBBON_TABS } from "../../utils/editingpage.helper";
+import { RIBBON_TABS, STATIC_MENU_ALERTS } from "../../utils/editingpage.helper";
 
 
 export default function RibbonTabsBar({
