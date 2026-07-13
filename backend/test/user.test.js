@@ -1,22 +1,14 @@
+import { getApiContext } from './comman'
 
-
-// ?? -- register
-import { registerUser } from "../src/module/auth/auth.controller";
-
-
-describe("userRegister", () => {
-   
-    it("should create a user ",  async() => {
-        const user = await registerUser()
+describe('User', () => { 
+    beforeAll(async ({ playwright }) => {
+        apiContext = await getApiContext(playwright);
+        // TODO : You can add other test cases like
+        // ?? 1. ClearDB()
+        // ?? 2. apiContext.dispose()
     });
 
-}); 
+    
 
-// ?? -- login
-
-
-// ?? -- get me
-
-
-// ?? -- logout
+ })
 
