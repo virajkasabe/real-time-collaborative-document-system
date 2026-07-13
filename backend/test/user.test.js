@@ -1,17 +1,16 @@
 
 
 // ?? -- register
-import { otpGenerator } from "../src/utils/helper";
+import { registerUser } from "../src/module/auth/auth.controller";
 
-describe("OtpTester", ()=>{
+
+describe("userRegister", () => {
    
     it("should create a user ",  async() => {
-        const otp = otpGenerator()
-        console.log("otp", otp)
+        const user = await registerUser()
     });
 
 }); 
-
 
 // ?? -- login
 
