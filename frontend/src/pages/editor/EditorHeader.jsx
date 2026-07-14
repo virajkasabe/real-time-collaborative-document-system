@@ -64,14 +64,14 @@ export default function EditorHeader({
         <div className="avatar-stack">
           <div className="avatar-item" style={{ backgroundColor: 'var(--accent)' }} data-tooltip={you}>
             {
-              currentUser.avatar ? <img src={currentUser?.avatar} alt="" className='rounded-full h-8 w-full' />  :  <p>{you.charAt(0).toUpperCase()} </p>
+              currentUser.avatar ? <img src={currentUser?.avatar} alt="" className='rounded-full h-8 w-full z-50' />  :  <p>{you.charAt(0).toUpperCase()} </p>
             }
           </div>
           {activeUsers.map((u) => (
             <div
               key={u._id}
               className="avatar-item"
-              style={{ backgroundColor: colorForUserId(u._id) }}
+              style={{ backgroundColor: colorForUserId(u._id) , zIndex : 10000 }}
               data-tooltip={u.fullName }
             >
               {

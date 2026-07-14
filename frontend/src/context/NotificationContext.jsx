@@ -58,7 +58,7 @@ export function NotificationProvider({ children }) {
     if (!socket) return;
 
     const handleNotification = (data) => {
-      console.log("incoming notification",data)
+      // console.log("incoming notification",data)
       addNotification(data);
       showToast(data);
     };

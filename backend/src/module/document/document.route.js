@@ -8,7 +8,8 @@ import {
     fetchDocumentFolder, 
     fetchTrashFolderDocuments, 
     restoreDoc, 
-    shareWithMeDocuments
+    shareWithMeDocuments,
+    updateDocTitle
 } from './document.controller.js';
 
 const router = Router()
@@ -20,6 +21,8 @@ router.route("/create-doc").post(createDocument)
 router.route("/fetch-doc/:docId").get(fetchDocument)
 
 router.route("/fetch-folder").get(fetchDocumentFolder)
+
+router.route('/update-doc-title/:docId').put(updateDocTitle)
 
 router.route("/shared-with-me-docs").get(shareWithMeDocuments)
 

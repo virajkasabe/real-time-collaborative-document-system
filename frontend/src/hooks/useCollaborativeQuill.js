@@ -1,12 +1,35 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CURSOR_EVENT, DOCUMENT_EVENT } from "../utils/constants";
 import Quill from "quill";
-import { AUTOSAVE_DEBOUNCE_MS, colorForUserId, convertDeltaToWireOperations, countWords, CURSOR_SEND_DEBOUNCE_MS, customDeltaToQuillDelta, deltaChangesContent, MAX_UNDO_STACK, OPERATION_DEDUPE_WINDOW_MS, quillDeltaToCustomDelta, REMOTE_CURSOR_TTL_MS, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS } from "../utils/editingpage.helper";
-import { randomUser } from '../../public/index'
+import {
+  AUTOSAVE_DEBOUNCE_MS,
+  colorForUserId,
+  convertDeltaToWireOperations,
+  countWords,
+  CURSOR_SEND_DEBOUNCE_MS,
+  customDeltaToQuillDelta,
+  deltaChangesContent,
+  MAX_UNDO_STACK,
+  quillDeltaToCustomDelta,
+  REMOTE_CURSOR_TTL_MS,
+  transformPositionByOperations,
+  TYPING_CURSOR_BROADCAST_DEBOUNCE_MS,
+} from "../utils/editingpage.helper";
+import { randomUser } from "../../public/index";
 
- 
 export function useCollaborativeQuill({
-  quillRef, doc, docId, canEdit, socket, user, title, onSave, onOutlineChange, onWordCountChange, onSyncingChange, params
+  quillRef,
+  doc,
+  docId,
+  canEdit,
+  socket,
+  user,
+  title,
+  onSave,
+  onOutlineChange,
+  onWordCountChange,
+  onSyncingChange,
+  params,
 }) {
   const quillInstanceRef = useRef(null);
   const [remoteCursors, setRemoteCursors] = useState({});
@@ -17,38 +40,52 @@ export function useCollaborativeQuill({
   const isApplyingHistoryRef = useRef(false);
   const performUndoRef = useRef(() => {});
   const performRedoRef = useRef(() => {});
-  const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
+  const [historyState, setHistoryState] = useState({
+    canUndo: false,
+    canRedo: false,
+  });
 
   useEffect(() => {
     if (!quillRef.current || quillInstanceRef.current) return undefined;
 
     const quill = new Quill(quillRef.current, {
-      theme: 'snow',
+      theme: "snow",
       modules: {
-        toolbar: '#word-ribbon-toolbar',
+        toolbar: "#word-ribbon-toolbar",
         history: { delay: 0, maxStack: 0, userOnly: true },
         keyboard: {
           bindings: {
             customUndo: {
-              key: 'Z',
+              key: "Z",
               shortKey: true,
-              handler: () => { performUndoRef.current(); return false; },
+              handler: () => {
+                performUndoRef.current();
+                return false;
+              },
             },
             customRedo: {
-              key: 'Z',
+              key: "Z",
               shortKey: true,
               shiftKey: true,
-              handler: () => { performRedoRef.current(); return false; },
+              handler: () => {
+                performRedoRef.current();
+                return false;
+              },
             },
             customRedoY: {
-              key: 'Y',
+              key: "Y",
               shortKey: true,
-              handler: () => { performRedoRef.current(); return false; },
+              handler: () => {
+                performRedoRef.current();
+                return false;
+              },
             },
           },
         },
       },
-      placeholder: canEdit ? 'Start writing your document here...' : 'This document is read-only.',
+      placeholder: canEdit
+        ? "Start writing your document here..."
+        : "This document is read-only.",
     });
     quillInstanceRef.current = quill;
     if (!canEdit) quill.disable();
@@ -60,10 +97,11 @@ export function useCollaborativeQuill({
     let typingCursorTimeoutId = null;
     let isSendingOperation = false;
 
-    const updateHistoryState = () => setHistoryState({
-      canUndo: undoStackRef.current.length > 0,
-      canRedo: redoStackRef.current.length > 0,
-    });
+    const updateHistoryState = () =>
+      setHistoryState({
+        canUndo: undoStackRef.current.length > 0,
+        canRedo: redoStackRef.current.length > 0,
+      });
 
     performUndoRef.current = () => {
       if (!canEdit || undoStackRef.current.length === 0) return;
@@ -86,16 +124,17 @@ export function useCollaborativeQuill({
     };
 
     const sendOperations = (operations) => {
-      if (!canEdit || isSendingOperation || operations.length === 0) return;
-      isSendingOperation = true;
+      if (!canEdit || operations.length === 0) return;
+
+      console.log("Send Operations:", operations);
+
       socket.emit(DOCUMENT_EVENT.SEND_OPERATION, {
         docId: docId || doc._id,
         actions: operations,
         version: doc.version || 0,
-        userId: user?._id || 'anonymous',
+        userId: user?._id || "anonymous",
         timestamp: Date.now(),
       });
-      setTimeout(() => { isSendingOperation = false; }, OPERATION_DEDUPE_WINDOW_MS);
     };
 
     const sendCursorData = (position, selection) => {
@@ -103,7 +142,7 @@ export function useCollaborativeQuill({
       socket.emit(CURSOR_EVENT.CURSOR_CHANGE, {
         docId: docId || doc._id,
         userId: user._id || user.id,
-        userName: user.fullName || user.name || 'Anonymous',
+        userName: user.fullName || user.name || "Anonymous",
         avatar: user.avatar || randomUser,
         position,
         selection: selection || { index: position, length: 0 },
@@ -120,7 +159,10 @@ export function useCollaborativeQuill({
       const next = { ...current };
       userIds.forEach((uid) => {
         const cursor = current[uid];
-        const shiftedPosition = transformPositionByOperations(cursor.position, operations);
+        const shiftedPosition = transformPositionByOperations(
+          cursor.position,
+          operations,
+        );
         const updatedCursor = { ...cursor, position: shiftedPosition };
         next[uid] = updatedCursor;
         renderRemoteCursorFlag(quill, updatedCursor);
@@ -130,19 +172,36 @@ export function useCollaborativeQuill({
     };
 
     const applyReceivedOperation = ({ actions }) => {
+      console.log("Received Operation : ", actions);
       if (!Array.isArray(actions)) return;
       for (const action of actions) {
         try {
-          if (action.type === 'insert' && action.text != null) {
-            const insertText = action.isEmbed ? JSON.parse(action.text) : action.text;
-            if (typeof insertText === 'string') quill.insertText(action.position, insertText, Quill.sources.SILENT);
-          } else if (action.type === 'delete' && action.length) {
-            quill.deleteText(action.position, action.length, Quill.sources.SILENT);
-          } else if (action.type === 'format' && action.attributes) {
-            quill.formatText(action.position, action.length || 1, action.attributes, Quill.sources.SILENT);
+          if (action.type === "insert" && action.text != null) {
+            const insertText = action.isEmbed
+              ? JSON.parse(action.text)
+              : action.text;
+            if (typeof insertText === "string")
+              quill.insertText(
+                action.position,
+                insertText,
+                Quill.sources.SILENT,
+              );
+          } else if (action.type === "delete" && action.length) {
+            quill.deleteText(
+              action.position,
+              action.length,
+              Quill.sources.SILENT,
+            );
+          } else if (action.type === "format" && action.attributes) {
+            quill.formatText(
+              action.position,
+              action.length || 1,
+              action.attributes,
+              Quill.sources.SILENT,
+            );
           }
         } catch (error) {
-          console.error('Error applying operation:', error);
+          console.error("Error applying operation:", error);
         }
       }
       repositionRemoteCursors(actions);
@@ -150,9 +209,13 @@ export function useCollaborativeQuill({
     };
 
     const handleCursorUpdate = (cursorData) => {
-      if(cursorData.docId !== params.id) return {}      
+      if (!cursorData) return;
+      if (cursorData.docId !== params.id) return {};
       renderRemoteCursorFlag(quill, cursorData);
-      remoteCursorsRef.current = { ...remoteCursorsRef.current, [cursorData.userId]: cursorData };
+      remoteCursorsRef.current = {
+        ...remoteCursorsRef.current,
+        [cursorData.userId]: cursorData,
+      };
       setRemoteCursors(remoteCursorsRef.current);
 
       window.cursorTimeouts = window.cursorTimeouts || {};
@@ -176,12 +239,20 @@ export function useCollaborativeQuill({
     };
 
     const handleTextChange = (delta, oldContents, source) => {
-      if (source === 'silent') return;
+      if (source === "silent") return;
+      console.log("========== TEXT CHANGE ==========");
+      console.log("Source:", source);
+      console.log("Delta:", delta);
+      console.log("Ops:", delta.ops);
+
+      console.log("RAW DELTA:", JSON.stringify(delta.ops, null, 2));
+      
 
       if (!isApplyingHistoryRef.current && deltaChangesContent(delta)) {
         const invertDelta = delta.invert(oldContents);
         undoStackRef.current.push({ undo: invertDelta, redo: delta });
-        if (undoStackRef.current.length > MAX_UNDO_STACK) undoStackRef.current.shift();
+        if (undoStackRef.current.length > MAX_UNDO_STACK)
+          undoStackRef.current.shift();
         redoStackRef.current = [];
         updateHistoryState();
       }
@@ -195,6 +266,8 @@ export function useCollaborativeQuill({
         sendOperations(operations);
         repositionRemoteCursors(operations);
       }
+
+      console.log("WIRE OPS:", JSON.stringify(operations, null, 2));
 
       clearTimeout(typingCursorTimeoutId);
       typingCursorTimeoutId = setTimeout(() => {
@@ -213,7 +286,7 @@ export function useCollaborativeQuill({
     };
 
     const handleSelectionChange = (range, _oldRange, source) => {
-      if (source === 'silent' || !range) return;
+      if (source === "silent" || !range) return;
       clearTimeout(selectionCursorTimeoutId);
       selectionCursorTimeoutId = setTimeout(() => {
         sendCursorData(range.index, range);
@@ -227,12 +300,12 @@ export function useCollaborativeQuill({
         socket.emit(CURSOR_EVENT.CURSOR_CHANGE, {
           docId: docId || doc._id,
           userId: user._id || user.id,
-          userName: user.fullName || user.name || 'Anonymous',
-          avatar: user.avatar || '',
+          userName: user.fullName || user.name || "Anonymous",
+          avatar: user.avatar || "",
           position: clickPosition,
           color: colorForUserId(user._id || user.id),
           timestamp: Date.now(),
-          eventType: 'click',
+          eventType: "click",
         });
       }
     };
@@ -240,10 +313,10 @@ export function useCollaborativeQuill({
     socket.on(DOCUMENT_EVENT.RECEIVE_OPERATION, applyReceivedOperation);
     socket.on(CURSOR_EVENT.CURSOR_UPDATE, handleCursorUpdate);
     socket.on(DOCUMENT_EVENT.USER_LEFT, handleUserLeft);
-    quill.on('text-change', handleTextChange);
-    quill.on('selection-change', handleSelectionChange);
-    quill.root.addEventListener('click', handleClick);
-    quill.container.addEventListener('click', handleClick);
+    quill.on("text-change", handleTextChange);
+    quill.on("selection-change", handleSelectionChange);
+    quill.root.addEventListener("click", handleClick);
+    quill.container.addEventListener("click", handleClick);
 
     const outlineInitTimeout = setTimeout(onOutlineChange, 50);
 
@@ -257,18 +330,20 @@ export function useCollaborativeQuill({
       socket.off(CURSOR_EVENT.CURSOR_UPDATE, handleCursorUpdate);
       socket.off(DOCUMENT_EVENT.USER_LEFT, handleUserLeft);
 
-      quill.off('text-change', handleTextChange);
-      quill.off('selection-change', handleSelectionChange);
-      quill.root.removeEventListener('click', handleClick);
-      quill.container.removeEventListener('click', handleClick);
+      quill.off("text-change", handleTextChange);
+      quill.off("selection-change", handleSelectionChange);
+      quill.root.removeEventListener("click", handleClick);
+      quill.container.removeEventListener("click", handleClick);
       quill.emitter.off();
 
-      if (quill.container) quill.container.innerHTML = '';
+      if (quill.container) quill.container.innerHTML = "";
       quillInstanceRef.current = null;
       undoStackRef.current = [];
       redoStackRef.current = [];
 
-      Object.keys(remoteCursorsRef.current).forEach((uid) => document.getElementById(`cursor-${uid}`)?.remove());
+      Object.keys(remoteCursorsRef.current).forEach((uid) =>
+        document.getElementById(`cursor-${uid}`)?.remove(),
+      );
       remoteCursorsRef.current = {};
       if (window.cursorTimeouts) {
         Object.values(window.cursorTimeouts).forEach(clearTimeout);
@@ -282,7 +357,12 @@ export function useCollaborativeQuill({
   const performRedo = useCallback(() => performRedoRef.current(), []);
 
   return {
-    quillInstanceRef, remoteCursors, performUndo, performRedo, canUndo: historyState.canUndo, canRedo: historyState.canRedo,
+    quillInstanceRef,
+    remoteCursors,
+    performUndo,
+    performRedo,
+    canUndo: historyState.canUndo,
+    canRedo: historyState.canRedo,
   };
 }
 
@@ -292,8 +372,9 @@ export function loadInitialContent(quill, content) {
       quill.setContents(customDeltaToQuillDelta(content));
     }
   } catch (error) {
-    console.error('Error setting initial content:', error);
-    if (typeof content === 'string') quill.clipboard.dangerouslyPasteHTML(content);
+    console.error("Error setting initial content:", error);
+    if (typeof content === "string")
+      quill.clipboard.dangerouslyPasteHTML(content);
   }
 }
 
@@ -306,12 +387,18 @@ export function resolveClickPosition(quill, _event) {
     if (!selection.rangeCount) return null;
 
     const range = selection.getRangeAt(0);
-    const walker = document.createTreeWalker(quill.root, NodeFilter.SHOW_TEXT, null, false);
+    const walker = document.createTreeWalker(
+      quill.root,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false,
+    );
     let currentNode = walker.nextNode();
     let currentOffset = 0;
     while (currentNode) {
-      if (currentNode === range.startContainer) return currentOffset + range.startOffset;
-      currentOffset += (currentNode.textContent || '').length;
+      if (currentNode === range.startContainer)
+        return currentOffset + range.startOffset;
+      currentOffset += (currentNode.textContent || "").length;
       currentNode = walker.nextNode();
     }
     return quill.getText().length;
@@ -321,9 +408,7 @@ export function resolveClickPosition(quill, _event) {
 }
 
 export function renderRemoteCursorFlag(quill, cursorData) {
-  const {
-    userId, userName, position, color, avatar,
-  } = cursorData;
+  const { userId, userName, position, color, avatar } = cursorData;
   const bounds = quill.getBounds(position);
   if (!bounds) return;
 
@@ -332,9 +417,9 @@ export function renderRemoteCursorFlag(quill, cursorData) {
   let flagEl;
 
   if (!cursorEl) {
-    cursorEl = document.createElement('div');
+    cursorEl = document.createElement("div");
     cursorEl.id = `cursor-${userId}`;
-    cursorEl.className = 'remote-cursor';
+    cursorEl.className = "remote-cursor";
     cursorEl.style.cssText = `
       position: absolute;
       width: 2px;
@@ -343,8 +428,8 @@ export function renderRemoteCursorFlag(quill, cursorData) {
       transition: top 0.12s ease, left 0.12s ease, height 0.12s ease;
     `;
 
-    flagEl = document.createElement('div');
-    flagEl.className = 'remote-cursor-flag';
+    flagEl = document.createElement("div");
+    flagEl.className = "remote-cursor-flag";
     flagEl.style.cssText = `
       position: absolute;
       top: -22px;
@@ -362,10 +447,10 @@ export function renderRemoteCursorFlag(quill, cursorData) {
       gap: 4px;
     `;
     cursorEl.appendChild(flagEl);
-    quill.container.style.position = 'relative';
+    quill.container.style.position = "relative";
     quill.container.appendChild(cursorEl);
   } else {
-    flagEl = cursorEl.querySelector('.remote-cursor-flag');
+    flagEl = cursorEl.querySelector(".remote-cursor-flag");
   }
 
   cursorEl.style.top = `${bounds.top}px`;
@@ -380,9 +465,9 @@ export function renderRemoteCursorFlag(quill, cursorData) {
         width: 16px; height: 16px; border-radius: 50%;
         border: 1px solid rgba(255,255,255,0.3); object-fit: cover;
       ">
-      ${userName || 'User'}
+      ${userName || "User"}
     `;
   } else {
-    flagEl.textContent = userName || 'User';
+    flagEl.textContent = userName || "User";
   }
 }

@@ -4,7 +4,7 @@ import { DOCUMENT_ROLES } from '../../utils/constants';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { useIsMobile } from '../../hooks/useIsMobil'
-import { PAGE_LAYOUTS } from '../../utils/editingpage.helper';
+import { countWords, FONT_SIZE_GROW, FONT_SIZE_SHRINK, PAGE_LAYOUTS, quillDeltaToCustomDelta, SIMULATED_TEAM_MEMBERS, SIMULATED_TEAM_REPLIES, TITLE_SAVE_DEBOUNCE_MS } from '../../utils/editingpage.helper';
 import { useActiveCollaborators } from '../../hooks/useActiveCollaborators'
 import { useCollaborativeQuill } from '../../hooks/useCollaborativeQuill'
 import EditorHeader from '../editor/EditorHeader'
@@ -14,10 +14,11 @@ import SidebarToggle from '../editor/SidebarToggle'
 import LeftSidebar from '../editor/LeftSidebar'
 import RightSidebar from '../editor/RightSidebar'
 import StatusBar from '../editor/StatusBar'
-import CommentPopup from '../editor/CommentPopup'
+// import CommentPopup from '../editor/CommentPopup'
 import ShareModal from '../editor/ShareModal'
 import { inviteCollab } from '../../apis/api';
 import { useParams } from 'react-router-dom'
+import FindReplacePane from './FindReplacePane';
 
 
 
@@ -125,7 +126,7 @@ export default function EditingPageContent({
 
   const quillRef = useRef(null);
   const chatBottomRef = useRef(null);
-
+  
   const updateOutline = useCallback((quill) => {
     const target = quill || quillInstance;
     if (!target) return;
@@ -153,6 +154,7 @@ export default function EditingPageContent({
     params : params
   });
   const quillInstance = quillInstanceRef.current;
+
 
   // Handle text selection for comment popup
   useEffect(() => {
@@ -447,7 +449,7 @@ export default function EditingPageContent({
     }
   };
 
-  // ?? Render
+  // ?? Renders Compo
 
   return (
     <div className="word-editor-layout" style={{ position: 'relative' }}>
@@ -519,14 +521,14 @@ export default function EditingPageContent({
       )}
 
       {/* Comment Popup */}
-      {commentPopup.visible && (
+      {/* {commentPopup.visible && (
         <CommentPopup
           position={commentPopup.position}
           selectedText={commentPopup.selectedText}
           onSubmit={handleCommentFromPopup}
           onClose={() => setCommentPopup(prev => ({ ...prev, visible: false }))}
         />
-      )}
+      )} */}
 
       <main className="editor-workspace" style={isMobile ? { position: 'relative' } : undefined}>
         <SidebarToggle
@@ -547,6 +549,7 @@ export default function EditingPageContent({
           isMobile={isMobile}
         />
 
+        {/* TODO : CHECK THE LAYOUT OF PAGE */}
         <section className="editor-canvas-pane">
           <div
             className="editor-paper-container"

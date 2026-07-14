@@ -80,6 +80,11 @@ export const createDoc = (data) => {
     return apiClient.post("/doc/create-doc", data)
 }
 
+export const updateDocumentTitle = (data) => {
+    return apiClient.put(`/doc/update-doc-title/${data}`, data)
+}
+
+
 export const fetchDocumentFolder = () => {
     return apiClient.get(`/doc/fetch-folder`)
 }

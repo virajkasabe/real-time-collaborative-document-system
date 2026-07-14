@@ -13,7 +13,6 @@ export function useDocumentLoader(id, socket, navigate, showToast, currentUser) 
       try {
         const response = await fetchDoc(id);
         const responseData = response.data.data;
-        console.log("res", responseData)
         if (!responseData?.document) {
           showToast('Document not found', 'warning');
           navigate('/dashboard');

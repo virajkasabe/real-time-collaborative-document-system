@@ -37,16 +37,23 @@ export const SIMULATED_TEAM_MEMBERS = ['Lisa Chen', 'Alex Johnson', 'Team Member
 export const FONT_SIZE_GROW = { small: 'medium', medium: 'large', large: 'huge', huge: 'huge' };
 export const FONT_SIZE_SHRINK = { huge: 'large', large: 'medium', medium: 'small', small: 'small' };
 
-export const AUTOSAVE_DEBOUNCE_MS = 150;
-export const CURSOR_SEND_DEBOUNCE_MS = 70;
-export const REMOTE_CURSOR_TTL_MS = 500;
-export const TYPING_CURSOR_BROADCAST_DEBOUNCE_MS = 80;
-export const OPERATION_DEDUPE_WINDOW_MS = 70;
-export const TITLE_SAVE_DEBOUNCE_MS = 500;
-export const TOAST_DURATION_MS = 1500;
+// Auto Save
+export const AUTOSAVE_DEBOUNCE_MS = 1000;
 
+// Cursor
+export const CURSOR_SEND_DEBOUNCE_MS = 30;
+export const TYPING_CURSOR_BROADCAST_DEBOUNCE_MS = 30;
+export const REMOTE_CURSOR_TTL_MS = 1500;
+
+// Title
+export const TITLE_SAVE_DEBOUNCE_MS = 500;
+
+// UI
+export const TOAST_DURATION_MS = 1500;
 export const MOBILE_BREAKPOINT = 768;
-export const MAX_UNDO_STACK = 100;
+
+// History
+export const MAX_UNDO_STACK = 100;;
 
 export const CURSOR_COLOR_PALETTE = ['#FF6B6B', '#4ECDC4', '#45AAF2', '#FED330', '#A55EEA', '#26DE81', '#FD9644', '#EB3B5A'];
 
