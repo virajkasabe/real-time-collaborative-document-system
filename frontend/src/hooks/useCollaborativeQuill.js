@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CURSOR_EVENT, DOCUMENT_EVENT } from "../utils/constants";
 import Quill from "quill";
-import { AUTOSAVE_DEBOUNCE_MS, colorForUserId, convertDeltaToWireOperations, countWords, CURSOR_SEND_DEBOUNCE_MS, customDeltaToQuillDelta, deltaChangesContent, MAX_UNDO_STACK, OPERATION_DEDUPE_WINDOW_MS, quillDeltaToCustomDelta, REMOTE_CURSOR_TTL_MS, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS } from "../utils/editingpage.helper";
+import { AUTOSAVE_DEBOUNCE_MS, colorForUserId, convertDeltaToWireOperations, countWords, CURSOR_SEND_DEBOUNCE_MS, customDeltaToQuillDelta, deltaChangesContent, MAX_UNDO_STACK, OPERATION_DEDUPE_WINDOW_MS, quillDeltaToCustomDelta, REMOTE_CURSOR_TTL_MS, transformPositionByOperations, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS } from "../utils/editingpage.helper";
 import { randomUser } from '../../public/index'
 
  
@@ -21,6 +21,7 @@ export function useCollaborativeQuill({
 
   useEffect(() => {
     if (!quillRef.current || quillInstanceRef.current) return undefined;
+  
 
     const quill = new Quill(quillRef.current, {
       theme: 'snow',
@@ -55,6 +56,7 @@ export function useCollaborativeQuill({
 
     loadInitialContent(quill, doc.content);
 
+
     let saveTimeoutId = null;
     let selectionCursorTimeoutId = null;
     let typingCursorTimeoutId = null;
@@ -86,16 +88,17 @@ export function useCollaborativeQuill({
     };
 
     const sendOperations = (operations) => {
-      if (!canEdit || isSendingOperation || operations.length === 0) return;
-      isSendingOperation = true;
+      if (!canEdit || operations.length === 0) return;
+
+      console.log("Send Operations:", operations);
+
       socket.emit(DOCUMENT_EVENT.SEND_OPERATION, {
         docId: docId || doc._id,
         actions: operations,
         version: doc.version || 0,
-        userId: user?._id || 'anonymous',
+        userId: user?._id || "anonymous",
         timestamp: Date.now(),
       });
-      setTimeout(() => { isSendingOperation = false; }, OPERATION_DEDUPE_WINDOW_MS);
     };
 
     const sendCursorData = (position, selection) => {
@@ -130,6 +133,7 @@ export function useCollaborativeQuill({
     };
 
     const applyReceivedOperation = ({ actions }) => {
+      console.log("Received Operation : ", actions)
       if (!Array.isArray(actions)) return;
       for (const action of actions) {
         try {

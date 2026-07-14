@@ -4,7 +4,7 @@ import { DOCUMENT_ROLES } from '../../utils/constants';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { useIsMobile } from '../../hooks/useIsMobil'
-import { countWords, PAGE_LAYOUTS, quillDeltaToCustomDelta, SIMULATED_TEAM_MEMBERS, SIMULATED_TEAM_REPLIES, TITLE_SAVE_DEBOUNCE_MS } from '../../utils/editingpage.helper';
+import { countWords, FONT_SIZE_GROW, FONT_SIZE_SHRINK, PAGE_LAYOUTS, quillDeltaToCustomDelta, SIMULATED_TEAM_MEMBERS, SIMULATED_TEAM_REPLIES, TITLE_SAVE_DEBOUNCE_MS } from '../../utils/editingpage.helper';
 import { useActiveCollaborators } from '../../hooks/useActiveCollaborators'
 import { useCollaborativeQuill } from '../../hooks/useCollaborativeQuill'
 import EditorHeader from '../editor/EditorHeader'
@@ -126,7 +126,7 @@ export default function EditingPageContent({
 
   const quillRef = useRef(null);
   const chatBottomRef = useRef(null);
-
+  
   const updateOutline = useCallback((quill) => {
     const target = quill || quillInstance;
     if (!target) return;
@@ -154,6 +154,7 @@ export default function EditingPageContent({
     params : params
   });
   const quillInstance = quillInstanceRef.current;
+
 
   // Handle text selection for comment popup
   useEffect(() => {
@@ -253,7 +254,6 @@ export default function EditingPageContent({
       const quillDelta = quillInstance?.getContents();
       const customDelta = quillDelta ? quillDeltaToCustomDelta(quillDelta) : { ops: [] };
       const words = quillInstance ? countWords(quillInstance.getText()) : 0;
-      console.log("newTitle", newTitle)
       onSave(newTitle, customDelta, words);
       setIsSyncing(false);
     }, TITLE_SAVE_DEBOUNCE_MS);
@@ -449,7 +449,7 @@ export default function EditingPageContent({
     }
   };
 
-  // ?? Render
+  // ?? Renders Compo
 
   return (
     <div className="word-editor-layout" style={{ position: 'relative' }}>
