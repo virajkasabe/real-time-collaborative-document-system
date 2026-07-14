@@ -204,13 +204,13 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center ring-2 ring-blue-500/30 hover:ring-blue-500/60 transition-all duration-200 flex-shrink-0">
               <span className="text-white text-xs sm:text-sm font-extrabold uppercase">
                 {
-                  user.avatar === "" ? 
+                  !user?.avatar ? 
                   (
                     user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'
                   ) 
                   : 
                   (
-                    <img src={user.avatar || randomUser } alt="" className='rounded-full w-8 h-8 sm:w-9 sm:h-9 object-cover' />
+                    <img src={user.avatar} key={user.avatar} alt="" className='rounded-full w-8 h-8 sm:w-9 sm:h-9 object-cover' />
                   )
                 }
               </span>
@@ -231,13 +231,13 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2563EB] to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
                     <span className="text-white font-bold text-base uppercase">
                       {
-                        user.avatar === "" ? 
+                        !user?.avatar ? 
                         (
                           user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'
                         ) 
                         : 
                         (
-                          <img src={user.avatar || randomUser } alt="" className='rounded-full w-10 h-10 object-cover' />
+                          <img src={user.avatar} key={user.avatar} alt="" className='rounded-full w-10 h-10 object-cover' />
                         )
                       }
                     </span>

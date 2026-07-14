@@ -149,10 +149,118 @@ function AnimatedDecimalCounter({ end, duration = 1500, suffix = "" }) {
   );
 }
 
+// 4. HIGH-PERFORMANCE ANIMATED ONE-DECIMAL COUNTER (For uptime metric like 99.9%)
+function AnimatedOneDecimalCounter({ end, duration = 1500, suffix = "" }) {
+  const [count, setCount] = useState(0);
+  const [triggered, setTriggered] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !triggered) {
+        setTriggered(true);
+      }
+    }, { threshold: 0.2 });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [triggered]);
+
+  useEffect(() => {
+    if (!triggered) return;
+    
+    let start = 0;
+    const startTime = performance.now();
+
+    const update = (timestamp) => {
+      const progress = timestamp - startTime;
+      const percentage = Math.min(progress / duration, 1);
+      const easeProgress = percentage * (2 - percentage);
+      
+      const current = Math.floor(start + easeProgress * (end - start));
+      setCount(current);
+
+      if (percentage < 1) {
+        requestAnimationFrame(update);
+      }
+    };
+
+    requestAnimationFrame(update);
+  }, [triggered, end, duration]);
+
+  return (
+    <span ref={ref} className="font-sans font-extrabold tracking-tight tabular-nums">
+      {(count / 10).toFixed(1)}
+      {suffix}
+    </span>
+  );
+}
+
 export default function Landing() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
+
+  const features = [
+    {
+      icon: '⚡',
+      title: 'Real-Time Collaboration',
+      desc: 'Work together with your team simultaneously. See changes as they happen with live cursor tracking.'
+    },
+    {
+      icon: '📄',
+      title: 'Rich Document Editor',
+      desc: 'Full-featured editor with formatting, tables, images, and more — just like Microsoft Word.'
+    },
+    {
+      icon: '🔒',
+      title: 'Secure & Private',
+      desc: 'Enterprise-grade security with role-based access control. You decide who sees what.'
+    },
+    {
+      icon: '💬',
+      title: 'Comments & Chat',
+      desc: 'Leave inline comments and chat with collaborators directly inside the document.'
+    },
+    {
+      icon: '📁',
+      title: 'Version History',
+      desc: 'Never lose work. Restore any previous version of your document with one click.'
+    },
+    {
+      icon: '🌐',
+      title: 'Access Anywhere',
+      desc: 'Works on desktop, tablet, and mobile. Your documents are always with you.'
+    },
+  ];
+
+  const steps = [
+    { num: '01', title: 'Create a Document', desc: 'Start from scratch or import an existing Word file.' },
+    { num: '02', title: 'Invite Your Team', desc: 'Share with teammates by email. Assign roles — Editor or Viewer.' },
+    { num: '03', title: 'Collaborate Live', desc: 'Edit together in real-time. See cursors, comments, and changes instantly.' },
+    { num: '04', title: 'Export & Share', desc: 'Download as PDF or DOCX anytime. Share links with anyone.' },
+  ];
+
+  const testimonials = [
+    {
+      name: 'Priya Sharma',
+      role: 'Product Manager, TechCorp',
+      avatar: 'P',
+      text: 'Athenura replaced Google Docs for our entire team. The real-time sync is incredibly fast.'
+    },
+    {
+      name: 'Rahul Mehta',
+      role: 'Startup Founder',
+      avatar: 'R',
+      text: 'We use it for all our proposals and reports. Version history has saved us multiple times!'
+    },
+    {
+      name: 'Anjali Nair',
+      role: 'Content Lead, MediaHouse',
+      avatar: 'A',
+      text: 'The comment and chat feature keeps all feedback in one place. No more endless email chains.'
+    },
+  ];
 
   const [, forceUpdate] = useState(0);
 
@@ -265,8 +373,8 @@ export default function Landing() {
       <main className="flex-1 w-full z-10">
         
         {/* HERO SECTION */}
-        <section className="hero-section-wrapper relative overflow-hidden">
-          <div className="hero-responsive-container flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-0 px-[24px] lg:px-0">
+        <section className="hero-section-wrapper py-12 sm:py-24 px-4 sm:px-6 relative overflow-hidden">
+          <div className="hero-responsive-container flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-0 px-4 sm:px-6 lg:px-0">
             
             {/* HERO LEFT COPY (45% width, vertically centered) */}
             <div className="w-full lg:w-[45%] text-left flex flex-col items-start justify-center">
@@ -278,7 +386,7 @@ export default function Landing() {
               </div>
 
               {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px, gap to badge = 16px */}
-              <h1 className="font-sans hero-headline-clamp text-[#0F172A] dark:text-white mt-[16px] max-w-[650px]">
+              <h1 className="font-sans text-3xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] dark:text-white mt-[16px] max-w-[650px] leading-tight tracking-tight">
                 The collaborative canvas for <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0D6EFD] to-indigo-500 dark:from-[#3FA3FF] dark:to-cyan-400">modern</span> engineering teams.
               </h1>
 
@@ -291,14 +399,14 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-4 mt-[28px] w-full sm:w-auto">
                 <button 
                   onClick={() => navigate('/register')} 
-                  className="btn-shine group relative inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold text-white bg-[#0D6EFD] hover:bg-[#0D6EFD]/95 rounded-xl transition-all shadow-[0_4px_20px_rgba(13,110,253,0.3)] hover:scale-[1.02] active:scale-[0.98] shrink-0"
+                  className="w-full sm:w-auto btn-shine group relative inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold text-white bg-[#0D6EFD] hover:bg-[#0D6EFD]/95 rounded-xl transition-all shadow-[0_4px_20px_rgba(13,110,253,0.3)] hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
                 >
                   <span>Start Collaborating Free</span>
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button 
                   onClick={() => navigate('/login')} 
-                  className="inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold border border-[#E2E8F0] dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-[#081B3A] dark:text-[#E5E7EB] rounded-xl transition-all backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98] shrink-0"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold border border-[#E2E8F0] dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-[#081B3A] dark:text-[#E5E7EB] rounded-xl transition-all backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
                 >
                   <Play size={14} className="fill-current mr-0.5" />
                   <span>Watch Demo</span>
@@ -473,147 +581,161 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* STATISTICS / SOCIAL PROOF METRICS SECTION */}
-        <section className="py-12 lg:py-16 border-y border-slate-200/50 dark:border-white/5 bg-slate-50/10 dark:bg-white/[0.002]">
-          <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+        {/* SECTION 2 — FEATURES */}
+        <section id="features" className="py-20 px-6 bg-slate-50 dark:bg-[#060D1A] transition-colors duration-300 border-y border-slate-200/60 dark:border-white/5">
+          <div className="max-w-6xl mx-auto">
             <RevealOnScroll>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                
-                <div className="space-y-2">
-                  <div className="text-4xl md:text-5xl text-[#0D6EFD] dark:text-[#3FA3FF]">
-                    <AnimatedCounter end={10} suffix="K+" />
+              <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
+                <span className="text-[#0D6EFD] text-xs font-extrabold uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-3.5 py-1.5 rounded-full border border-blue-200/50 dark:border-blue-900/30">Everything you need</span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white text-center leading-tight tracking-tight pt-2">
+                  Everything you need to collaborate
+                </h2>
+                <p className="text-slate-500 dark:text-gray-400 text-center max-w-xl mx-auto text-base sm:text-lg">
+                  Athenura brings your team together with powerful tools built for modern document collaboration.
+                </p>
+              </div>
+            </RevealOnScroll>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((f, i) => (
+                <RevealOnScroll key={i} delay={i * 75}>
+                  <div className="spotlight-card bg-white dark:bg-[#0F172A] border border-slate-200/70 dark:border-white/5 rounded-2xl p-6 hover:border-blue-500/30 hover:shadow-lg dark:hover:shadow-none transition-all duration-300 h-full flex flex-col justify-start">
+                    <div className="text-3xl mb-4 p-2.5 w-12 h-12 bg-slate-50 dark:bg-[#070B14] rounded-xl flex items-center justify-center border border-slate-100 dark:border-white/5 shadow-inner">{f.icon}</div>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">
+                      {f.title}
+                    </h3>
+                    <p className="text-slate-600 dark:text-gray-400 text-sm leading-relaxed">
+                      {f.desc}
+                    </p>
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#94A3B8]/60">Active Teams</div>
-                </div>
+                </RevealOnScroll>
+              ))}
+            </div>
+          </div>
+        </section>
 
-                <div className="space-y-2">
-                  <div className="text-4xl md:text-5xl text-purple-500 dark:text-purple-400">
-                    <AnimatedCounter end={50} suffix="K+" />
+        {/* SECTION 3 — HOW IT WORKS */}
+        <section className="py-20 px-6 bg-white dark:bg-[#080F1E] transition-colors duration-300">
+          <div className="max-w-4xl mx-auto">
+            <RevealOnScroll>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white text-center mb-16 tracking-tight">
+                How it works
+              </h2>
+            </RevealOnScroll>
+            
+            <div className="space-y-10">
+              {steps.map((s, i) => (
+                <RevealOnScroll key={i} delay={i * 100}>
+                  <div className="flex gap-6 items-start p-6 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#0F172A]/40 backdrop-blur-sm">
+                    <span className="text-4xl sm:text-5xl font-black text-blue-600/20 dark:text-blue-500/10 flex-shrink-0 w-16 select-none leading-none pt-1">
+                      {s.num}
+                    </span>
+                    <div>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-1.5">
+                        {s.title}
+                      </h3>
+                      <p className="text-slate-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed">
+                        {s.desc}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#94A3B8]/60">Documents Saved</div>
-                </div>
+                </RevealOnScroll>
+              ))}
+            </div>
+          </div>
+        </section>
 
-                <div className="space-y-2">
-                  <div className="text-4xl md:text-5xl text-emerald-500 dark:text-emerald-400">
-                    <AnimatedDecimalCounter end={9999} suffix="%" />
+        {/* SECTION 4 — STATS / SOCIAL PROOF */}
+        <section className="py-16 px-6 bg-slate-50 dark:bg-[#060D1A] transition-colors duration-300 border-y border-slate-200/60 dark:border-white/5">
+          <div className="max-w-6xl mx-auto">
+            <RevealOnScroll>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-center font-sans">
+                {[
+                  { value: 10, label: 'Documents Created', isK: true },
+                  { value: 500, label: 'Teams Using Athenura', isPlus: true },
+                  { value: 999, label: 'Uptime', isUptime: true },
+                  { value: 100, label: 'Sync Latency', isLatency: true },
+                ].map((s, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="text-3xl sm:text-4xl font-extrabold text-blue-600 dark:text-blue-400">
+                      {s.isK && <AnimatedCounter end={s.value} suffix="K+" />}
+                      {s.isPlus && <AnimatedCounter end={s.value} suffix="+" />}
+                      {s.isUptime && <AnimatedOneDecimalCounter end={s.value} suffix="%" />}
+                      {s.isLatency && (
+                        <>
+                          <span className="font-sans font-extrabold tracking-tight">&lt; </span>
+                          <AnimatedCounter end={s.value} suffix="ms" />
+                        </>
+                      )}
+                    </div>
+                    <div className="text-slate-500 dark:text-gray-400 text-xs sm:text-sm font-semibold">{s.label}</div>
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#94A3B8]/60">System Uptime</div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-4xl md:text-5xl text-amber-500 dark:text-amber-400">
-                    <AnimatedCounter end={120} suffix="+" />
-                  </div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#94A3B8]/60">Countries Reached</div>
-                </div>
-
+                ))}
               </div>
             </RevealOnScroll>
           </div>
         </section>
 
-        {/* PREMIUM FEATURE CARDS GRID */}
-        <section className="py-12 lg:py-16">
-          <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 space-y-16">
+        {/* SECTION 5 — TESTIMONIALS */}
+        <section className="py-20 px-6 bg-white dark:bg-[#080F1E] transition-colors duration-300">
+          <div className="max-w-5xl mx-auto">
             <RevealOnScroll>
-              <div className="text-center space-y-4 max-w-3xl mx-auto">
-                <span className="text-[#0D6EFD] text-xs font-extrabold uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-3.5 py-1.5 rounded-full border border-blue-200/50 dark:border-blue-900/30">Built For Engineering Teams</span>
-                <h2 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl text-[#081B3A] dark:text-white leading-tight tracking-tight pt-2">
-                  Enterprise speed. Minimalist control.
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white text-center mb-16 tracking-tight">
+                Loved by teams everywhere
+              </h2>
+            </RevealOnScroll>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {testimonials.map((t, i) => (
+                <RevealOnScroll key={i} delay={i * 100}>
+                  <div className="bg-slate-50/50 dark:bg-[#0F172A] border border-slate-200/60 dark:border-white/5 rounded-2xl p-6 h-full flex flex-col justify-between shadow-sm dark:shadow-none hover:shadow-md transition-shadow duration-300">
+                    <p className="text-slate-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed mb-6 italic">
+                      "{t.text}"
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
+                        {t.avatar}
+                      </div>
+                      <div>
+                        <div className="text-slate-900 dark:text-white text-sm font-bold">
+                          {t.name}
+                        </div>
+                        <div className="text-slate-500 dark:text-gray-500 text-xs font-semibold">{t.role}</div>
+                      </div>
+                    </div>
+                  </div>
+                </RevealOnScroll>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 6 — CTA BANNER */}
+        <section className="py-20 px-6 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-900/25 dark:to-indigo-900/15 border-y border-slate-200/60 dark:border-blue-500/10 transition-colors duration-300">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <RevealOnScroll>
+              <div className="space-y-4">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  Ready to collaborate smarter?
                 </h2>
-                <p className="text-base sm:text-lg text-[#6B7280] dark:text-[#94A3B8] max-w-2xl mx-auto font-normal leading-relaxed">
-                  Designed to eliminate friction, sync active Caret vectors instantly, and safeguard your engineering layout blueprint securely.
+                <p className="text-slate-600 dark:text-gray-400 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                  Join thousands of teams already using Athenura. Free to get started.
                 </p>
               </div>
             </RevealOnScroll>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-              
-              {/* FEATURE 1: Real-time Sync */}
-              <RevealOnScroll delay={0}>
-                <div className="spotlight-card glow-blue p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/30 text-[#0D6EFD] flex items-center justify-center shrink-0 shadow-inner">
-                      <Activity size={20} className="animate-float-fast text-[#0D6EFD]" />
-                    </div>
-                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
-                      Real-time Sync Layer
-                    </h4>
-                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
-                      Co-author specs synchronously. Instantly replicate cursors, key carets, formatting adjustments, and typing highlights across the globe.
-                    </p>
-                  </div>
-                  <div className="text-xs font-bold text-[#0D6EFD] hover:underline flex items-center gap-1 pt-2">
-                    <span>Explore socket layer</span>
-                    <ChevronRight size={12} />
-                  </div>
-                </div>
-              </RevealOnScroll>
-
-              {/* FEATURE 2: Intelligent Outlines */}
-              <RevealOnScroll delay={100}>
-                <div className="spotlight-card glow-purple p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-900/30 text-purple-500 flex items-center justify-center shrink-0 shadow-inner">
-                      <Layers size={20} className="animate-float-slow text-purple-500" />
-                    </div>
-                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
-                      Engineering Outlines
-                    </h4>
-                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
-                      Spin up pre-structured specs, release blueprints, roadmap targets, and API templates in standard fluid responsive canvas dimensions.
-                    </p>
-                  </div>
-                  <div className="text-xs font-bold text-purple-500 hover:underline flex items-center gap-1 pt-2">
-                    <span>Preview templates</span>
-                    <ChevronRight size={12} />
-                  </div>
-                </div>
-              </RevealOnScroll>
-
-              {/* FEATURE 3: Access Permissions */}
-              <RevealOnScroll delay={200}>
-                <div className="spotlight-card glow-amber p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/30 text-amber-500 flex items-center justify-center shrink-0 shadow-inner">
-                      <Shield size={20} className="animate-float-medium text-amber-500" />
-                    </div>
-                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
-                      Role Authorization
-                    </h4>
-                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
-                      Strict identity authentication. Transition users dynamically from Editor access to Viewer nodes, or lock folders securely in 1 click.
-                    </p>
-                  </div>
-                  <div className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1 pt-2">
-                    <span>View access matrices</span>
-                    <ChevronRight size={12} />
-                  </div>
-                </div>
-              </RevealOnScroll>
-
-              {/* FEATURE 4: Checkpoint commits */}
-              <RevealOnScroll delay={300}>
-                <div className="spotlight-card glow-emerald p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/30 text-emerald-500 flex items-center justify-center shrink-0 shadow-inner">
-                      <Clock size={20} className="animate-float-fast text-emerald-500" />
-                    </div>
-                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
-                      Checkpoint Commits
-                    </h4>
-                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
-                      Never lose work. Enjoy microsecond auto-saving to secure databases combined with designated layout restoration points.
-                    </p>
-                  </div>
-                  <div className="text-xs font-bold text-emerald-500 hover:underline flex items-center gap-1 pt-2">
-                    <span>Browse version control</span>
-                    <ChevronRight size={12} />
-                  </div>
-                </div>
-              </RevealOnScroll>
-
-            </div>
+            
+            <RevealOnScroll delay={150}>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                <a href="/register"
+                  className="px-8 py-3 bg-[#0D6EFD] hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-[0_4px_15px_rgba(13,110,253,0.15)] flex items-center justify-center cursor-pointer">
+                  Get Started Free
+                </a>
+                <a href="/login"
+                  className="px-8 py-3 border border-slate-300 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-white font-bold rounded-xl transition backdrop-blur-sm flex items-center justify-center cursor-pointer">
+                  Sign In
+                </a>
+              </div>
+            </RevealOnScroll>
           </div>
         </section>
 

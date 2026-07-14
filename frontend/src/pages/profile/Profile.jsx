@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Check,
   FileText,
@@ -16,6 +16,7 @@ import {
   Zap,
   Menu,
   ChevronRight,
+  Camera,
 } from 'lucide-react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import Button from '../../components/common/Button';
@@ -24,11 +25,84 @@ import { useAuth } from '../../context/AuthContext';
 import { documentService } from '../../services/documentService';
 
 export default function Profile() {
-  const { user, triggerToast } = useAuth();
+  const { user, triggerToast, updateUser } = useAuth();
   const { sidebarOpen } = useOutletContext();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.fullName || user?.name || '');
   const [isEditing, setIsEditing] = useState(false);
+
+  const [avatarPreview, setAvatarPreview] = useState(
+    user?.avatar || ''
+  );
+  const avatarInputRef = useRef(null);
+
+  // Avatar click handler — triggers file input
+  const handleAvatarClick = () => {
+    avatarInputRef.current?.click();
+  };
+
+  // File selected handler
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      triggerToast('Please select an image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      triggerToast('Image must be less than 2MB', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const base64 = reader.result;
+
+      // 1. Update preview immediately
+      setAvatarPreview(base64);
+
+      // 2. Save to localStorage
+      const stored = JSON.parse(
+        localStorage.getItem('collabdocs_user') || '{}'
+      );
+      const updatedUser = { ...stored, avatar: base64 };
+      localStorage.setItem(
+        'collabdocs_user',
+        JSON.stringify(updatedUser)
+      );
+
+      // 3. Update AuthContext so Navbar updates too
+      if (updateUser) {
+        updateUser({ avatar: base64 });
+      } else {
+        // Fallback if updateUser not in context
+        const userStored = JSON.parse(
+          localStorage.getItem('collabdocs_user') || '{}'
+        );
+        userStored.avatar = base64;
+        localStorage.setItem(
+          'collabdocs_user',
+          JSON.stringify(userStored)
+        );
+      }
+
+      triggerToast('Avatar updated successfully!', 'success');
+    };
+
+    reader.onerror = () => {
+      triggerToast('Failed to read image', 'error');
+    };
+
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
 
   const handleSave = (e) => {
     if (e && e.preventDefault) {
@@ -158,25 +232,86 @@ export default function Profile() {
         
         {/* Left: Profile Summary Card */}
         <div className="lg:col-span-1 bg-gradient-to-br from-[#0F172A] to-[#1A2332] dark:from-[#0F172A] dark:to-[#1A2332] border border-[#E5E7EB] dark:border-white/10 rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl shadow-[#0D6EFD]/5 dark:shadow-[#6C63FF]/5 flex flex-col items-center text-center space-y-3 sm:space-y-4 transition-all duration-300 hover:shadow-2xl hover:shadow-[#0D6EFD]/10 dark:hover:shadow-[#6C63FF]/10">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#0D6EFD] to-[#6C63FF] blur-2xl opacity-20 animate-pulse"></div>
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-[#2563EB] to-[#6C63FF] flex items-center justify-center mx-auto shadow-2xl ring-4 ring-[#0D6EFD]/30 hover:ring-[#6C63FF]/50 transition-all duration-300 overflow-hidden">
-              {user?.avatar && user.avatar !== "" ? (
-                <img 
-                  src={user.avatar} 
-                  alt={user?.fullName || 'User'} 
-                  className="w-full h-full object-cover rounded-full"
+          <div className="relative w-24 h-24 mx-auto">
+            {/* Avatar image or initial */}
+            <div
+              onClick={handleAvatarClick}
+              className="w-24 h-24 rounded-full overflow-hidden
+                cursor-pointer group relative
+                ring-4 ring-blue-500/30 shadow-xl">
+
+              {avatarPreview || user?.avatar ? (
+                <img
+                  src={avatarPreview || user?.avatar}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                  onError={() => setAvatarPreview('')}
                 />
               ) : (
-                <span className="text-white text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase">
-                  {getInitials()}
-                </span>
+                <div className="w-full h-full rounded-full
+                  bg-gradient-to-br from-[#2563EB] to-indigo-600
+                  flex items-center justify-center">
+                  <span className="text-white text-4xl font-extrabold
+                    uppercase">
+                    {user?.fullName?.charAt(0) ||
+                     user?.email?.charAt(0) ||
+                     'U'}
+                  </span>
+                </div>
               )}
+
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-black/60
+                opacity-0 hover:opacity-100 transition-opacity
+                rounded-full flex flex-col items-center
+                justify-center gap-1">
+                <Camera size={18} className="text-white" />
+                <span className="text-white text-[10px] font-medium">
+                  Change
+                </span>
+              </div>
             </div>
-            <div className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 rounded-full border-2 border-[#0F172A]">
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-            </div>
+
+            {/* Hidden file input — OUTSIDE the clickable div */}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+
+            {/* Remove photo button */}
+            {(avatarPreview || user?.avatar) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAvatarPreview('');
+                  if (updateUser) updateUser({ avatar: '' });
+                  const stored = JSON.parse(
+                    localStorage.getItem('collabdocs_user') || '{}'
+                  );
+                  stored.avatar = '';
+                  localStorage.setItem(
+                    'collabdocs_user',
+                    JSON.stringify(stored)
+                  );
+                  triggerToast('Avatar removed', 'success');
+                }}
+                className="absolute -bottom-1 -right-1
+                  bg-red-500 hover:bg-red-600 text-white
+                  rounded-full w-6 h-6 flex items-center
+                  justify-center text-xs transition cursor-pointer"
+                title="Remove photo">
+                ✕
+              </button>
+            )}
           </div>
+
+          {/* Helper text */}
+          <p className="text-[11px] text-gray-500 text-center mt-2">
+            Click to change • Max 2MB
+          </p>
 
           <div className="space-y-1 sm:space-y-1.5">
             <h3 className="text-base sm:text-lg md:text-xl font-bold text-white mt-2 capitalize">

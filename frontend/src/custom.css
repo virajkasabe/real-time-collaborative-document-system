@@ -1982,8 +1982,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-mockup-card-responsive {
-  width: min(760px, 52vw);
-  max-width: 100%;
+  width: 100%;
+  max-width: 760px;
   height: auto;
   max-height: 560px;
   aspect-ratio: 720 / 510;

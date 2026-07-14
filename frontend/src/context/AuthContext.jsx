@@ -35,22 +35,36 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initializeAuth = async() => {
       try {
-        if(!user) {
-            const res = await getUser()
-              const user = res.data.data.user
-              LocalStorage.set("user", user);
-              const savedUser = LocalStorage.get("user");
+        const storedUser = LocalStorage.get("user") || 
+                           JSON.parse(localStorage.getItem('collabdocs_user') || 'null');
 
-              if (savedUser) {
-                setUser(savedUser);
-                setIsAuthenticated(true);
-              } else {
-                LocalStorage.remove("user");
-              }
+        if (storedUser) {
+          setUser(storedUser);
+          setIsAuthenticated(true);
         }
-        
+
+        const res = await getUser();
+        const apiUser = res?.data?.data?.user || res?.data?.user || res?.data;
+
+        if (apiUser) {
+          const mergedUser = {
+            ...apiUser,
+            avatar: apiUser?.avatar || storedUser?.avatar || '',
+          };
+
+          setUser(mergedUser);
+          setIsAuthenticated(true);
+          LocalStorage.set("user", mergedUser);
+          localStorage.setItem('collabdocs_user', JSON.stringify(mergedUser));
+        }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        const storedUser = LocalStorage.get("user") || 
+                           JSON.parse(localStorage.getItem('collabdocs_user') || 'null');
+        if (storedUser) {
+          setUser(storedUser);
+          setIsAuthenticated(true);
+        }
       } finally {
         setLoading(false);
       }
@@ -123,6 +137,7 @@ export function AuthProvider({ children }) {
       }
 
       LocalStorage.set("user", user);
+      localStorage.setItem('collabdocs_user', JSON.stringify(user));
       setUser(user);
       setIsAuthenticated(true);
       
@@ -140,6 +155,7 @@ export function AuthProvider({ children }) {
       const res = await userLogout();
       if (res.data.success) {
         LocalStorage.remove("user");
+        localStorage.removeItem('collabdocs_user');
         setUser(null);
         setIsAuthenticated(false);
         return res.data;
@@ -148,10 +164,21 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error.message);
       LocalStorage.remove("user");
+      localStorage.removeItem('collabdocs_user');
       setUser(null);
       setIsAuthenticated(false);
       throw error;
     }
+  }, []);
+
+  const updateUser = useCallback((updates) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      LocalStorage.set("user", updated);
+      localStorage.setItem('collabdocs_user', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   const forgetPasswordRequest = useCallback(async (email) => {
@@ -211,7 +238,8 @@ export function AuthProvider({ children }) {
     forgetPasswordRequest,
     resetPassword,
     triggerToast,
-    error
+    error,
+    updateUser
   }), [
     user,
     isAuthenticated,
@@ -225,7 +253,8 @@ export function AuthProvider({ children }) {
     forgetPasswordRequest,
     resetPassword,
     triggerToast,
-    error
+    error,
+    updateUser
   ]);
 
   return (
