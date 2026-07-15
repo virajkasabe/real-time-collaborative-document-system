@@ -9,6 +9,39 @@ import React, {
 } from 'react';
   
 import Quill from 'quill';
+
+const BlockEmbed = Quill.import('blots/block/embed');
+
+class PageBreakBlot extends BlockEmbed {
+  static create() {
+    const node = super.create();
+    node.setAttribute('class', 'page-break');
+    node.setAttribute('contenteditable', 'false');
+    return node;
+  }
+  static value() {
+    return true;
+  }
+}
+PageBreakBlot.blotName = 'pagebreak';
+PageBreakBlot.tagName = 'div';
+Quill.register(PageBreakBlot);
+
+class DividerBlot extends BlockEmbed {
+  static create() {
+    const node = super.create();
+    node.setAttribute('class', 'quill-divider');
+    node.setAttribute('contenteditable', 'false');
+    return node;
+  }
+  static value() {
+    return true;
+  }
+}
+DividerBlot.blotName = 'divider';
+DividerBlot.tagName = 'hr';
+Quill.register(DividerBlot);
+
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaCrown } from "react-icons/fa6";
 import { FaPencilAlt } from "react-icons/fa";
@@ -454,6 +487,36 @@ function useCollaborativeQuill({
   const performRedoRef = useRef(() => {});
   const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
 
+  // Store all changing props in refs to decouple the main Quill lifecycle effect
+  const titleRef = useRef(title);
+  const onSaveRef = useRef(onSave);
+  const onOutlineChangeRef = useRef(onOutlineChange);
+  const onWordCountChangeRef = useRef(onWordCountChange);
+  const onSyncingChangeRef = useRef(onSyncingChange);
+  const canEditRef = useRef(canEdit);
+  const userRef = useRef(user);
+  const docRef = useRef(doc);
+
+  useEffect(() => { titleRef.current = title; }, [title]);
+  useEffect(() => { onSaveRef.current = onSave; }, [onSave]);
+  useEffect(() => { onOutlineChangeRef.current = onOutlineChange; }, [onOutlineChange]);
+  useEffect(() => { onWordCountChangeRef.current = onWordCountChange; }, [onWordCountChange]);
+  useEffect(() => { onSyncingChangeRef.current = onSyncingChange; }, [onSyncingChange]);
+  useEffect(() => { canEditRef.current = canEdit; }, [canEdit]);
+  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { docRef.current = doc; }, [doc]);
+
+  // Dynamically enable/disable Quill editor when editing permission changes
+  useEffect(() => {
+    if (quillInstanceRef.current) {
+      if (canEdit) {
+        quillInstanceRef.current.enable();
+      } else {
+        quillInstanceRef.current.disable();
+      }
+    }
+  }, [canEdit]);
+
   useEffect(() => {
     if (!quillRef.current || quillInstanceRef.current) return undefined;
 
@@ -461,6 +524,7 @@ function useCollaborativeQuill({
       theme: 'snow',
       modules: {
         toolbar: '#word-ribbon-toolbar',
+        table: true,
         history: { delay: 0, maxStack: 0, userOnly: true },
         keyboard: {
           bindings: {
@@ -483,12 +547,12 @@ function useCollaborativeQuill({
           },
         },
       },
-      placeholder: canEdit ? 'Start writing your document here...' : 'This document is read-only.',
+      placeholder: canEditRef.current ? 'Start writing your document here...' : 'This document is read-only.',
     });
     quillInstanceRef.current = quill;
-    if (!canEdit) quill.disable();
+    if (!canEditRef.current) quill.disable();
 
-    loadInitialContent(quill, doc.content);
+    loadInitialContent(quill, docRef.current?.content || doc.content);
 
     let saveTimeoutId = null;
     let selectionCursorTimeoutId = null;
@@ -501,7 +565,7 @@ function useCollaborativeQuill({
     });
 
     performUndoRef.current = () => {
-      if (!canEdit || undoStackRef.current.length === 0) return;
+      if (!canEditRef.current || undoStackRef.current.length === 0) return;
       const entry = undoStackRef.current.pop();
       isApplyingHistoryRef.current = true;
       quill.updateContents(entry.undo, Quill.sources.USER);
@@ -511,7 +575,7 @@ function useCollaborativeQuill({
     };
 
     performRedoRef.current = () => {
-      if (!canEdit || redoStackRef.current.length === 0) return;
+      if (!canEditRef.current || redoStackRef.current.length === 0) return;
       const entry = redoStackRef.current.pop();
       isApplyingHistoryRef.current = true;
       quill.updateContents(entry.redo, Quill.sources.USER);
@@ -522,31 +586,31 @@ function useCollaborativeQuill({
 
     // ---- Outbound: local edits -> socket ----
     const sendOperations = (operations) => {
-      if (!canEdit || isSendingOperation || operations.length === 0) return;
+      if (!canEditRef.current || isSendingOperation || operations.length === 0) return;
       isSendingOperation = true;
       socket.emit(DOCUMENT_EVENT.SEND_OPERATION, {
-        docId: docId || doc._id,
+        docId: docId || docRef.current?._id || doc._id,
         actions: operations,
-        version: doc.version || 0,
-        userId: user?._id || 'anonymous',
+        version: docRef.current?.version || doc.version || 0,
+        userId: userRef.current?._id || 'anonymous',
         timestamp: Date.now(),
       });
       setTimeout(() => { isSendingOperation = false; }, OPERATION_DEDUPE_WINDOW_MS);
     };
 
     const sendCursorData = (position, selection) => {
-      if (!user) return;
+      if (!userRef.current) return;
       socket.emit(CURSOR_EVENT.CURSOR_CHANGE, {
-        docId: docId || doc._id,
-        userId: user._id || user.id,
-        userName: user.fullName || user.name || 'Anonymous',
-        avatar: user.avatar || randomUser,
+        docId: docId || docRef.current?._id || doc._id,
+        userId: userRef.current._id || userRef.current.id,
+        userName: userRef.current.fullName || userRef.current.name || 'Anonymous',
+        avatar: userRef.current.avatar || randomUser,
         position,
         selection: selection || { index: position, length: 0 },
         // Stable per-user color instead of a fresh random color on every
         // broadcast — a changing color on every keystroke is what made the
         // remote cursor flags look like they were "fluttering".
-        color: colorForUserId(user._id || user.id),
+        color: colorForUserId(userRef.current._id || userRef.current.id),
         timestamp: Date.now(),
       });
     };
@@ -593,7 +657,9 @@ function useCollaborativeQuill({
       // cached positions of everyone else's cursor flags need to be shifted
       // by hand or they'll stay frozen at their old (now wrong) location.
       repositionRemoteCursors(actions);
-      onWordCountChange(countWords(quill.getText()));
+      if (onWordCountChangeRef.current) {
+        onWordCountChangeRef.current(countWords(quill.getText()));
+      }
     };
 
     const handleCursorUpdate = (cursorData) => {
@@ -637,9 +703,9 @@ function useCollaborativeQuill({
         updateHistoryState();
       }
 
-      onOutlineChange();
+      if (onOutlineChangeRef.current) onOutlineChangeRef.current();
       const words = countWords(quill.getText());
-      onWordCountChange(words);
+      if (onWordCountChangeRef.current) onWordCountChangeRef.current(words);
 
       const operations = convertDeltaToWireOperations(delta);
       if (operations.length > 0) {
@@ -658,11 +724,13 @@ function useCollaborativeQuill({
         typingCursorTimeoutId = null;
       }, TYPING_CURSOR_BROADCAST_DEBOUNCE_MS);
 
-      onSyncingChange(true);
+      if (onSyncingChangeRef.current) onSyncingChangeRef.current(true);
       clearTimeout(saveTimeoutId);
       saveTimeoutId = setTimeout(() => {
-        onSave(title, quillDeltaToCustomDelta(quill.getContents()), words);
-        onSyncingChange(false);
+        if (onSaveRef.current) {
+          onSaveRef.current(titleRef.current, quillDeltaToCustomDelta(quill.getContents()), words);
+        }
+        if (onSyncingChangeRef.current) onSyncingChangeRef.current(false);
         saveTimeoutId = null;
       }, AUTOSAVE_DEBOUNCE_MS);
     };
@@ -678,14 +746,14 @@ function useCollaborativeQuill({
 
     const handleClick = (event) => {
       const clickPosition = resolveClickPosition(quill, event);
-      if (clickPosition !== null && user) {
+      if (clickPosition !== null && userRef.current) {
         socket.emit(CURSOR_EVENT.CURSOR_CHANGE, {
-          docId: docId || doc._id,
-          userId: user._id || user.id,
-          userName: user.fullName || user.name || 'Anonymous',
-          avatar: user.avatar || '',
+          docId: docId || docRef.current?._id || doc._id,
+          userId: userRef.current._id || userRef.current.id,
+          userName: userRef.current.fullName || userRef.current.name || 'Anonymous',
+          avatar: userRef.current.avatar || '',
           position: clickPosition,
-          color: colorForUserId(user._id || user.id),
+          color: colorForUserId(userRef.current._id || userRef.current.id),
           timestamp: Date.now(),
           eventType: 'click',
         });
@@ -700,7 +768,9 @@ function useCollaborativeQuill({
     quill.root.addEventListener('click', handleClick);
     quill.container.addEventListener('click', handleClick);
 
-    const outlineInitTimeout = setTimeout(onOutlineChange, 50);
+    const outlineInitTimeout = setTimeout(() => {
+      if (onOutlineChangeRef.current) onOutlineChangeRef.current();
+    }, 50);
 
     return () => {
       clearTimeout(saveTimeoutId);
@@ -723,6 +793,17 @@ function useCollaborativeQuill({
       undoStackRef.current = [];
       redoStackRef.current = [];
 
+      // Clean up toolbar pickers so they are not duplicated if the effect re-runs
+      const toolbarEl = document.getElementById('word-ribbon-toolbar');
+      if (toolbarEl) {
+        const pickers = toolbarEl.querySelectorAll('.ql-picker');
+        pickers.forEach((picker) => picker.remove());
+        const selects = toolbarEl.querySelectorAll('select');
+        selects.forEach((select) => {
+          select.style.display = '';
+        });
+      }
+
       // Clean up any remote cursor flags and their expiry timers so a manual
       // page refresh (which tears this component down) doesn't leave orphaned
       // DOM nodes or dangling timeouts behind.
@@ -734,7 +815,7 @@ function useCollaborativeQuill({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, docId, onSave, title, user, socket, canEdit]);
+  }, [quillRef, docId, socket]);
 
   const performUndo = useCallback(() => performUndoRef.current(), []);
   const performRedo = useCallback(() => performRedoRef.current(), []);
@@ -922,7 +1003,10 @@ function EditingPageContent({
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
-  const [title, setTitle] = useState(doc.title || 'Untitled Document');
+  const [title, setTitle] = useState(() => {
+    const rawTitle = doc.title || 'Untitled Document';
+    return rawTitle === 'Untitle Document' ? 'Untitled Document' : rawTitle;
+  });
   const [isSyncing, setIsSyncing] = useState(false);
 
   const isOwner = docUserRole === DOCUMENT_ROLES.OWNER;
@@ -1016,6 +1100,12 @@ function EditingPageContent({
   const [shareRole, setShareRole] = useState(DOCUMENT_ROLES.VIEWER);
   const [copied, setCopied] = useState(false);
 
+  // Insert Tab States
+  const [showTablePicker, setShowTablePicker] = useState(false);
+  const [hoverTableSize, setHoverTableSize] = useState({ rows: 0, cols: 0 });
+  const [showLinkPopover, setShowLinkPopover] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+
   const quillRef = useRef(null);
   const chatBottomRef = useRef(null);
 
@@ -1046,6 +1136,76 @@ function EditingPageContent({
     onSyncingChange: setIsSyncing,
   });
   const quillInstance = quillInstanceRef.current;
+
+  // ---- Insert Tab Handlers ----
+  const handleInsertTable = (rows, cols) => {
+    if (!quillInstance) return;
+    const tableModule = quillInstance.getModule('table');
+    if (tableModule) {
+      tableModule.insertTable(rows, cols);
+      showToast(`Inserted a ${rows}x${cols} table`, 'success');
+    } else {
+      showToast('Table module not loaded', 'warning');
+    }
+  };
+
+  const handleInsertImage = () => {
+    if (!quillInstance) return;
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.onchange = () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const range = quillInstance.getSelection(true);
+        quillInstance.insertEmbed(range.index, 'image', e.target.result);
+        quillInstance.setSelection(range.index + 1);
+        showToast('Image inserted successfully', 'success');
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
+  const handleInsertLink = (url) => {
+    if (!quillInstance || !url.trim()) return;
+    let formattedUrl = url.trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+    const range = quillInstance.getSelection();
+    if (range && range.length > 0) {
+      quillInstance.format('link', formattedUrl);
+      showToast('Link added to selected text', 'success');
+    } else {
+      const selection = quillInstance.getSelection(true);
+      quillInstance.insertText(selection.index, formattedUrl, 'link', formattedUrl);
+      quillInstance.setSelection(selection.index + formattedUrl.length);
+      showToast('Link inserted', 'success');
+    }
+    setShowLinkPopover(false);
+    setLinkUrl('');
+  };
+
+  const handleInsertPageBreak = () => {
+    if (!quillInstance) return;
+    const range = quillInstance.getSelection(true);
+    quillInstance.insertEmbed(range.index, 'pagebreak', true);
+    quillInstance.insertText(range.index + 1, '\n');
+    quillInstance.setSelection(range.index + 2);
+    showToast('Page break inserted', 'success');
+  };
+
+  const handleInsertDivider = () => {
+    if (!quillInstance) return;
+    const range = quillInstance.getSelection(true);
+    quillInstance.insertEmbed(range.index, 'divider', true);
+    quillInstance.insertText(range.index + 1, '\n');
+    quillInstance.setSelection(range.index + 2);
+    showToast('Horizontal line inserted', 'success');
+  };
 
   // Editor body class toggle
   useEffect(() => {
@@ -1342,6 +1502,19 @@ function EditingPageContent({
         pageLayout={pageLayout}
         setPageLayout={setPageLayout}
         isMobile={isMobile}
+        showTablePicker={showTablePicker}
+        setShowTablePicker={setShowTablePicker}
+        hoverTableSize={hoverTableSize}
+        setHoverTableSize={setHoverTableSize}
+        showLinkPopover={showLinkPopover}
+        setShowLinkPopover={setShowLinkPopover}
+        linkUrl={linkUrl}
+        setLinkUrl={setLinkUrl}
+        onInsertTable={handleInsertTable}
+        onInsertImage={handleInsertImage}
+        onInsertLink={handleInsertLink}
+        onInsertPageBreak={handleInsertPageBreak}
+        onInsertDivider={handleInsertDivider}
       />
 
       {showFindReplace && (
@@ -1488,7 +1661,7 @@ function EditorHeader({
           <span className="word-title-cloud-status" title="Saved to Cloud">
             <FaCloud size={14} style={{ color: 'var(--accent)' }} />
           </span>
-          {!isMobile && <span className="text-center text-[14px] text-yellow-400">{docUserRole}</span>}
+          {!isMobile && <span className="doc-role-badge">{docUserRole}</span>}
         </div>
       </div>
 
@@ -1580,6 +1753,9 @@ function RibbonToolbar({
   onParagraphShading, onApplyStyle, onOpenFind, onOpenReplace, onShowStats,
   leftSidebarCollapsed, setLeftSidebarCollapsed, rightSidebarCollapsed, setRightSidebarCollapsed,
   accentColor, onApplyAccentColor, theme, toggleTheme, pageLayout, setPageLayout, isMobile,
+  showTablePicker, setShowTablePicker, hoverTableSize, setHoverTableSize,
+  showLinkPopover, setShowLinkPopover, linkUrl, setLinkUrl,
+  onInsertTable, onInsertImage, onInsertLink, onInsertPageBreak, onInsertDivider,
 }) {
   return (
     <div
@@ -1700,16 +1876,148 @@ function RibbonToolbar({
 
       {/* INSERT TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'insert' ? 'visible' : 'hidden'}`}>
-        {canEdit && (
-          <div className="ribbon-group">
-            <div className="ribbon-controls-container">
-              <div className="ribbon-buttons-row">
-                <button className="ql-blockquote" title="Blockquote" />
-                <button className="ql-code-block" title="Code Block" />
-              </div>
-            </div>
-            <span className="ribbon-group-label">Elements</span>
+        {!canEdit ? (
+          <div style={{ padding: '8px 16px', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            👁️ You are viewing this document in read-only mode.
           </div>
+        ) : (
+          <>
+            {/* Tables Group */}
+            <div className="ribbon-group">
+              <div className="ribbon-controls-container">
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    className="ribbon-large-btn"
+                    onClick={() => {
+                      setShowTablePicker(!showTablePicker);
+                      setShowLinkPopover(false);
+                    }}
+                    title="Insert Table"
+                  >
+                    📊
+                    <span>Table</span>
+                  </button>
+                  {showTablePicker && (
+                    <div className="table-picker-popover">
+                      <div className="table-picker-grid">
+                        {Array.from({ length: 5 }).map((_, r) => (
+                          <div key={r} className="table-picker-row">
+                            {Array.from({ length: 5 }).map((_, c) => {
+                              const active = r < hoverTableSize.rows && c < hoverTableSize.cols;
+                              return (
+                                <div
+                                  key={c}
+                                  className={`table-picker-cell ${active ? 'active' : ''}`}
+                                  onMouseEnter={() => setHoverTableSize({ rows: r + 1, cols: c + 1 })}
+                                  onClick={() => {
+                                    onInsertTable(r + 1, c + 1);
+                                    setShowTablePicker(false);
+                                  }}
+                                />
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="table-picker-label">
+                        {hoverTableSize.rows > 0 ? `${hoverTableSize.rows} x ${hoverTableSize.cols} Table` : 'Select grid size'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <span className="ribbon-group-label">Tables</span>
+            </div>
+            <div className="ribbon-group-separator" />
+
+            {/* Media/Illustrations Group */}
+            <div className="ribbon-group">
+              <div className="ribbon-controls-container">
+                <div className="ribbon-buttons-row">
+                  <button type="button" className="ribbon-custom-btn" onClick={onInsertImage} title="Insert Image from computer">
+                    🖼️ <span>Picture</span>
+                  </button>
+                  
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      className="ribbon-custom-btn"
+                      onClick={() => {
+                        setShowLinkPopover(!showLinkPopover);
+                        setShowTablePicker(false);
+                      }}
+                      title="Insert Hyperlink"
+                    >
+                      🔗 <span>Link</span>
+                    </button>
+                    {showLinkPopover && (
+                      <div className="link-popover">
+                        <input
+                          type="text"
+                          placeholder="Enter URL (https://...)"
+                          value={linkUrl}
+                          onChange={(e) => setLinkUrl(e.target.value)}
+                          className="link-popover-input"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') onInsertLink(linkUrl);
+                          }}
+                        />
+                        <div className="link-popover-actions">
+                          <button
+                            type="button"
+                            className="link-popover-btn insert"
+                            onClick={() => onInsertLink(linkUrl)}
+                          >
+                            Insert
+                          </button>
+                          <button
+                            type="button"
+                            className="link-popover-btn cancel"
+                            onClick={() => {
+                              setShowLinkPopover(false);
+                              setLinkUrl('');
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <span className="ribbon-group-label">Illustrations & Links</span>
+            </div>
+            <div className="ribbon-group-separator" />
+
+            {/* Pages & Breaks Group */}
+            <div className="ribbon-group">
+              <div className="ribbon-controls-container">
+                <div className="ribbon-buttons-row">
+                  <button type="button" className="ribbon-custom-btn" onClick={onInsertPageBreak} title="Insert Page Break">
+                    📄 <span>Page Break</span>
+                  </button>
+                  <button type="button" className="ribbon-custom-btn" onClick={onInsertDivider} title="Insert Horizontal Rule">
+                    ➖ <span>Horizontal Line</span>
+                  </button>
+                </div>
+              </div>
+              <span className="ribbon-group-label">Pages</span>
+            </div>
+            <div className="ribbon-group-separator" />
+
+            {/* Elements Group */}
+            <div className="ribbon-group">
+              <div className="ribbon-controls-container">
+                <div className="ribbon-buttons-row">
+                  <button className="ql-blockquote" title="Blockquote" />
+                  <button className="ql-code-block" title="Code Block" />
+                </div>
+              </div>
+              <span className="ribbon-group-label">Text Elements</span>
+            </div>
+          </>
         )}
       </div>
 

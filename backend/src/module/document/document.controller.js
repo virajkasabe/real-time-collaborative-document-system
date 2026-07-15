@@ -12,7 +12,7 @@ export const createDocument = asyncHandler(async (req, res) => {
   const { title } = req.body;
 
   const docData = {
-    title: title || "Untitle Document",
+    title: title || "Untitled Document",
     ownerId: req.user._id,
   };
 

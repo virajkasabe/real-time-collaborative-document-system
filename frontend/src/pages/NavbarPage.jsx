@@ -138,7 +138,7 @@ const NavbarPage = () => {
 
                             {/* Dropdown Menu */}
                             {isDropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
+                                <div className="absolute top-full right-0 w-[220px] bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-xl shadow-xl z-[100] py-2 min-w-max">
                                     <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-white/10">
                                         <p className="text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB]">
                                             {user.fullName || 'User'}

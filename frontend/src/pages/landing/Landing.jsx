@@ -581,6 +581,175 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* SECTION 1 — Features (3 cards) */}
+        <section className="py-16 px-4 sm:px-6 md:px-12 bg-white dark:bg-[#0B0F19] transition-colors duration-300">
+          <div className="max-w-6xl mx-auto">
+            <RevealOnScroll>
+              <div className="text-center space-y-4 max-w-3xl mx-auto mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-[#081B3A] dark:text-white tracking-tight">
+                  Features
+                </h2>
+              </div>
+            </RevealOnScroll>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <RevealOnScroll delay={50}>
+                <div className="bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 hover:shadow-lg dark:hover:shadow-none transition-all duration-300 h-full flex flex-col justify-start">
+                  <div className="text-3xl mb-4 p-2.5 w-12 h-12 bg-[#0D6EFD]/10 dark:bg-[#0D6EFD]/20 rounded-xl flex items-center justify-center text-[#0D6EFD]">
+                    <Sparkles size={24} />
+                  </div>
+                  <h3 className="text-[#081B3A] dark:text-white font-bold text-xl mb-3">
+                    Real-Time Collaboration
+                  </h3>
+                  <p className="text-[#6B7280] dark:text-[#94A3B8] text-sm leading-relaxed">
+                    multiple users edit simultaneously
+                  </p>
+                </div>
+              </RevealOnScroll>
+
+              <RevealOnScroll delay={100}>
+                <div className="bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 hover:shadow-lg dark:hover:shadow-none transition-all duration-300 h-full flex flex-col justify-start">
+                  <div className="text-3xl mb-4 p-2.5 w-12 h-12 bg-[#0D6EFD]/10 dark:bg-[#0D6EFD]/20 rounded-xl flex items-center justify-center text-[#0D6EFD]">
+                    <Clock size={24} />
+                  </div>
+                  <h3 className="text-[#081B3A] dark:text-white font-bold text-xl mb-3">
+                    Version History
+                  </h3>
+                  <p className="text-[#6B7280] dark:text-[#94A3B8] text-sm leading-relaxed">
+                    track every change, restore any version
+                  </p>
+                </div>
+              </RevealOnScroll>
+
+              <RevealOnScroll delay={150}>
+                <div className="bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 hover:shadow-lg dark:hover:shadow-none transition-all duration-300 h-full flex flex-col justify-start">
+                  <div className="text-3xl mb-4 p-2.5 w-12 h-12 bg-[#0D6EFD]/10 dark:bg-[#0D6EFD]/20 rounded-xl flex items-center justify-center text-[#0D6EFD]">
+                    <Shield size={24} />
+                  </div>
+                  <h3 className="text-[#081B3A] dark:text-white font-bold text-xl mb-3">
+                    Secure Access Control
+                  </h3>
+                  <p className="text-[#6B7280] dark:text-[#94A3B8] text-sm leading-relaxed">
+                    role-based permissions per document
+                  </p>
+                </div>
+              </RevealOnScroll>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2 — How It Works (3 steps) */}
+        <section className="py-16 px-4 sm:px-6 md:px-12 bg-[#F7FAFF] dark:bg-[#070B14] transition-colors duration-300">
+          <div className="max-w-5xl mx-auto">
+            <RevealOnScroll>
+              <div className="text-center space-y-4 max-w-3xl mx-auto mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-[#081B3A] dark:text-white tracking-tight">
+                  How It Works
+                </h2>
+              </div>
+            </RevealOnScroll>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <RevealOnScroll delay={50}>
+                <div className="bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 text-center h-full flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-[#0D6EFD] text-white flex items-center justify-center font-bold text-lg mb-4">
+                    1
+                  </div>
+                  <h3 className="text-[#081B3A] dark:text-white font-bold text-lg mb-2">
+                    Step 1
+                  </h3>
+                  <p className="text-[#6B7280] dark:text-[#94A3B8] text-sm leading-relaxed">
+                    Create a document
+                  </p>
+                </div>
+              </RevealOnScroll>
+
+              <RevealOnScroll delay={100}>
+                <div className="bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 text-center h-full flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-[#0D6EFD] text-white flex items-center justify-center font-bold text-lg mb-4">
+                    2
+                  </div>
+                  <h3 className="text-[#081B3A] dark:text-white font-bold text-lg mb-2">
+                    Step 2
+                  </h3>
+                  <p className="text-[#6B7280] dark:text-[#94A3B8] text-sm leading-relaxed">
+                    Invite your team
+                  </p>
+                </div>
+              </RevealOnScroll>
+
+              <RevealOnScroll delay={150}>
+                <div className="bg-white dark:bg-[#0F172A]/40 border border-[#E5E7EB] dark:border-white/5 rounded-2xl p-8 text-center h-full flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-[#0D6EFD] text-white flex items-center justify-center font-bold text-lg mb-4">
+                    3
+                  </div>
+                  <h3 className="text-[#081B3A] dark:text-white font-bold text-lg mb-2">
+                    Step 3
+                  </h3>
+                  <p className="text-[#6B7280] dark:text-[#94A3B8] text-sm leading-relaxed">
+                    Collaborate in real-time
+                  </p>
+                </div>
+              </RevealOnScroll>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3 — Stats banner (3 numbers) */}
+        <section className="py-16 px-4 sm:px-6 md:px-12 bg-white dark:bg-[#0B0F19] transition-colors duration-300">
+          <div className="max-w-6xl mx-auto">
+            <RevealOnScroll>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div className="space-y-2 p-6 bg-[#F7FAFF] dark:bg-[#070B14] rounded-2xl border border-[#E5E7EB] dark:border-white/5 shadow-sm">
+                  <div className="text-4xl sm:text-5xl font-extrabold text-[#0D6EFD]">
+                    10,000+
+                  </div>
+                  <div className="text-[#6B7280] dark:text-[#94A3B8] text-sm font-semibold">
+                    Documents Created
+                  </div>
+                </div>
+                
+                <div className="space-y-2 p-6 bg-[#F7FAFF] dark:bg-[#070B14] rounded-2xl border border-[#E5E7EB] dark:border-white/5 shadow-sm">
+                  <div className="text-4xl sm:text-5xl font-extrabold text-[#0D6EFD]">
+                    500+
+                  </div>
+                  <div className="text-[#6B7280] dark:text-[#94A3B8] text-sm font-semibold">
+                    Teams Using Athenura
+                  </div>
+                </div>
+
+                <div className="space-y-2 p-6 bg-[#F7FAFF] dark:bg-[#070B14] rounded-2xl border border-[#E5E7EB] dark:border-white/5 shadow-sm">
+                  <div className="text-4xl sm:text-5xl font-extrabold text-[#0D6EFD]">
+                    99.9%
+                  </div>
+                  <div className="text-[#6B7280] dark:text-[#94A3B8] text-sm font-semibold">
+                    Uptime
+                  </div>
+                </div>
+              </div>
+            </RevealOnScroll>
+          </div>
+        </section>
+
+        {/* SECTION 4 — CTA banner */}
+        <section className="py-16 px-4 sm:px-6 md:px-12 bg-[#F7FAFF] dark:bg-[#070B14] transition-colors duration-300">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <RevealOnScroll>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#081B3A] dark:text-white tracking-tight">
+                Ready to collaborate?
+              </h2>
+            </RevealOnScroll>
+            <RevealOnScroll delay={100}>
+              <button 
+                onClick={() => navigate('/register')}
+                className="inline-flex items-center justify-center px-8 py-3 bg-[#0D6EFD] hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-[0_4px_15px_rgba(13,110,253,0.15)] cursor-pointer"
+              >
+                Start Free Today
+              </button>
+            </RevealOnScroll>
+          </div>
+        </section>
+
         {/* SECTION 2 — FEATURES */}
         <section id="features" className="py-20 px-6 bg-slate-50 dark:bg-[#060D1A] transition-colors duration-300 border-y border-slate-200/60 dark:border-white/5">
           <div className="max-w-6xl mx-auto">

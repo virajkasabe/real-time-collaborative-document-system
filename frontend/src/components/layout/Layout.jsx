@@ -6,6 +6,7 @@ import Navbar from './Navbar';
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -23,7 +24,12 @@ export default function Layout() {
   return (
     <div className="flex h-screen bg-[#F7FAFF] dark:bg-[#070B14] text-[#081B3A] dark:text-[#E5E7EB] transition-colors duration-300 overflow-hidden w-full relative">
       {/* Sidebar navigation */}
-      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Sidebar 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen} 
+        sidebarCollapsed={sidebarCollapsed} 
+        setSidebarCollapsed={setSidebarCollapsed} 
+      />
       
       {/* Mobile sidebar overlay backdrop */}
       {sidebarOpen && (
@@ -40,7 +46,7 @@ export default function Layout() {
         
         {/* Scrollable page container */}
         <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto bg-[#F7FAFF] dark:bg-[#070B14] transition-colors duration-300">
-          <Outlet context={{ sidebarOpen, setSidebarOpen, searchQuery, setSearchQuery }} />
+          <Outlet context={{ sidebarOpen: !sidebarCollapsed, sidebarCollapsed, searchQuery, setSearchQuery }} />
         </main>
       </div>
     </div>
