@@ -52,6 +52,7 @@ import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { documentService } from '../services/documentService';
 import { CURSOR_EVENT, DOCUMENT_EVENT, DOCUMENT_ROLES } from '../utils/constants';
+import InsertRibbon from '../components/editor/InsertRibbon';
 
 import {
   FaBookOpen, FaCheck, FaChevronLeft, FaCloud, FaHistory,
@@ -1515,6 +1516,9 @@ function EditingPageContent({
         onInsertLink={handleInsertLink}
         onInsertPageBreak={handleInsertPageBreak}
         onInsertDivider={handleInsertDivider}
+        quillInstance={quillInstance}
+        setRightTab={setRightTab}
+        showToast={showToast}
       />
 
       {showFindReplace && (
@@ -1756,6 +1760,7 @@ function RibbonToolbar({
   showTablePicker, setShowTablePicker, hoverTableSize, setHoverTableSize,
   showLinkPopover, setShowLinkPopover, linkUrl, setLinkUrl,
   onInsertTable, onInsertImage, onInsertLink, onInsertPageBreak, onInsertDivider,
+  quillInstance, setRightTab, showToast,
 }) {
   return (
     <div
@@ -1876,149 +1881,20 @@ function RibbonToolbar({
 
       {/* INSERT TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'insert' ? 'visible' : 'hidden'}`}>
-        {!canEdit ? (
-          <div style={{ padding: '8px 16px', color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            👁️ You are viewing this document in read-only mode.
-          </div>
-        ) : (
-          <>
-            {/* Tables Group */}
-            <div className="ribbon-group">
-              <div className="ribbon-controls-container">
-                <div style={{ position: 'relative' }}>
-                  <button
-                    type="button"
-                    className="ribbon-large-btn"
-                    onClick={() => {
-                      setShowTablePicker(!showTablePicker);
-                      setShowLinkPopover(false);
-                    }}
-                    title="Insert Table"
-                  >
-                    📊
-                    <span>Table</span>
-                  </button>
-                  {showTablePicker && (
-                    <div className="table-picker-popover">
-                      <div className="table-picker-grid">
-                        {Array.from({ length: 5 }).map((_, r) => (
-                          <div key={r} className="table-picker-row">
-                            {Array.from({ length: 5 }).map((_, c) => {
-                              const active = r < hoverTableSize.rows && c < hoverTableSize.cols;
-                              return (
-                                <div
-                                  key={c}
-                                  className={`table-picker-cell ${active ? 'active' : ''}`}
-                                  onMouseEnter={() => setHoverTableSize({ rows: r + 1, cols: c + 1 })}
-                                  onClick={() => {
-                                    onInsertTable(r + 1, c + 1);
-                                    setShowTablePicker(false);
-                                  }}
-                                />
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="table-picker-label">
-                        {hoverTableSize.rows > 0 ? `${hoverTableSize.rows} x ${hoverTableSize.cols} Table` : 'Select grid size'}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <span className="ribbon-group-label">Tables</span>
-            </div>
-            <div className="ribbon-group-separator" />
-
-            {/* Media/Illustrations Group */}
-            <div className="ribbon-group">
-              <div className="ribbon-controls-container">
-                <div className="ribbon-buttons-row">
-                  <button type="button" className="ribbon-custom-btn" onClick={onInsertImage} title="Insert Image from computer">
-                    🖼️ <span>Picture</span>
-                  </button>
-                  
-                  <div style={{ position: 'relative' }}>
-                    <button
-                      type="button"
-                      className="ribbon-custom-btn"
-                      onClick={() => {
-                        setShowLinkPopover(!showLinkPopover);
-                        setShowTablePicker(false);
-                      }}
-                      title="Insert Hyperlink"
-                    >
-                      🔗 <span>Link</span>
-                    </button>
-                    {showLinkPopover && (
-                      <div className="link-popover">
-                        <input
-                          type="text"
-                          placeholder="Enter URL (https://...)"
-                          value={linkUrl}
-                          onChange={(e) => setLinkUrl(e.target.value)}
-                          className="link-popover-input"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') onInsertLink(linkUrl);
-                          }}
-                        />
-                        <div className="link-popover-actions">
-                          <button
-                            type="button"
-                            className="link-popover-btn insert"
-                            onClick={() => onInsertLink(linkUrl)}
-                          >
-                            Insert
-                          </button>
-                          <button
-                            type="button"
-                            className="link-popover-btn cancel"
-                            onClick={() => {
-                              setShowLinkPopover(false);
-                              setLinkUrl('');
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <span className="ribbon-group-label">Illustrations & Links</span>
-            </div>
-            <div className="ribbon-group-separator" />
-
-            {/* Pages & Breaks Group */}
-            <div className="ribbon-group">
-              <div className="ribbon-controls-container">
-                <div className="ribbon-buttons-row">
-                  <button type="button" className="ribbon-custom-btn" onClick={onInsertPageBreak} title="Insert Page Break">
-                    📄 <span>Page Break</span>
-                  </button>
-                  <button type="button" className="ribbon-custom-btn" onClick={onInsertDivider} title="Insert Horizontal Rule">
-                    ➖ <span>Horizontal Line</span>
-                  </button>
-                </div>
-              </div>
-              <span className="ribbon-group-label">Pages</span>
-            </div>
-            <div className="ribbon-group-separator" />
-
-            {/* Elements Group */}
-            <div className="ribbon-group">
-              <div className="ribbon-controls-container">
-                <div className="ribbon-buttons-row">
-                  <button className="ql-blockquote" title="Blockquote" />
-                  <button className="ql-code-block" title="Code Block" />
-                </div>
-              </div>
-              <span className="ribbon-group-label">Text Elements</span>
-            </div>
-          </>
-        )}
+        <InsertRibbon
+          canEdit={canEdit}
+          quillInstance={quillInstance}
+          onInsertTable={onInsertTable}
+          onInsertImage={onInsertImage}
+          onInsertLink={onInsertLink}
+          onInsertPageBreak={onInsertPageBreak}
+          onInsertDivider={onInsertDivider}
+          rightSidebarCollapsed={rightSidebarCollapsed}
+          setRightSidebarCollapsed={setRightSidebarCollapsed}
+          setRightTab={setRightTab}
+          showToast={showToast}
+          isMobile={isMobile}
+        />
       </div>
 
       {/* DESIGN TAB */}
