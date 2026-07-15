@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import athenuraLogo from "../assets/athenura-logo.png";
+import { useTheme } from "../context/ThemeContext";
 
 function useInView(ref, threshold = 0.15) {
   const [vis, setVis] = useState(false);
@@ -59,6 +60,32 @@ export default function FooterPage() {
   const [showTop,   setShowTop]   = useState(false);
   const [email,     setEmail]     = useState("");
   const [subDone,   setSubDone]   = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const colors = isDark
+    ? {
+        shell: "#111827",
+        border: "rgba(255,255,255,0.08)",
+        panel: "rgba(255,255,255,0.05)",
+        textPrimary: "#f8fafc",
+        textSecondary: "#e2e8f0",
+        textMuted: "#94a3b8",
+        divider: "rgba(255,255,255,0.08)",
+        grid: "#60a5fa",
+        badge: "rgba(96,165,250,0.10)",
+      }
+    : {
+        shell: "#f3f4f6",
+        border: "rgba(0,0,0,0.08)",
+        panel: "rgba(0,0,0,0.04)",
+        textPrimary: "#111827",
+        textSecondary: "#1f2937",
+        textMuted: "#6b7280",
+        divider: "rgba(0,0,0,0.08)",
+        grid: "#9ca3af",
+        badge: "rgba(59,130,246,0.05)",
+      };
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 300);
@@ -98,33 +125,31 @@ export default function FooterPage() {
         @keyframes pinPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.25);opacity:.65} }
         @keyframes glow     { 0%,100%{opacity:.5} 50%{opacity:1} }
         @keyframes fadeIn   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .ft-link { color:#94a3b8;font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .2s,transform .2s,padding-left .2s,background .2s,border-color .2s;position:relative; }
-        .ft-link:hover { color:#e2e8f0;transform:translateX(5px);padding-left:2px; }
+        .ft-link { color:inherit;font-size:.875rem;text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .2s,transform .2s,padding-left .2s,background .2s,border-color .2s;position:relative; }
+        .ft-link:hover { transform:translateX(5px);padding-left:2px; }
         .ft-link::after { content:'';position:absolute;left:0;bottom:-1px;width:0;height:1px;background:#3b82f6;transition:width .25s; }
         .ft-link:hover::after { width:100%; }
-        .brand-block { padding:1rem .25rem 1rem 0; }
+        .brand-block { padding:1rem .25rem 0 0; display:flex; flex-direction:column; }
         .brand-tag { display:inline-flex;align-items:center;gap:.5rem;color:#60a5fa;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-top:1rem;margin-bottom:.7rem; }
         .brand-tag::before { content:'';display:inline-block;width:26px;height:1px;background:linear-gradient(90deg,#60a5fa,transparent); }
-        .brand-copy { color:#94a3b8;font-size:.84rem;line-height:1.8;max-width:220; }
-        .svc-link { color:#e2e8f0;font-size:.86rem;font-weight:600;text-decoration:none;display:block;line-height:1.35;transition:color .2s; }
-        .svc-item { display:flex;align-items:flex-start;gap:.7rem;padding:.8rem .9rem;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.04);transition:transform .2s,background .2s,border-color .2s,box-shadow .2s; }
-        .svc-item:hover { transform:translateX(4px);background:rgba(59,130,246,.12);border-color:rgba(96,165,250,.28);box-shadow:0 10px 24px rgba(37,99,235,.14); }
+        .svc-link { font-size:.86rem;font-weight:600;text-decoration:none;display:block;line-height:1.35;transition:color .2s; }
+        .svc-item { display:flex;align-items:flex-start;gap:.7rem;padding:.8rem .9rem;border-radius:12px;transition:transform .2s,background .2s,border-color .2s,box-shadow .2s; }
+        .svc-item:hover { transform:translateX(4px); }
         .svc-icon { width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:linear-gradient(135deg,rgba(37,99,235,.22),rgba(99,102,241,.18));color:#60a5fa;box-shadow:inset 0 1px 1px rgba(255,255,255,.08); }
-        .svc-detail { color:#64748b;font-size:.72rem;line-height:1.45;margin-top:.15rem; }
         .map-card { transition:transform .28s,box-shadow .28s; }
-        .map-card:hover { transform:scale(1.03);box-shadow:0 10px 40px rgba(37,99,235,.3); }
-        .contact-card { display:flex;align-items:flex-start;gap:.75rem;padding:.7rem .8rem;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);transition:all .2s; }
-        .contact-card:hover { transform:translateY(-2px);background:rgba(37,99,235,.12);border-color:rgba(96,165,250,.24); }
+        .map-card:hover { transform:scale(1.01); }
+        .contact-card { display:flex;align-items:flex-start;gap:.75rem;padding:.7rem .8rem;border-radius:12px;transition:all .2s; }
+        .contact-card:hover { transform:translateY(-2px); }
         .sub-input:focus { outline:none;box-shadow:0 0 0 2px #3b82f6; }
-        .cta-btn:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,.5) !important; }
-        .contact-link:hover { color:#60a5fa !important; }
+        .cta-btn:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,.35) !important; }
       `}</style>
 
       <footer style={{
-        background: "linear-gradient(160deg,#060e1c 0%,#0b1730 30%,#0d1b3e 60%,#07121f 100%)",
-        borderTop: "1px solid rgba(255,255,255,.06)",
+        background: colors.shell,
+        borderTop: `1px solid ${colors.border}`,
         position: "relative", overflow: "hidden",
         fontFamily: "system-ui,sans-serif",
+        color: colors.textPrimary,
       }}>
         {/* Shimmer bar */}
         <div style={{
@@ -134,22 +159,22 @@ export default function FooterPage() {
         }} />
 
         {/* Dot grids */}
-        <div style={{ position:"absolute",top:0,right:0,width:240,height:240,opacity:.1,pointerEvents:"none",
-          backgroundImage:"radial-gradient(#60a5fa 1.2px,transparent 1.2px)",backgroundSize:"15px 15px" }} />
-        <div style={{ position:"absolute",bottom:60,left:0,width:180,height:180,opacity:.07,pointerEvents:"none",
-          backgroundImage:"radial-gradient(#818cf8 1.2px,transparent 1.2px)",backgroundSize:"15px 15px" }} />
+        <div style={{ position:"absolute",top:0,right:0,width:240,height:240,opacity:isDark ? .12 : .08,pointerEvents:"none",
+          backgroundImage:`radial-gradient(${colors.grid} 1.2px,transparent 1.2px)`,backgroundSize:"15px 15px" }} />
+        <div style={{ position:"absolute",bottom:60,left:0,width:180,height:180,opacity:isDark ? .08 : .05,pointerEvents:"none",
+          backgroundImage:`radial-gradient(${colors.grid} 1.2px,transparent 1.2px)`,backgroundSize:"15px 15px" }} />
 
         {/* Glow blobs */}
         <div style={{ position:"absolute",top:"40%",left:"20%",width:500,height:300,pointerEvents:"none",
-          background:"radial-gradient(ellipse,rgba(37,99,235,.07) 0%,transparent 70%)",animation:"glow 5s ease-in-out infinite" }} />
+          background:`radial-gradient(ellipse,${colors.badge} 0%,transparent 70%)`,animation:"glow 5s ease-in-out infinite" }} />
 
         {/* CTA strip */}
         <Reveal>
-          <div style={{ borderBottom:"1px solid rgba(255,255,255,.06)", background:"linear-gradient(90deg,rgba(37,99,235,.12),rgba(99,102,241,.08),rgba(6,182,212,.06))" }}>
-            <div style={{ maxWidth:1280,margin:"0 auto",padding:"2rem 1.5rem",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:"1.25rem" }}>
+          <div style={{ borderBottom:`1px solid ${colors.border}`, background:isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
+            <div style={{ maxWidth:1280,margin:"0 auto",padding:"2rem 1rem",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:"1.25rem" }}>
               <div>
-                <h3 style={{ color:"#ffffff",fontSize:"1.1rem",fontWeight:700,marginBottom:".25rem" }}>Ready to collaborate in real time?</h3>
-                <p style={{ color:"#64748b",fontSize:".85rem" }}>Join thousands of teams already using Athenura.</p>
+                <h3 style={{ color: colors.textPrimary,fontSize:"1.1rem",fontWeight:700,marginBottom:".25rem" }}>Ready to collaborate in real time?</h3>
+                <p style={{ color: colors.textMuted,fontSize:".85rem" }}>Join thousands of teams already using Athenura.</p>
               </div>
               <form onSubmit={handleSub} style={{ display:"flex",gap:".5rem",flexWrap:"wrap" }}>
                 {subDone ? (
@@ -160,7 +185,7 @@ export default function FooterPage() {
                   <>
                     <input type="email" value={email} required onChange={e => setEmail(e.target.value)}
                       placeholder="Enter your email" className="sub-input"
-                      style={{ padding:".55rem 1rem",borderRadius:8,fontSize:".85rem",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.12)",color:"#e2e8f0",width:220 }} />
+                      style={{ padding:".55rem 1rem",borderRadius:8,fontSize:".85rem",background:colors.panel,border:`1px solid ${colors.border}`,color:colors.textSecondary,width:220 }} />
                     <button type="submit" className="cta-btn"
                       style={{ padding:".55rem 1.25rem",borderRadius:8,fontSize:".85rem",fontWeight:600,background:"linear-gradient(135deg,#2563eb,#6366f1)",color:"#fff",border:"none",cursor:"pointer",boxShadow:"0 4px 14px rgba(37,99,235,.35)",transition:"transform .2s,box-shadow .2s" }}>
                       Get Early Access
@@ -173,35 +198,37 @@ export default function FooterPage() {
         </Reveal>
 
         {/* Main columns */}
-        <div style={{ maxWidth:1280,margin:"0 auto",padding:"3.5rem 1.5rem",position:"relative",zIndex:1 }}>
+        <div style={{ maxWidth:1280,margin:"0 auto",padding:"1.5rem 1rem 2rem",position:"relative",zIndex:1 }}>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:"2.5rem 2rem" }}>
 
             {/* Brand */}
             <Reveal delay={0}>
               <div className="brand-block">
-                <Link to="/" style={{ display:"inline-block",marginBottom:"1rem" }}>
-                  <img src={athenuraLogo} alt="Athenura" style={{ height:36,width:"auto",objectFit:"contain",filter:"brightness(10)",opacity:.95 }} />
+                <Link to="/" style={{ display:"inline-flex", alignItems:"center", marginBottom:"1rem" }}>
+                  <img
+                    src={athenuraLogo}
+                    alt="Athenura"
+                    style={{
+                      height: 36,
+                      width: "auto",
+                      objectFit: "contain",
+                      filter: isDark ? "brightness(10)" : "brightness(0.15)",
+                      opacity: 0.9,
+                      display: "block",
+                    }}
+                  />
                 </Link>
                 <div className="brand-tag">Trusted platform</div>
-                <p className="brand-copy">
+                <p style={{ color: colors.textMuted, fontSize:".84rem", lineHeight:1.8, maxWidth:220 }}>
                   Real-time collaboration document system with secure access, powerful editing, and a seamless team experience.
                 </p>
-                <p style={{ color:"#475569",fontSize:".72rem",marginTop:"1rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase" }}>Follow us</p>
-                <div style={{ display:"flex",gap:".55rem",marginTop:".6rem",flexWrap:"wrap" }}>
+                <p style={{ color: colors.textMuted,fontSize:".72rem",marginTop:"1rem",fontWeight:700,letterSpacing:".12em",textTransform:"uppercase" }}>Follow us</p>
+                <div style={{ display:"flex",gap:".45rem",marginTop:".5rem",flexWrap:"wrap",marginBottom:0 }}>
                   {socials.map(({ label, href, icon, accent }) => (
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                      style={{
-                        width:36,height:36,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
-                        background: hovSocial === label ? accent + "22" : "rgba(255,255,255,.05)",
-                        border: `1px solid ${hovSocial === label ? accent + "55" : "rgba(255,255,255,.09)"}`,
-                        color: hovSocial === label ? accent : "#64748b",
-                        transition:"all .22s",
-                        transform: hovSocial === label ? "translateY(-3px) scale(1.1)" : "none",
-                        boxShadow: hovSocial === label ? `0 6px 18px ${accent}33` : "none",
-                      }}
+                      style={{ width:34,height:34,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",background:accent+"20",border:`1px solid ${accent}50`,color:accent,transition:"all .22s",transform:hovSocial===label?"translateY(-3px) scale(1.1)":"none",boxShadow:hovSocial===label?`0 4px 14px ${accent}44`:"none" }}
                       onMouseEnter={() => setHovSocial(label)}
-                      onMouseLeave={() => setHovSocial(null)}
-                    >
+                      onMouseLeave={() => setHovSocial(null)}>
                       <svg viewBox="0 0 24 24" style={{ width:14,height:14 }} fill="currentColor">{icon}</svg>
                     </a>
                   ))}
@@ -212,11 +239,11 @@ export default function FooterPage() {
             {/* Company */}
             <Reveal delay={80}>
               <div>
-                <h4 style={{ color:"#ffffff",fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:"1px solid rgba(255,255,255,.07)" }}>Company</h4>
+                <h4 style={{ color:colors.textPrimary,fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:`1px solid ${colors.border}` }}>Company</h4>
                 <ul style={{ listStyle:"none",padding:0,margin:0,display:"flex",flexDirection:"column",gap:".6rem" }}>
                   {company.map(([label, to]) => (
                     <li key={label}>
-                      <Link to={to} className="ft-link" style={{ padding:"0.65rem 0.75rem", borderRadius:10, background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.05)" }}>
+                      <Link to={to} className="ft-link" style={{ padding:"0.65rem 0.75rem", borderRadius:10, background:colors.panel, border:`1px solid ${colors.border}`, color: colors.textSecondary }}>
                         {label}
                       </Link>
                     </li>
@@ -228,18 +255,15 @@ export default function FooterPage() {
             {/* Services */}
             <Reveal delay={160}>
               <div>
-                <h4 style={{ color:"#ffffff",fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:"1px solid rgba(255,255,255,.07)" }}>Services</h4>
-                <ul style={{ listStyle:"none",padding:0,margin:0,display:"flex",flexDirection:"column",gap:".7rem" }}>
-                  {services.map(({ title, detail, icon }) => (
+                <h4 style={{ color:colors.textPrimary,fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:`1px solid ${colors.border}` }}>Services</h4>
+                <ul style={{ listStyle:"none",padding:0,margin:0,display:"flex",flexDirection:"column",gap:".55rem" }}>
+                  {services.map(({ title, icon }) => (
                     <li key={title}>
-                      <a href="#" className="svc-item" style={{ display:"flex", alignItems:"flex-start", gap:".7rem", textDecoration:"none" }}>
+                      <a href="#" className="svc-item" style={{ display:"flex", alignItems:"center", gap:".7rem", textDecoration:"none", padding:"0.65rem 0.75rem" }}>
                         <span className="svc-icon" aria-hidden="true">
                           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">{icon}</svg>
                         </span>
-                        <span>
-                          <span className="svc-link">{title}</span>
-                          <span className="svc-detail">{detail}</span>
-                        </span>
+                        <span className="svc-link" style={{ color: colors.textSecondary }}>{title}</span>
                       </a>
                     </li>
                   ))}
@@ -250,7 +274,7 @@ export default function FooterPage() {
             {/* Contact */}
             <Reveal delay={240}>
               <div>
-                <h4 style={{ color:"#ffffff",fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:"1px solid rgba(255,255,255,.07)" }}>Contact Us</h4>
+                <h4 style={{ color:colors.textPrimary,fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:`1px solid ${colors.border}` }}>Contact Us</h4>
                 <div style={{ display:"flex",flexDirection:"column",gap:".7rem" }}>
                   {contactItems.map(({ label, val, href, color, svg }) => (
                     <div key={label} className="contact-card">
@@ -258,8 +282,8 @@ export default function FooterPage() {
                         <svg viewBox="0 0 24 24" style={{ width:15,height:15,color }} fill="currentColor">{svg}</svg>
                       </span>
                       <div>
-                        <p style={{ color:"#64748b",fontSize:".68rem",letterSpacing:".1em",fontWeight:700,marginBottom:".2rem",textTransform:"uppercase" }}>{label}</p>
-                        <a href={href} className="contact-link" style={{ color:"#e2e8f0",fontSize:".82rem",fontWeight:600,textDecoration:"none",transition:"color .2s",display:"inline-block" }}>{val}</a>
+                        <p style={{ color:colors.textMuted,fontSize:".68rem",letterSpacing:".1em",fontWeight:700,marginBottom:".2rem",textTransform:"uppercase" }}>{label}</p>
+                        <a href={href} className="contact-link" style={{ color:colors.textSecondary,fontSize:".82rem",fontWeight:600,textDecoration:"none",transition:"color .2s",display:"inline-block" }}>{val}</a>
                       </div>
                     </div>
                   ))}
@@ -270,10 +294,10 @@ export default function FooterPage() {
             {/* Location */}
             <Reveal delay={320}>
               <div>
-                <h4 style={{ color:"#ffffff",fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:"1px solid rgba(255,255,255,.07)" }}>Location</h4>
+                <h4 style={{ color:colors.textPrimary,fontSize:".875rem",fontWeight:700,letterSpacing:".04em",marginBottom:"1.1rem",paddingBottom:".5rem",borderBottom:`1px solid ${colors.border}` }}>Location</h4>
                 <a href="https://www.google.com/maps/search/?api=1&query=Athenura+Technologies+Noida+Uttar+Pradesh+201309+India"
                   target="_blank" rel="noopener noreferrer" className="map-card"
-                  style={{ display:"block",height:168,borderRadius:16,textDecoration:"none",border:"1px solid rgba(96,165,250,.2)",background:"linear-gradient(135deg,#0f1e3d,#18305a,#0c1a32)",position:"relative",overflow:"hidden",boxShadow:"0 14px 32px rgba(2,6,23,.24)" }}>
+                  style={{ display:"block",height:168,borderRadius:16,textDecoration:"none",border:`1px solid ${isDark ? "rgba(96,165,250,.2)" : "rgba(0,0,0,0.1)"}`,background:isDark ? "linear-gradient(135deg,#0f1e3d,#18305a,#0c1a32)" : "linear-gradient(135deg,#dbeafe,#e0e7ff,#dbeafe)",position:"relative",overflow:"hidden",boxShadow: isDark ? "0 14px 32px rgba(2,6,23,.24)" : "0 4px 12px rgba(0,0,0,.06)" }}>
                   <svg style={{ position:"absolute",inset:0,width:"100%",height:"100%",opacity:.12 }}>
                     {[0,25,50,75,100].map(p => (
                       <g key={p}>
@@ -287,8 +311,8 @@ export default function FooterPage() {
                     <div style={{ width:38,height:38,borderRadius:"50%",background:"linear-gradient(135deg,#2563eb,#6366f1)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 18px rgba(37,99,235,.55)",animation:"pinPulse 2.2s ease-in-out infinite" }}>
                       <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5z" /></svg>
                     </div>
-                    <p style={{ color:"#dbeafe",fontWeight:700,fontSize:".82rem",textAlign:"center" }}>Athenura Technologies</p>
-                    <p style={{ color:"#94a3b8",fontSize:".72rem",textAlign:"center",lineHeight:1.5 }}>Noida, Uttar Pradesh, India</p>
+                    <p style={{ color:isDark ? "#dbeafe" : "#1d4ed8",fontWeight:700,fontSize:".82rem",textAlign:"center" }}>Athenura Technologies</p>
+                    <p style={{ color: colors.textMuted,fontSize:".72rem",textAlign:"center",lineHeight:1.5 }}>Noida, Uttar Pradesh, India</p>
                     <span style={{ fontSize:".68rem",color:"#60a5fa",background:"rgba(37,99,235,.15)",border:"1px solid rgba(96,165,250,.2)",borderRadius:999,padding:".2rem .7rem",marginTop:".15rem" }}>Open in Maps ↗</span>
                   </div>
                 </a>
@@ -298,13 +322,19 @@ export default function FooterPage() {
           </div>
 
           {/* Divider */}
-          <div style={{ margin:"3rem 0 0",height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,.08),rgba(255,255,255,.08),transparent)" }} />
+          <div style={{ margin:"1.5rem 0 0",height:1,background:`linear-gradient(90deg,transparent,${colors.divider},${colors.divider},transparent)` }} />
 
           {/* Bottom bar */}
           <Reveal delay={400}>
-            <div style={{ paddingTop:"1.4rem",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:"1rem" }}>
-              <p style={{ color:"#334155",fontSize:".78rem" }}>© 2026 Athenura. All rights reserved.</p>
-              
+            <div style={{ paddingTop:"1rem",display:"flex",flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",gap:".75rem" }}>
+              <p style={{ color:colors.textMuted,fontSize:".76rem",margin:0 }}>© 2026 Athenura. All rights reserved.</p>
+              <div style={{ display:"flex",gap:"1.5rem" }}>
+                {["Privacy Policy","Terms of Service","Cookie Policy"].map(l => (
+                  <a key={l} href="#" style={{ color:colors.textMuted,fontSize:".76rem",textDecoration:"none",transition:"color .2s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = isDark ? "#e2e8f0" : "#111827"}
+                    onMouseLeave={e => e.currentTarget.style.color = colors.textMuted}>{l}</a>
+                ))}
+              </div>
             </div>
           </Reveal>
         </div>
