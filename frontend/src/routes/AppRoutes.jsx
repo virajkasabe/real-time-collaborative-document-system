@@ -9,7 +9,7 @@ import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 import Dashboard from '../pages/dashboard/Dashboard';
 import Documents from '../pages/dashboard/Documents';
 import SharedDocuments from '../pages/dashboard/SharedDocuments';
-import EditingPage from '../pages/EditingPage';
+import EditingPage from '../pages/EditorPage';
 import Profile from '../pages/profile/Profile';
 import Settings from '../pages/profile/Settings';
 import ResetPassword from '../pages/profile/ResetPassword';

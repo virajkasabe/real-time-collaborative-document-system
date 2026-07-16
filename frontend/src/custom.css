@@ -1010,13 +1010,13 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid var(--border, #e2e8f0) !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: flex-start !important;
   padding: 0 16px !important;
   box-sizing: border-box !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: thin !important;
+  overflow: visible !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
   gap: 0 !important;
 }
 
@@ -1033,17 +1033,20 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.word-ribbon-toolbar-panel .ribbon-tab-content {
+/* Tab content container scales to full parent width to enable shrink */
+.word-ribbon-toolbar-panel .ribbon-tab-content,
+.word-ribbon-toolbar-panel .ribbon-tab-content > div {
   display: flex !important;
   flex-wrap: nowrap !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   height: 100% !important;
-  width: max-content !important;
-  min-width: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box !important;
   gap: 0 !important;
+  justify-content: flex-start !important;
 }
 
 .word-ribbon-toolbar-panel .ribbon-tab-content.hidden {
@@ -1056,11 +1059,11 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center !important;
   justify-content: space-between !important;
   height: 76px !important;
-  padding: 4px 12px !important;
+  padding: 4px clamp(4px, 0.6vw, 12px) !important;
   box-sizing: border-box !important;
   position: relative !important;
-  flex-shrink: 0 !important;
-  min-width: max-content !important;
+  flex: 0 0 auto !important;
+  min-width: fit-content !important;
 }
 
 .word-ribbon-toolbar-panel .ribbon-group::after {
@@ -1087,9 +1090,9 @@ h1, h2, h3, h4, h5, h6 {
   width: 1px !important;
   height: 48px !important;
   background: var(--border, #e2e8f0) !important;
-  margin: 0 8px !important;
+  margin: 0 clamp(4px, 0.8vw, 12px) !important;
   align-self: center !important;
-  flex-shrink: 0 !important;
+  flex: 0 0 auto !important;
 }
 
 .dark .word-ribbon-toolbar-panel .ribbon-group-separator {
@@ -2383,7 +2386,36 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .word-ribbon-toolbar-panel select {
+  display: inline-block !important;
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 4px;
+  background: var(--bg, #fff);
+  color: var(--text, #1e293b);
+  height: 26px;
+  outline: none;
+  cursor: pointer;
+  margin: 0 4px !important;
+}
+.dark .word-ribbon-toolbar-panel select {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #0f172a;
+  color: #e5e7eb;
+}
+.word-ribbon-toolbar-panel select.ql-color,
+.word-ribbon-toolbar-panel select.ql-background {
   display: none !important;
+}
+.word-ribbon-toolbar-panel button.ribbon-color-btn,
+.word-ribbon-toolbar-panel button.ribbon-bg-btn {
+  font-size: 14px !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin: 0 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* --- High Contrast Auth Pages Fix for Dark Mode --- */
@@ -2421,12 +2453,13 @@ h1, h2, h3, h4, h5, h6 {
 
 
 
-/* 1280px Breakpoint: fit ribbon groups on desktop and prevent extra scrollbars */
+/* 1280px Breakpoint: fit ribbon groups on desktop and ensure no scrollbars */
 @media (min-width: 1280px) {
   #word-ribbon-toolbar.word-ribbon-toolbar-panel {
     overflow-x: hidden !important;
   }
-  .word-ribbon-toolbar-panel .ribbon-tab-content {
+  .word-ribbon-toolbar-panel .ribbon-tab-content,
+  .word-ribbon-toolbar-panel .ribbon-tab-content > div {
     width: 100% !important;
     min-width: 100% !important;
     justify-content: flex-start !important;
@@ -2585,4 +2618,242 @@ h1, h2, h3, h4, h5, h6 {
 }
 .dark .link-popover-btn.cancel {
   border-color: rgba(255, 255, 255, 0.15);
+}
+
+.word-ribbon-toolbar-panel .ql-toolbar {
+  display: none !important;  /* hide Quill's auto-injected toolbar */
+}
+
+/* Hide scrollbar but keep layout scrolling off */
+#word-ribbon-toolbar::-webkit-scrollbar,
+.word-ribbon-toolbar-panel::-webkit-scrollbar {
+  display: none !important;
+}
+
+.word-ribbon-toolbar-panel {
+  overflow: visible !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  white-space: nowrap !important;
+  scrollbar-width: none !important;
+}
+
+/* Prevent toolbar content from overflowing outer viewports */
+.ribbon-tab-content {
+  display: inline-flex !important;
+  min-width: 100% !important;
+  align-items: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 0 !important;
+  min-height: 76px !important;
+}
+
+.ribbon-tab-content.hidden {
+  display: none !important;
+}
+
+.ribbon-tab-content.visible {
+  display: inline-flex !important;
+}
+
+/* Groups and separators never overflow, size dynamically to content wider */
+.ribbon-group {
+  flex: 0 0 auto !important;
+  min-width: fit-content !important;
+}
+
+.ribbon-group-separator {
+  flex: 0 0 auto !important;
+  width: 1px !important;
+  margin: 0 clamp(4px, 0.8vw, 12px) !important;
+}
+
+/* Make all toolbar buttons responsive */
+.word-ribbon-toolbar-panel button {
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.15s ease !important;
+}
+
+/* Base styles for the button labels */
+.ribbon-btn-label {
+  display: inline-block !important;
+}
+
+/* Compact Level 1: Hide low priority labels completely */
+.word-ribbon-toolbar-panel.compact-level-1 .low-priority-btn .ribbon-btn-label {
+  display: none !important;
+}
+.word-ribbon-toolbar-panel.compact-level-1 .low-priority-btn {
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+.word-ribbon-toolbar-panel.compact-level-1 .low-priority-btn:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08)) !important;
+  border-radius: 4px !important;
+}
+
+/* Compact Level 2: Hide all text labels completely except key primary buttons */
+.word-ribbon-toolbar-panel.compact-level-2 .ribbon-btn-label {
+  display: none !important;
+}
+.word-ribbon-toolbar-panel.compact-level-2 .ribbon-custom-btn {
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+.word-ribbon-toolbar-panel.compact-level-2 .ribbon-custom-btn:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08)) !important;
+  border-radius: 4px !important;
+}
+
+/* Ensure buttons in standard rows have a consistent gap */
+.word-ribbon-toolbar-panel .ribbon-buttons-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Styles carousel also no shrink */
+.styles-carousel {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  overflow: visible;
+}
+
+/* Ribbon Popover Menus (Date/Time, Symbol, etc.) */
+.ribbon-popover-menu {
+  background: var(--paper-bg, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dark .ribbon-popover-menu {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border, #cbd5e1);
+  margin-bottom: 4px;
+}
+.dark .popover-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.popover-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 0 2px;
+}
+.popover-close-btn:hover {
+  color: var(--accent, #0d6efd);
+}
+
+.popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.popover-list-item {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text, #1e293b);
+  transition: background 0.1s;
+}
+.popover-list-item:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08));
+  color: var(--accent, #0d6efd);
+}
+.dark .popover-list-item {
+  color: #e5e7eb;
+}
+
+/* Symbol Grid Picker */
+.symbol-popover {
+  width: 180px;
+}
+
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.symbol-grid-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text, #1e293b);
+  transition: all 0.1s;
+}
+.symbol-grid-btn:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08));
+  border-color: var(--accent-border, #bfdbfe);
+  color: var(--accent, #0d6efd);
+}
+.dark .symbol-grid-btn {
+  color: #e5e7eb;
+}
+
+/* Anchored comment quote block styling */
+.anchored-comment-quote {
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+  border-left: 2px solid var(--accent, #0d6efd);
+  padding: 2px 0 2px 6px;
+  margin: 4px 0 8px 0;
+  font-style: italic;
+  background: rgba(13, 110, 253, 0.04);
+  border-radius: 0 4px 4px 0;
+  text-align: left;
+}
+.dark .anchored-comment-quote {
+  background: rgba(13, 110, 253, 0.08);
 }
