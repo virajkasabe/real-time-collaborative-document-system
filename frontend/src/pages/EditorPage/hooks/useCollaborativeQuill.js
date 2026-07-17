@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Quill from 'quill';
+
+// Whitelist custom fonts
+const Font = Quill.import('formats/font');
+Font.whitelist = ['sans-serif', 'serif', 'monospace', 'georgia'];
+Quill.register(Font, true);
+
 import { randomUser } from '../../../../public';
 import { CURSOR_EVENT, DOCUMENT_EVENT } from '../../../utils/constants';
 import {

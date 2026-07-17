@@ -46,61 +46,33 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      triggerToast('Please select an image file', 'error');
+      triggerToast('Select an image file', 'error');
       return;
     }
-
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      triggerToast('Image must be less than 2MB', 'error');
+      triggerToast('Max 2MB allowed', 'error');
       return;
     }
 
     const reader = new FileReader();
-
     reader.onloadend = () => {
       const base64 = reader.result;
-
-      // 1. Update preview immediately
-      setAvatarPreview(base64);
-
-      // 2. Save to localStorage
+      setAvatarPreview(base64);          // immediate UI update
+      
+      // Save to localStorage
       const stored = JSON.parse(
         localStorage.getItem('collabdocs_user') || '{}'
       );
       const updatedUser = { ...stored, avatar: base64 };
-      localStorage.setItem(
-        'collabdocs_user',
-        JSON.stringify(updatedUser)
-      );
+      localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
 
-      // 3. Update AuthContext so Navbar updates too
       if (updateUser) {
-        updateUser({ avatar: base64 });
-      } else {
-        // Fallback if updateUser not in context
-        const userStored = JSON.parse(
-          localStorage.getItem('collabdocs_user') || '{}'
-        );
-        userStored.avatar = base64;
-        localStorage.setItem(
-          'collabdocs_user',
-          JSON.stringify(userStored)
-        );
+        updateUser({ avatar: base64 });    // update context
       }
-
-      triggerToast('Avatar updated successfully!', 'success');
+      triggerToast('Avatar updated!', 'success');
     };
-
-    reader.onerror = () => {
-      triggerToast('Failed to read image', 'error');
-    };
-
     reader.readAsDataURL(file);
-
-    // Reset input so same file can be selected again
     e.target.value = '';
   };
 
@@ -242,6 +214,7 @@ export default function Profile() {
 
               {avatarPreview || user?.avatar ? (
                 <img
+                  key={avatarPreview || user?.avatar}
                   src={avatarPreview || user?.avatar}
                   alt="Avatar"
                   className="w-full h-full object-cover"

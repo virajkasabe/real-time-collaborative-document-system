@@ -30,7 +30,8 @@ import {
   Terminal, 
   Quote, 
   TextQuote, 
-  Minus 
+  Minus,
+  Eye
 } from 'lucide-react';
 import RibbonGroup from './RibbonGroup';
 import RibbonButton from './RibbonButton';
@@ -69,7 +70,7 @@ export default function InsertRibbon({
   if (!canEdit) {
     return (
       <div className="px-4 py-2 text-xs italic text-[#6B7280] dark:text-[#94A3B8]/80 flex items-center gap-2">
-        👁️ You are viewing this document in read-only mode.
+        <Eye size={16} /> You are viewing this document in read-only mode.
       </div>
     );
   }

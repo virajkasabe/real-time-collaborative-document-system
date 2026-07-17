@@ -19,7 +19,7 @@ import NotificationsPage from '../pages/NotificationsPage';
 import Layout from '../components/layout/Layout';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 import ToastNotification from '../components/notifications/ToastNotification';
-import AboutUs from '../pages/About';
+import AboutPage from '../pages/AboutPage';
 import ContactUs from '../pages/Contact';
 import HelpPage from '../pages/Help';
 import PublicLayout from './PublicLayout';
@@ -39,7 +39,7 @@ export default function AppRoutes() {
       
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Landing />} />
-        <Route path="/about" element={<AboutUs />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/help" element={<HelpPage />} />
       </Route>

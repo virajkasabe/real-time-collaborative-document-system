@@ -10,11 +10,12 @@ import {
 } from 'react-icons/fa';
 import { LuRefreshCw, LuShare2 } from 'react-icons/lu';
 import { colorForUserId } from '../utils/cursorHelpers';
+import SaveIndicator from '../../../components/common/SaveIndicator';
 
 export default function EditorHeader({
   onBack, autoSaveActive, onToggleAutoSave, canEdit, onUndo, onRedo, canUndo, canRedo,
   title, onTitleChange, docUserRole, theme, toggleTheme, canShare, isEditor, onShareClick,
-  activeUsers, currentUser, isMobile,
+  activeUsers, currentUser, isMobile, saveStatus,
 }) {
   const you = currentUser?.fullName || currentUser?.name || 'You';
   return (
@@ -51,9 +52,9 @@ export default function EditorHeader({
             style={isMobile ? { maxWidth: '120px' } : undefined}
           />
           {!isMobile && <span className="word-file-extension">- Word</span>}
-          <span className="word-title-cloud-status" title="Saved to Cloud">
-            <FaCloud size={14} style={{ color: 'var(--accent)' }} />
-          </span>
+          <div className="ml-2 flex items-center shrink-0" style={{ minWidth: '80px' }}>
+            <SaveIndicator status={saveStatus} />
+          </div>
           {!isMobile && <span className="doc-role-badge">{docUserRole}</span>}
         </div>
       </div>

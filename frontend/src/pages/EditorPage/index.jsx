@@ -58,6 +58,7 @@ export default function EditingPage() {
 
   const { doc, docUserRole } = useDocumentLoader(id, socket, navigate, showToast, user);
   const [localDoc, setLocalDoc] = useState(null);
+  const [saveStatus, setSaveStatus] = useState('saved');
 
   // Keep a local, updatable copy once the document has loaded.
   useEffect(() => {
@@ -65,24 +66,37 @@ export default function EditingPage() {
   }, [doc]);
 
   const handleSave = useCallback((newTitle, newContent, words) => {
-    let customContent = { ops: [] };
-    if (newContent) {
-      try {
-        if (newContent.ops && Array.isArray(newContent.ops)) {
-          customContent = newContent;
-        } else {
-          const tempQuill = new Quill(document.createElement('div'), { theme: 'snow' });
-          tempQuill.clipboard.dangerouslyPasteHTML(newContent);
-          customContent = quillDeltaToCustomDelta(tempQuill.getContents());
+    setSaveStatus('saving');
+    try {
+      let customContent = { ops: [] };
+      if (newContent) {
+        try {
+          if (newContent.ops && Array.isArray(newContent.ops)) {
+            customContent = newContent;
+          } else {
+            const tempQuill = new Quill(document.createElement('div'), { theme: 'snow' });
+            tempQuill.clipboard.dangerouslyPasteHTML(newContent);
+            customContent = quillDeltaToCustomDelta(tempQuill.getContents());
+          }
+        } catch (error) {
+          console.error('Error converting content:', error);
+          customContent = { ops: [{ position: 0, text: newContent, attributes: {} }] };
         }
-      } catch (error) {
-        console.error('Error converting content:', error);
-        customContent = { ops: [{ position: 0, text: newContent, attributes: {} }] };
       }
+      const updated = documentService.update(id, { name: newTitle, content: customContent, wordCount: words });
+      if (updated) {
+        setLocalDoc(updated);
+        setSaveStatus('saved');
+        showToast('Document saved successfully.', 'success');
+      } else {
+        setSaveStatus('error');
+        showToast('Failed to save document.', 'error');
+      }
+    } catch (err) {
+      setSaveStatus('error');
+      showToast('Failed to save document.', 'error');
     }
-    const updated = documentService.update(id, { name: newTitle, content: customContent, wordCount: words });
-    if (updated) setLocalDoc(updated);
-  }, [id]);
+  }, [id, showToast]);
 
   return (
     <>
@@ -101,6 +115,7 @@ export default function EditingPage() {
           docUserRole={docUserRole}
           docId={id}
           showToast={showToast}
+          saveStatus={saveStatus}
         />
       )}
     </>

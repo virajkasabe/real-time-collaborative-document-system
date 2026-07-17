@@ -31,6 +31,7 @@ import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import { createDoc, docMoveToTrash, fetchDocumentFolder } from '../../apis/api';
+import { formatDocumentName } from '../../utils/helpers';
 
 // Extensions the Import Document action accepts. Keep this in sync with the
 // `accept` attribute on the hidden <input type="file"> below.
@@ -142,7 +143,7 @@ export default function Dashboard() {
 
     if (searchQuery.trim()) {
       list = list.filter(d => 
-        d.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        formatDocumentName(d.title).toLowerCase().includes(searchQuery.toLowerCase()) || 
         d.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -247,9 +248,9 @@ export default function Dashboard() {
 
   const handleDuplicate = async (e, doc) => {
     e.stopPropagation();
-    const newDoc = await createDoc(`Copy of ${doc.title}`, doc.category, user?.email, user?.fulllName);
+    const newDoc = await createDoc(`Copy of ${formatDocumentName(doc.title)}`, doc.category, user?.email, user?.fulllName);
     if (newDoc) {
-      triggerToast(`Duplicated: ${doc.title}`, 'success');
+      triggerToast(`Duplicated: ${formatDocumentName(doc.title)}`, 'success');
       setRowMenuOpen(null);
       triggerReload();
     }
@@ -889,7 +890,7 @@ export default function Dashboard() {
                           {renderTypeIcon(doc.fileType)}
                           <div className="min-w-0">
                             <span className="font-semibold text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] transition-colors truncate block">
-                              {doc.title}
+                              {formatDocumentName(doc.title)}
                             </span>
                             <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">
                               {doc.fileType}

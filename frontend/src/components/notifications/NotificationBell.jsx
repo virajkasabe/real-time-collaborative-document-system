@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FiBell } from 'react-icons/fi';
+import { Bell } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationItem from './NotificationItem';
 import { useAuth } from '../../context/AuthContext';
@@ -29,16 +29,14 @@ export default function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer"
+        className="relative p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer"
         aria-label="Notifications"
       >
-        <FiBell className="text-[#0F172A] dark:text-white text-base sm:text-lg" />
+        <Bell size={20} />
         
         {/* Unread Badge */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] sm:min-w-[20px] h-[18px] sm:h-[20px] bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] sm:text-[10px] font-bold animate-pulse px-1">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
         )}
       </button>
 

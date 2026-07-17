@@ -1696,8 +1696,8 @@ h1, h2, h3, h4, h5, h6 {
 .dark .ql-editor {
   background-image: linear-gradient(
     to bottom,
-    #1e293b 0px,
-    #1e293b 1026px,
+    var(--paper-bg, #1e293b) 0px,
+    var(--paper-bg, #1e293b) 1026px,
     rgba(255, 255, 255, 0.04) 1026px,
     rgba(255, 255, 255, 0.04) 1027px,
     #0b0f19 1027px,
@@ -2856,4 +2856,195 @@ h1, h2, h3, h4, h5, h6 {
 }
 .dark .anchored-comment-quote {
   background: rgba(13, 110, 253, 0.08);
+}
+
+/* Document theme, text colors, and font paired whitelist styling */
+.ql-editor {
+  color: var(--paper-text, var(--text-h)) !important;
+}
+
+/* Custom registered font mapping classes */
+.ql-container .ql-font-georgia,
+.ql-editor .ql-font-georgia {
+  font-family: Georgia, serif !important;
+}
+.ql-container .ql-font-calibri,
+.ql-editor .ql-font-calibri {
+  font-family: Calibri, sans-serif !important;
+}
+.ql-container .ql-font-times-new-roman,
+.ql-editor .ql-font-times-new-roman {
+  font-family: "Times New Roman", serif !important;
+}
+.ql-container .ql-font-consolas,
+.ql-editor .ql-font-consolas {
+  font-family: Consolas, monospace !important;
+}
+
+/* Custom registered font dropdown picker styling */
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="georgia"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="georgia"]::before {
+  content: 'Georgia' !important;
+}
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="georgia"] {
+  font-family: Georgia, serif !important;
+}
+
+/* Theme presets rules */
+.doc-theme-classic .ql-editor {
+  font-family: "Times New Roman", Times, serif !important;
+}
+.doc-theme-classic .ql-editor h1 {
+  font-size: 28px !important;
+}
+.doc-theme-classic .ql-editor h2 {
+  font-size: 22px !important;
+}
+.doc-theme-classic .ql-editor h3 {
+  font-size: 18px !important;
+}
+
+.doc-theme-minimal .ql-editor {
+  font-family: Calibri, sans-serif !important;
+}
+.doc-theme-minimal .ql-editor h1,
+.doc-theme-minimal .ql-editor h2,
+.doc-theme-minimal .ql-editor h3 {
+  font-weight: 500 !important;
+  color: #374151 !important;
+}
+
+.doc-theme-bold .ql-editor {
+  font-family: Calibri, sans-serif !important;
+}
+.doc-theme-bold .ql-editor h1,
+.doc-theme-bold .ql-editor h2,
+.doc-theme-bold .ql-editor h3 {
+  font-weight: 800 !important;
+}
+.doc-theme-bold .ql-editor h1 {
+  font-size: 32px !important;
+}
+.doc-theme-bold .ql-editor h2 {
+  font-size: 26px !important;
+}
+
+.doc-theme-elegant .ql-editor {
+  font-family: Georgia, serif !important;
+}
+.doc-theme-elegant .ql-editor p.ql-align-center em,
+.doc-theme-elegant .ql-editor blockquote {
+  font-style: italic !important;
+  color: #7C3AED !important;
+}
+
+/* Color swatches rendering override */
+.word-ribbon-toolbar-panel button.ribbon-color-swatch {
+  background: var(--swatch-bg) !important;
+  border: var(--swatch-border, 1px solid rgba(0,0,0,0.15)) !important;
+  border-radius: 50% !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  display: inline-block !important;
+}
+
+/* Fix vertical buttons stack in compact modes (e.g. Editing group) */
+.word-ribbon-toolbar-panel.compact-level-1 .ribbon-vertical-buttons .low-priority-btn,
+.word-ribbon-toolbar-panel.compact-level-2 .ribbon-vertical-buttons .ribbon-custom-btn {
+  min-width: 24px !important;
+  max-width: 24px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* Word-style Large Vertical Ribbon Buttons (Design Tab) */
+.word-ribbon-toolbar-panel .ribbon-large-vertical-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 68px !important;
+  height: 52px !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+  gap: 2px !important;
+  padding: 2px !important;
+}
+
+.word-ribbon-toolbar-panel .ribbon-large-vertical-btn:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08)) !important;
+  border-color: rgba(13, 110, 253, 0.15) !important;
+}
+
+.word-ribbon-toolbar-panel .ribbon-large-vertical-btn .btn-icon-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 26px !important;
+}
+
+.word-ribbon-toolbar-panel .ribbon-large-vertical-btn .btn-label {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: var(--text-h, #1e293b) !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+
+/* Dropdown popover list styles */
+.popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.popover-list-item {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-h, #1e293b);
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+.popover-list-item:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08));
+}
+.popover-list-item.active-item {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.12));
+  font-weight: 600;
+}
+
+/* Stacked column for Effects / Set as Default in Document Formatting group */
+.word-ribbon-toolbar-panel .effects-setdefault-column {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  height: 52px !important;
+  margin-left: 2px !important;
+  flex-shrink: 0 !important;
+  align-self: center !important;
+}
+
+.word-ribbon-toolbar-panel .effects-setdefault-column .ribbon-custom-btn {
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  font-size: 10px !important;
+  width: 100% !important;
 }

@@ -28,12 +28,11 @@ import { quillDeltaToCustomDelta } from './utils/deltaConversion';
 import { countWords } from './utils/textHelpers';
 
 export default function EditingPageContent({
-  document: doc, theme, toggleTheme, onBack, onSave, docUserRole, docId, showToast,
+  document: doc, theme, toggleTheme, onBack, onSave, docUserRole, docId, showToast, saveStatus,
 }) {
   const { socket } = useSocket();
   const { user } = useAuth();
   const isMobile = useIsMobile();
-
   const [title, setTitle] = useState(() => {
     const rawTitle = doc.title || 'Untitled Document';
     return rawTitle === 'Untitle Document' ? 'Untitled Document' : rawTitle;
@@ -62,6 +61,8 @@ export default function EditingPageContent({
   const [formatPainterActive, setFormatPainterActive] = useState(false);
   const [accentColor, setAccentColor] = useState(null);
   const [pageLayout, setPageLayout] = useState('normal');
+  const [documentTheme, setDocumentTheme] = useState('modern');
+  const [pageBackgroundColor, setPageBackgroundColor] = useState('');
 
   // On a small screen only one sidebar should be open at a time, or the
   // panels cover the entire viewport and hide each other.
@@ -673,6 +674,7 @@ export default function EditingPageContent({
         activeUsers={activeUsers}
         currentUser={user}
         isMobile={isMobile}
+        saveStatus={saveStatus}
       />
 
       <RibbonTabsBar
@@ -710,6 +712,10 @@ export default function EditingPageContent({
         handleInsertPageBreak={handleInsertPageBreak}
         handleInsertComment={handleInsertComment}
         showToast={showToast}
+        documentTheme={documentTheme}
+        setDocumentTheme={setDocumentTheme}
+        pageBackgroundColor={pageBackgroundColor}
+        setPageBackgroundColor={setPageBackgroundColor}
       />
 
       {showFindReplace && (
@@ -746,13 +752,15 @@ export default function EditingPageContent({
 
         <section className="editor-canvas-pane">
           <div
-            className="editor-paper-container"
+            className={`editor-paper-container doc-theme-${documentTheme || 'modern'}`}
             style={{
               transform: `scale(${zoomPercent / 100})`,
               transformOrigin: 'top center',
               transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.2s ease',
               maxWidth: isMobile ? '100%' : PAGE_LAYOUTS[pageLayout].maxWidth,
               margin: '0 auto',
+              '--paper-bg': pageBackgroundColor || '',
+              '--paper-text': pageBackgroundColor ? (['#ffffff', '#fff9f0', '#f5f5f5', '#f0f7ff', '#f0fff4'].includes(pageBackgroundColor.toLowerCase()) ? '#081B3A' : '#FFFFFF') : '',
             }}
           >
             <div ref={quillRef} style={{ minHeight: '100%' }} />

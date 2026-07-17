@@ -404,13 +404,6 @@ export default function Landing() {
                   <span>Start Collaborating Free</span>
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
-                <button 
-                  onClick={() => navigate('/login')} 
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 h-[60px] text-base font-semibold border border-[#E2E8F0] dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-[#081B3A] dark:text-[#E5E7EB] rounded-xl transition-all backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98] shrink-0 cursor-pointer"
-                >
-                  <Play size={14} className="fill-current mr-0.5" />
-                  <span>Watch Demo</span>
-                </button>
               </div>
             </div>
 

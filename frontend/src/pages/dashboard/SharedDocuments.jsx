@@ -4,6 +4,7 @@ import { FileText, Star, Eye, ShieldAlert, ArrowRight, Users, Calendar, Clock, C
 import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import { sharedWithMeDocs } from '../../apis/api';
+import { formatDocumentName } from '../../utils/helpers';
 
 export default function SharedDocuments() {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ export default function SharedDocuments() {
       let list = res.data.data.documents
       setSharedDocs(list)
       if (searchQuery.trim()) {
-        list = list.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        list = list.filter(d => formatDocumentName(d.title || d.name).toLowerCase().includes(searchQuery.toLowerCase()));
       }
       return list;
     } catch (error) {
@@ -194,7 +195,7 @@ export default function SharedDocuments() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-[15px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] dark:group-hover:text-white transition-colors truncate">
-                        {doc.title || doc.name}
+                        {formatDocumentName(doc.title || doc.name)}
                       </span>
                     </div>
                     

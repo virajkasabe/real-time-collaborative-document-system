@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MapPin, Mail, Globe, Send, MessageSquare, Phone, Users } from "lucide-react";
+import { MapPin, Mail, Globe, Send, MessageSquare, Phone, Users, Check } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 function RevealOnScroll({ children, delay = 0 }) {
@@ -171,8 +171,8 @@ export default function ContactUs() {
               <p className={`text-sm mb-6 ${isDark ? "text-[#94A3B8]" : "text-slate-500"}`}>Our team will respond within 24 business hours.</p>
 
               {sent && (
-                <div className="bg-green-100 border border-green-300 text-green-800 rounded-lg px-4 py-3 mb-5 text-sm">
-                  ✓ Message sent! We'll get back to you soon.
+                <div className="bg-green-100 border border-green-300 text-green-800 rounded-lg px-4 py-3 mb-5 text-sm flex items-center">
+                  <Check size={16} className="mr-1.5 shrink-0" /> Message sent! We'll get back to you soon.
                 </div>
               )}
 

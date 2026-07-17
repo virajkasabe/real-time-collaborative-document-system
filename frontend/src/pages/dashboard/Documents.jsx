@@ -33,6 +33,7 @@ import {
   fetchTrashFolder,
   deleteDoc 
 } from '../../apis/api';
+import { formatDocumentName } from '../../utils/helpers';
 
 // Confirmation Dialog Component
 const ConfirmationDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText, type = 'danger' }) => {
@@ -196,7 +197,7 @@ export default function Documents() {
 
   // Helper function to get document title
   const getDocTitle = (doc) => {
-    return doc?.title || doc?.name || 'Untitled Document';
+    return formatDocumentName(doc?.title || doc?.name);
   };
 
   // Helper function to get owner name
@@ -265,9 +266,13 @@ export default function Documents() {
   const filteredDocs = useMemo(() => {
     let list = enrichedDocs;
 
+    if (filter === 'shared') {
+      list = list.filter(d => d.owner?.email !== user?.email && d.ownerEmail !== user?.email);
+    }
+
     if (searchQuery.trim()) {
       list = list.filter(d => 
-        d.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        formatDocumentName(d.title)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         d.ownerName?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -320,9 +325,9 @@ export default function Documents() {
       } else if (sortBy === 'Oldest') {
         return new Date(a.updatedAt) - new Date(b.updatedAt);
       } else if (sortBy === 'NameAZ') {
-        return (a.title || '').localeCompare(b.title || '');
+        return formatDocumentName(a.title).localeCompare(formatDocumentName(b.title));
       } else if (sortBy === 'NameZA') {
-        return (b.title || '').localeCompare(a.title || '');
+        return formatDocumentName(b.title).localeCompare(formatDocumentName(a.title));
       } else if (sortBy === 'Recent') {
         return new Date(b.updatedAt) - new Date(a.updatedAt);
       }
@@ -934,7 +939,7 @@ export default function Documents() {
                 <div className="shrink-0">{renderTypeIcon(doc.fileType)}</div>
                 <div className="min-w-0 flex-1">
                   <span className="font-semibold text-[13px] sm:text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] dark:group-hover:text-white transition-colors truncate block">
-                    {doc.title}
+                    {formatDocumentName(doc.title)}
                   </span>
                   <div className="text-[10px] sm:text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 block mt-0.5 leading-none transition-colors">
                     Owner: <span className="text-[11px] sm:text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">
@@ -949,19 +954,19 @@ export default function Documents() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+              <div className="flex items-center gap-1 sm:gap-2 justify-end relative z-10">
                 {filter === 'trash' ? (
                   <>
                     <button
-                      onClick={(e) => handleRestoreAction(e, doc._id, doc.title)}
-                      className="p-1.5 rounded text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                      onClick={(e) => handleRestoreAction(e, doc._id, formatDocumentName(doc.title))}
+                      className="p-1.5 sm:p-2 rounded-xl text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer"
                       title="Restore"
                     >
                       <Undo size={14} />
                     </button>
                     <button
-                      onClick={(e) => handlePermanentDeleteAction(e, doc._id, doc.title)}
-                      className="p-1.5 rounded text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      onClick={(e) => handlePermanentDeleteAction(e, doc._id, formatDocumentName(doc.title))}
+                      className="p-1.5 sm:p-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                       title="Delete Permanently"
                     >
                       <Trash2 size={14} />
@@ -1004,7 +1009,7 @@ export default function Documents() {
                             <span>Share</span>
                           </button>
                           <button
-                            onClick={(e) => handleTrashAction(e, doc._id, doc.title)}
+                            onClick={(e) => handleTrashAction(e, doc._id, formatDocumentName(doc.title))}
                             className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 border-t border-[#E5E7EB] dark:border-white/10 mt-0.5"
                           >
                             <Trash2 size={11} />
@@ -1043,7 +1048,7 @@ export default function Documents() {
                 </div>
                 <div className="space-y-0.5">
                   <h5 className="font-semibold text-[13px] sm:text-[14px] text-[#081B3A] dark:text-slate-200 group-hover:text-[#0D6EFD] dark:group-hover:text-white transition-colors truncate">
-                    {doc.title}
+                    {formatDocumentName(doc.title)}
                   </h5>
                   <p className="text-[10px] sm:text-[11px] font-medium text-[#6B7280] dark:text-[#94A3B8]/80 leading-none mt-0.5 truncate">
                     {doc.fileType} • Owner: <span className="text-[11px] sm:text-[12.5px] font-medium text-[#081B3A] dark:text-slate-200">
@@ -1063,14 +1068,14 @@ export default function Documents() {
                 {filter === 'trash' ? (
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={(e) => handleRestoreAction(e, doc._id, doc.title)}
+                      onClick={(e) => handleRestoreAction(e, doc._id, formatDocumentName(doc.title))}
                       className="text-emerald-500 hover:bg-emerald-500/10 p-1 rounded transition-colors cursor-pointer"
                       title="Restore"
                     >
                       <Undo size={11} />
                     </button>
                     <button
-                      onClick={(e) => handlePermanentDeleteAction(e, doc._id, doc.title)}
+                      onClick={(e) => handlePermanentDeleteAction(e, doc._id, formatDocumentName(doc.title))}
                       className="text-rose-500 hover:bg-rose-500/10 p-1 rounded transition-colors cursor-pointer"
                       title="Delete Permanently"
                     >
@@ -1079,7 +1084,7 @@ export default function Documents() {
                   </div>
                 ) : (
                   <button
-                    onClick={(e) => handleTrashAction(e, doc._id, doc.title)}
+                    onClick={(e) => handleTrashAction(e, doc._id, formatDocumentName(doc.title))}
                     className="text-rose-500 hover:bg-rose-500/10 p-1 rounded transition-colors cursor-pointer"
                     title="Move to Trash"
                   >

@@ -73,12 +73,12 @@ const NavbarPage = () => {
 
                 {/* Navigation Links - Center */}
                 <div className="hidden md:flex items-center gap-6">
-                    <a 
-                        href="/#features" 
+                    <Link 
+                        to="/" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
                     >
-                        Features
-                    </a>
+                        Home
+                    </Link>
                     <Link 
                         to="/about" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
@@ -197,13 +197,13 @@ const NavbarPage = () => {
             {/* Mobile Menu Dropdown */}
             {mobileMenuOpen && (
                 <div className="md:hidden bg-white dark:bg-[#0F172A] border-t border-[#E5E7EB] dark:border-white/5 px-6 py-4 space-y-4 animate-fade-in shadow-lg">
-                    <a 
-                        href="/#features" 
+                    <Link 
+                        to="/" 
                         onClick={() => setMobileMenuOpen(false)} 
                         className="block text-sm font-semibold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors py-2"
                     >
-                        Features
-                    </a>
+                        Home
+                    </Link>
                     <Link 
                         to="/about" 
                         onClick={() => setMobileMenuOpen(false)} 
