@@ -4,6 +4,7 @@ services:
     container_name: caffine_and_redis
     ports:
       - "6379:6379"
+      - "8001:8001"
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
