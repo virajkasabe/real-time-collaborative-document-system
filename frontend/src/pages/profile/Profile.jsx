@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Check,
   FileText,
@@ -12,6 +12,10 @@ import {
   Edit2,
   Shield,
   Zap,
+  Camera,
+  Upload,
+  Trash2,
+  Image,
 } from 'lucide-react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import Button from '../../components/common/Button';
@@ -27,6 +31,11 @@ export default function Profile() {
   const { theme } = useTheme();
   const [name, setName] = useState(user?.fullName || user?.name || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleSave = (e) => {
     if (e && e.preventDefault) {
@@ -45,6 +54,122 @@ export default function Profile() {
     setTimeout(() => {
       window.location.reload();
     }, 500);
+  };
+
+  // Handle file selection
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      triggerToast('Please upload a valid image (JPEG, PNG, GIF, WEBP, or SVG)', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      triggerToast('Image size should be less than 5MB', 'error');
+      return;
+    }
+
+    setSelectedFile(file);
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle avatar upload using FormData
+  const handleAvatarUpload = async () => {
+    if (!selectedFile) {
+      triggerToast('Please select an image first', 'error');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Create FormData
+      const formData = new FormData();
+      formData.append('avatar', selectedFile);
+      formData.append('userId', user?.id || user?.email || '');
+      
+      // If you have an API endpoint, uncomment this:
+      /*
+      const response = await fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - browser will set it with boundary
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload avatar');
+      }
+      
+      const data = await response.json();
+      const avatarUrl = data.avatarUrl; // URL returned from server
+      */
+
+      // For demo purposes, we'll use the preview URL or convert to base64
+      // In production, you would use the URL returned from your server
+      const avatarUrl = previewUrl; // Or use the server response URL
+      
+      // Update user with new avatar
+      if (user) {
+        const updatedUser = { ...user, avatar: avatarUrl };
+        localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
+      }
+
+      triggerToast('Avatar updated successfully!', 'success');
+      setShowAvatarOptions(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setIsUploading(false);
+      
+      // Refresh to show updated avatar
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      triggerToast(error.message || 'Failed to upload avatar', 'error');
+      setIsUploading(false);
+    }
+  };
+
+  // Handle avatar removal
+  const handleRemoveAvatar = () => {
+    if (user) {
+      const updatedUser = { ...user, avatar: '' };
+      localStorage.setItem('collabdocs_user', JSON.stringify(updatedUser));
+    }
+    
+    triggerToast('Avatar removed successfully!', 'success');
+    setShowAvatarOptions(false);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
+  // Trigger file input
+  const handleAvatarClick = () => {
+    setShowAvatarOptions(true);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
+
+  // Trigger file input click
+  const handleChooseFile = () => {
+    fileInputRef.current?.click();
   };
 
   const allDocs = documentService.getAll();
@@ -100,6 +225,8 @@ export default function Profile() {
       inputBorder: theme === 'dark' ? 'border-white/5' : 'border-gray-200',
       accentColor: theme === 'dark' ? 'text-secondary-500' : 'text-primary-500',
       accentHover: theme === 'dark' ? 'group-hover:text-secondary-500' : 'group-hover:text-primary-500',
+      modalBg: theme === 'dark' ? 'bg-gray-900' : 'bg-white',
+      modalOverlay: theme === 'dark' ? 'bg-black/80' : 'bg-black/50',
     };
   };
 
@@ -107,6 +234,158 @@ export default function Profile() {
 
   return (
     <div className={`p-4 sm:p-5 md:p-8 space-y-4 sm:space-y-6 md:space-y-8 max-w-5xl w-full mx-auto ${theme}`}>
+      {/* Avatar Options Modal */}
+      {showAvatarOptions && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            setShowAvatarOptions(false);
+            setSelectedFile(null);
+            setPreviewUrl(null);
+          }}
+        >
+          <div className={`absolute inset-0 ${styles.modalOverlay} backdrop-blur-sm`}></div>
+          <div 
+            className={`relative ${styles.modalBg} rounded-2xl shadow-2xl max-w-md w-full p-6 border ${styles.borderColor} animate-in fade-in zoom-in duration-200`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-bold ${styles.textPrimary}`}>
+                Update Avatar
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAvatarOptions(false);
+                  setSelectedFile(null);
+                  setPreviewUrl(null);
+                }}
+                className={`p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${styles.textSecondary}`}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+
+              {/* Current Avatar Preview */}
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center shadow-xl ring-4 ring-primary-500/30 overflow-hidden">
+                    {previewUrl ? (
+                      <img 
+                        src={previewUrl} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : user?.avatar && user.avatar !== "" ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={user?.fullName || 'User'} 
+                        className="w-full h-full object-cover rounded-full"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          const parent = e.target.parentElement;
+                          const initials = document.createElement('span');
+                          initials.className = 'text-white text-3xl font-extrabold uppercase';
+                          initials.textContent = getInitials();
+                          parent.appendChild(initials);
+                        }}
+                      />
+                    ) : (
+                      <span className="text-white text-3xl font-extrabold uppercase">
+                        {getInitials()}
+                      </span>
+                    )}
+                  </div>
+                  {selectedFile && (
+                    <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-1">
+                      <Check size={12} className="text-white" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* File Upload Area */}
+              <div
+                onClick={handleChooseFile}
+                className={`border-2 border-dashed ${styles.borderColor} rounded-xl p-6 text-center cursor-pointer hover:border-primary-500 dark:hover:border-secondary-500 transition-all group`}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`p-3 rounded-full ${styles.bgSecondary} group-hover:bg-primary-50 dark:group-hover:bg-secondary-900/20 transition-colors`}>
+                    <Image size={24} className={`${styles.accentColor}`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${styles.textPrimary}`}>
+                      {selectedFile ? selectedFile.name : 'Choose an image'}
+                    </p>
+                    <p className={`text-xs ${styles.textMuted} mt-1`}>
+                      {selectedFile 
+                        ? `${(selectedFile.size / 1024).toFixed(1)} KB`
+                        : 'Click to browse or drag and drop'
+                      }
+                    </p>
+                    {!selectedFile && (
+                      <p className={`text-[10px] ${styles.textMuted} mt-2`}>
+                        Supported: JPEG, PNG, GIF, WEBP, SVG (Max 5MB)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleAvatarUpload}
+                  disabled={!selectedFile || isUploading}
+                  className={`px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold hover:shadow-lg hover:shadow-primary-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2`}
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      <span>Upload</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleRemoveAvatar}
+                  disabled={!user?.avatar}
+                  className={`px-4 py-2.5 rounded-lg border border-red-200 dark:border-red-800/30 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all text-sm font-medium text-red-600 dark:text-red-400 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <Trash2 size={16} />
+                  <span>Remove</span>
+                </button>
+              </div>
+
+              {/* Cancel button for mobile */}
+              <button
+                onClick={() => {
+                  setShowAvatarOptions(false);
+                  setSelectedFile(null);
+                  setPreviewUrl(null);
+                }}
+                className="w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 pb-4 sm:pb-5 transition-all duration-300 select-none relative border-gradient-to-r from-primary-500 to-secondary-500">
         <div className="absolute bottom-0 left-0 w-20 sm:w-24 md:w-32 h-0.5 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full"></div>
@@ -183,25 +462,43 @@ export default function Profile() {
         <div className="lg:col-span-1">
           <div className={`bg-gradient-to-br ${theme === 'dark' ? 'from-gray-900 to-gray-800' : 'from-primary-50 to-secondary-50'} border ${styles.borderColor} rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl ${styles.shadowColor} flex flex-col items-center text-center space-y-3 sm:space-y-4 transition-all duration-300 ${styles.shadowHover}`}>
             
-            {/* Avatar */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 blur-2xl opacity-20 animate-pulse"></div>
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center mx-auto shadow-2xl ring-4 ring-primary-500/30 hover:ring-secondary-500/50 transition-all duration-300 overflow-hidden">
+            {/* Avatar - Clickable */}
+            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 blur-2xl opacity-20 animate-pulse group-hover:opacity-40 transition-opacity"></div>
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center mx-auto shadow-2xl ring-4 ring-primary-500/30 hover:ring-secondary-500/50 transition-all duration-300 overflow-hidden group-hover:scale-105">
                 {user?.avatar && user.avatar !== "" ? (
                   <img 
                     src={user.avatar} 
                     alt={user?.fullName || 'User'} 
                     className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      const parent = e.target.parentElement;
+                      const initials = document.createElement('span');
+                      initials.className = 'text-white text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase';
+                      initials.textContent = getInitials();
+                      parent.appendChild(initials);
+                    }}
                   />
                 ) : (
                   <span className="text-white text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase">
                     {getInitials()}
                   </span>
                 )}
+                
+                {/* Camera Overlay */}
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full">
+                    <Camera size={20} className="text-white sm:size-5 md:size-6" />
+                  </div>
+                </div>
               </div>
               <div className={`absolute -bottom-1 -right-1 p-1 bg-emerald-500 rounded-full border-2 ${theme === 'dark' ? 'border-gray-900' : 'border-white'}`}>
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse"></div>
               </div>
+              <p className={`text-[10px] ${styles.textMuted} mt-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                Click to change
+              </p>
             </div>
 
             {/* User Info */}
@@ -391,67 +688,6 @@ export default function Profile() {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <button 
-              onClick={() => navigate('/documents')}
-              className={`${styles.bgCard} border ${styles.borderColor} rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg ${styles.shadowColor} hover:shadow-xl ${styles.shadowHover} transition-all duration-300 ${styles.borderHover} group`}
-            >
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary-500/20 to-secondary-500/20 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
-                  <FileText size={14} sm:size={18} className={styles.accentColor} />
-                </div>
-                <div className="text-left">
-                  <p className={`text-xs sm:text-sm font-bold ${styles.textPrimary}`}>My Docs</p>
-                  <p className={`text-[8px] sm:text-[10px] ${styles.textSecondary} hidden xs:block`}>View all documents</p>
-                </div>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => navigate('/shared')}
-              className={`${styles.bgCard} border ${styles.borderColor} rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg shadow-purple-500/5 dark:shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 dark:hover:shadow-purple-500/10 transition-all duration-300 hover:border-purple-500/20 dark:hover:border-purple-500/20 group`}
-            >
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
-                  <Users size={14} sm:size={18} className="text-purple-500" />
-                </div>
-                <div className="text-left">
-                  <p className={`text-xs sm:text-sm font-bold ${styles.textPrimary}`}>Shared</p>
-                  <p className={`text-[8px] sm:text-[10px] ${styles.textSecondary} hidden xs:block`}>Shared with you</p>
-                </div>
-              </div>
-            </button>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className={`${styles.bgCard} border ${styles.borderColor} rounded-lg sm:rounded-xl p-3 sm:p-4 text-center shadow-sm transition-all duration-300 hover:shadow-md`}>
-              <div className="text-lg sm:text-xl md:text-2xl font-bold text-primary-500 dark:text-secondary-500">
-                {ownedDocsCount}
-              </div>
-              <div className={`text-[8px] sm:text-[10px] ${styles.textSecondary} font-medium uppercase tracking-wider`}>
-                Owned
-              </div>
-            </div>
-            <div className={`${styles.bgCard} border ${styles.borderColor} rounded-lg sm:rounded-xl p-3 sm:p-4 text-center shadow-sm transition-all duration-300 hover:shadow-md`}>
-              <div className="text-lg sm:text-xl md:text-2xl font-bold text-purple-500">
-                {sharedDocsCount}
-              </div>
-              <div className={`text-[8px] sm:text-[10px] ${styles.textSecondary} font-medium uppercase tracking-wider`}>
-                Shared
-              </div>
-            </div>
-            <div className={`${styles.bgCard} border ${styles.borderColor} rounded-lg sm:rounded-xl p-3 sm:p-4 text-center shadow-sm transition-all duration-300 hover:shadow-md`}>
-              <div className="text-lg sm:text-xl md:text-2xl font-bold text-amber-500">
-                {starredDocsCount}
-              </div>
-              <div className={`text-[8px] sm:text-[10px] ${styles.textSecondary} font-medium uppercase tracking-wider`}>
-                Starred
-              </div>
-            </div>
           </div>
         </div>
       </div>
