@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, Star, Lightbulb, FileText, Shield, Clock, MessageSquare } from "lucide-react";
+import { Users, Star, Lightbulb, FileText, Shield, MessageSquare } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 function RevealOnScroll({ children, delay = 0 }) {
@@ -80,7 +80,7 @@ export default function AboutUs() {
   return (
     <div
       onPointerMove={handlePointerMove}
-      className={`min-h-screen relative overflow-x-hidden dot-grid-bg transition-colors duration-300 ${isDark ? "bg-[#070B14] text-[#E5E7EB]" : "bg-[#F7FAFF] text-[#081B3A]"}`}
+      className={`min-h-[calc(100vh-72px)] relative overflow-x-hidden dot-grid-bg transition-colors duration-300 ${isDark ? "bg-[#070B14] text-[#E5E7EB]" : "bg-[#F7FAFF] text-[#081B3A]"}`}
     >
       {/* Gradient glows */}
       <div className="absolute top-1/4 left-1/4 w-[20rem] sm:w-[35rem] h-[20rem] sm:h-[35rem] rounded-full bg-blue-500/10 dark:bg-blue-600/5 blur-3xl pointer-events-none animate-pulse-slow z-0" />
@@ -92,7 +92,7 @@ export default function AboutUs() {
       <div className="absolute bottom-[38%] left-[6%] text-cyan-500/20 dark:text-white/5 animate-float-fast z-0 pointer-events-none hidden lg:block"><MessageSquare size={38} /></div>
       <div className="absolute bottom-[25%] right-[8%] text-blue-500/20 dark:text-white/5 animate-float-slow z-0 pointer-events-none hidden lg:block"><Shield size={36} /></div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 relative z-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-12 relative z-10">
 
         {/* Heading */}
         <RevealOnScroll>
@@ -177,18 +177,6 @@ export default function AboutUs() {
           </div>
         </div>
       </main>
-
-      {/* CTA */}
-      <section className={`py-12 sm:py-14 transition-colors duration-300 ${isDark ? "bg-gradient-to-r from-zinc-900 to-black" : "bg-gradient-to-r from-blue-700 to-indigo-700"}`}>
-        <RevealOnScroll>
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-4xl text-white mb-4">Join Our Journey</h2>
-            <p className={`max-w-xl mx-auto leading-8 text-sm sm:text-base ${isDark ? "text-zinc-400" : "text-blue-100"}`}>
-              Join us to build the future of engineering collaboration. We're growing fast and looking for driven, thoughtful engineers and designers.
-            </p>
-          </div>
-        </RevealOnScroll>
-      </section>
     </div>
   );
 }
