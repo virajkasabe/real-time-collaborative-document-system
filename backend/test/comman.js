@@ -1,4 +1,4 @@
-import { ENV } from '../src/config/ENV'
+import { ENV } from '../src/config/ENV.js'
 
 const port = ENV.PORT || 5001
 const URL = ENV.BACKEND_URI
