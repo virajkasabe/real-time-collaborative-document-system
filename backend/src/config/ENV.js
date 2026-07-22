@@ -9,6 +9,7 @@ export const ENV = {
   MONGODB_URI: process.env.MONGODB_URI,
   REDIS_URI: process.env.REDIS_URI,
   DEFAULT_ROUTE: process.env.DEFAULT_ROUTE,
+  MONGO_MEMORY_SERVER_PORT : process.env.MONGO_MEMORY_SERVER_PORT,
   CORS_ORIGIN: process.env.CORS_ORIGIN,
   CLIENT_URL: process.env.CLIENT_URL,
   BACKEND_URI: process.env.BACKEND_URI,
