@@ -21,7 +21,7 @@ export const userLogin = async (data) => {
 }
 
 // ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
-export const googleLoginApi = `${baseAPIURL}/callback/google`
+export const googleLoginApi = `${baseAPIURL}/auth/google`
 
 
 export const userLogout = () => {
