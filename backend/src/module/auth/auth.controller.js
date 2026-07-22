@@ -61,6 +61,8 @@ export const registerUser = asyncHandler(async (req, res) => {
   console.log({
     otp,
   });
+
+
   
 
   await User.findById(user._id).select(
@@ -76,6 +78,11 @@ export const registerUser = asyncHandler(async (req, res) => {
   console.log("OTP", otp);
 
   // TODO : SEND EMAIL FOR OTP
+
+    await otpService(
+      otp,
+      email = email
+  )
 
   console.log("user register");
   return res
