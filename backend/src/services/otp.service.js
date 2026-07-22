@@ -1,6 +1,10 @@
-import { apiInstance,senderEmail, senderName } from './brevoClient'
+import { apiInstance,senderEmail, senderName } from './brevoClient.js'
 
 export const otpService = async (otp, link = null, email, options = {}) => {
+    console.log(
+        "first", otp, link = null, email, options = {}
+    )
+    
     try {
         const {
             senderEmail = senderEmail || 'noreply@yourdomain.com',
@@ -19,6 +23,12 @@ export const otpService = async (otp, link = null, email, options = {}) => {
             subject: subject
         }
 
+        console.log("second", {
+             emailData,
+            options
+            }
+        )
+
         // If using a template
         if (templateId) {
             emailData.templateId = templateId
@@ -27,6 +37,12 @@ export const otpService = async (otp, link = null, email, options = {}) => {
                 LINK: link || '',
                 EXPIRY: expiryMinutes
             }
+
+            console.log("thrid", {
+             emailData
+            }
+        )
+
         } else {
             // HTML email content
             emailData.htmlContent = `
@@ -52,10 +68,17 @@ export const otpService = async (otp, link = null, email, options = {}) => {
                 </body>
                 </html>
             `
-            emailData.textContent = `Your OTP verification code is: ${otp}\n\nThis OTP is valid for ${expiryMinutes} minutes.\n${link ? `Click here to verify: ${link}` : ''}`
+            emailData.textContent = `Your OTP verification code is: ${otp}\n\nThis OTP is valid for ${expiryMinutes} minutes.\n${link ? `Click here to verify: ${link}` : ''}`,
+            
+            console.log("fourth in error", emailData)
         }
 
+
         const response = await apiInstance.post('/smtp/email', emailData)
+
+        console.log(
+            "five" , response
+        )
 
         return {
             success: true,
@@ -63,12 +86,17 @@ export const otpService = async (otp, link = null, email, options = {}) => {
             message: 'OTP sent successfully'
         }
     } catch (error) {
+        console.log(
+           "six in error" , response
+       )
+
         console.error('Error sending OTP email:', error.response?.data || error.message)
-        
+
         return {
             success: false,
             error: error.response?.data || error.message,
             message: 'Failed to send OTP'
         }
+        
     }
 }
