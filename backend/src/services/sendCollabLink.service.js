@@ -1,9 +1,5 @@
-import { BrevoClient } from '@getbrevo/brevo'
-import { ENV } from '../config/ENV.js';
+import { apiInstance, senderEmail } from './brevoClient.js'
 
-const apiInstance = new BrevoClient({
-  apiKey : ENV.BREVO_API_KEY
-})
 
 export const registerAndJoinCollab = async (documentName, inviterName, acceptLink, declineLink, recipientEmail, inviterEmail, recipientName = null, registrationLink) => {
   try {
@@ -151,7 +147,7 @@ export const registerAndJoinCollab = async (documentName, inviterName, acceptLin
       htmlContent: emailHtml,
       sender: {
         name: inviterName || 'Collab System',
-        email: inviterEmail || ENV.BREVO_SENDER_EMAIL
+        email: inviterEmail || senderEmail
       }
     };
 
@@ -169,10 +165,6 @@ export const registerAndJoinCollab = async (documentName, inviterName, acceptLin
 
 export const joinCollab = async (documentName, inviterName, acceptLink, declineLink, userEmail = null, inviterEmail = null, loginLink) => {
   try {
-    // Validate required fields
-    if (!ENV.ADMIN_EMAIL) {
-      throw new Error('Admin email not configured');
-    }
     if (!loginLink) {
       throw new Error('Login link is required');
     }
@@ -317,14 +309,14 @@ export const joinCollab = async (documentName, inviterName, acceptLink, declineL
 
     const emailData = {
       to: [{
-        email: ENV.ADMIN_EMAIL,
+        email: senderEmail,
         name: 'Admin'
       }],
       subject: `🔐 Login Required: ${userEmail || 'User'} wants to join ${documentName || 'document'}`,
       htmlContent: emailHtml,
       sender: {
         name: 'Collab System',
-        email: ENV.BREVO_SENDER_EMAIL
+        email: senderEmail
       }
     };
 
