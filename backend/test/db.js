@@ -2,7 +2,7 @@ import mongoose, { mongo } from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { ENV } from "../src/config/ENV.js";
 
-const MONGO_MEMORY_SERVER_PORT = ENV.PORT || 10000;
+const MONGO_MEMORY_SERVER_PORT = ENV.MONGO_MEMORY_SERVER_PORT || 10000;
 const MONGODB_URL = `mongodb://127.0.0.1:${MONGO_MEMORY_SERVER_PORT}/`;
 
 let mongoServer = null;

@@ -1,4 +1,3 @@
-// test/app/user.js
 import { test, expect } from '@playwright/test';
 import { clearDB } from '../db.js';
 import { getApiContext } from '../comman.js';
