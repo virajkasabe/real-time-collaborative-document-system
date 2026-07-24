@@ -1,38 +1,47 @@
-import { getApiContext } from './comman'
-import { clearDB } from '../db';
+// test/app/user.js
+import { test, expect } from '@playwright/test';
+import { clearDB } from '../db.js';
+import { getApiContext } from '../comman.js';
 
-describe('User', () => { 
-    beforeAll(async ({ playwright }) => {
+let apiContext;
+let userId;
+
+test.describe('User', () => {
+    test.beforeAll(async ({ playwright }) => {
         apiContext = await getApiContext(playwright);
-        await clearDB()
+        await clearDB();
     });
 
-    beforeAll(async({})=>{
-        await apiContext.dispose()
-    })
+    test.afterAll(async () => {
+        if (apiContext) {
+            await apiContext.dispose();
+        }
+    });
 
-    test.describe("POST:/api/v1/rtcds/auth -FOR USERS",() => {
-        // user register 
-        test("should create User with valid fullName, email & password", async()=>{
+    test.describe('POST: /api/v1/rtcds/auth - FOR USERS', () => {
+        test('should create user with valid fullName, email & password', async () => {
             const user = {
-                fullName : "Greate Example",
-                email : "greateexample@gmail.com",
-                password : "Greate@123"
-            }
+                fullName: 'Great Example',
+                email: 'greatexample@gmail.com',
+                password: 'Great@123'
+            };
 
-            const res = await apiContext.post('/api/v1/rtcds/auth/register',{
-                data : user
-            })
+            const res = await apiContext.post('/register', {
+                data: user
+            });
 
             const json = await res.json();
-            expect(res.status()).toEqual(201);
-            expect(json.statusCode).toEqual(201);
-            expect(json.data).toMatchObject(user);
+
+            expect(res.status()).toBe(201);
+            expect(json.statusCode).toBe(201);
+            expect(json.data).toMatchObject({
+                fullName: user.fullName,
+                email: user.email
+            });
+            expect(json.data.password).toBeUndefined();
+
             userId = json.data._id;
-        })
-    })
-
-        
-
- })
-
+            expect(userId).toBeDefined();
+        });
+    });
+});
