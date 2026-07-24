@@ -1,6 +1,7 @@
 import { httpServer } from '../src/app';
 import { ENV } from '../src/config/ENV';
 import { connectedDBForTesting } from './db';
+import { redisTestConnector } from './redis-server';
 
 const PORT = ENV.PORT || 5003
 
@@ -13,4 +14,5 @@ const startServer = () => {
 
 
 await connectedDBForTesting();
+await redisTestConnector()
 await startServer();
