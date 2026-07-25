@@ -1,18 +1,37 @@
-import { httpServer } from '../src/app';
-import { ENV } from '../src/config/ENV';
-import { connectedDBForTesting } from './db';
-import { redisTestConnector } from './redis-server';
 
-const PORT = ENV.PORT || 5003
+import { redisConnect, client } from "../src/redis.js";
+import { createServer } from "../src/server.js";
+import connectDB from "./db.js";
 
-const startServer = () => {
-    httpServer.listen(PORT, () => {
-        console.info( `Visit the documentation at: http://localhost:${PORT}`)
-        console.log(`Server Listning on port : ${PORT}`)
-    })
-}
+let server;
+let io;
 
+beforeAll(async () => {
+    // Mongo
+    console.log("db connecting soon")
+    await connectDB()
 
-await connectedDBForTesting();
-await redisTestConnector()
-await startServer();
+    // Redis
+    await redisConnect();
+
+    // HTTP + Socket.IO
+    const result = await createServer();
+
+    server = result.server;
+    io = result.io;
+});
+
+afterEach(async () => {
+    // Clear collections
+    await User.deleteMany({});
+});
+
+afterAll(async () => {
+    await io.close();
+
+    await new Promise((resolve) => server.close(resolve));
+
+    await client.quit();
+
+    mongoose.connection.close();
+});

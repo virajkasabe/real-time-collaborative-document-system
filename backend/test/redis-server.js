@@ -12,3 +12,7 @@ export const redisTestConnector = () => {
           client.connect()
         ]);
 }
+
+export {
+    client
+}
