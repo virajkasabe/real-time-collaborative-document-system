@@ -25,7 +25,7 @@ test.describe('User', () => {
                 password: 'Great@123'
             };
 
-            const res = await apiContext.post('/register', {
+            const res = await apiContext.post('/api/v1/rtcds/auth/register', {
                 data: user
             });
 
