@@ -76,7 +76,8 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   // TODO : SEND EMAIL FOR OTP
 
-  const link = `${ENV.CORS_ORIGIN}/verify-email/${unHashedToken}`
+  const link = `${ENV.VERIFY_EMAIL}/${unHashedToken}`
+  console.log(`${link}`)
 
   const rest = await otpService(
     otp,
@@ -86,7 +87,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     console.log("res", rest)
 
-    console.log(`${ENV.CORS_ORIGIN}/verify-email/${unHashedToken}`)
+    console.log(`${ENV.CLIENT_URL}/verify-email/${unHashedToken}`)
 
   console.log("user register");
 
