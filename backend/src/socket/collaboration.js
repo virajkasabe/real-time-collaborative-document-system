@@ -14,7 +14,6 @@ import {
   NOTIFICATION_EVENT,
   SOCKET_EVENT,
 } from "./socketEvents.js";
-import { v4 as uuidv4 } from 'uuid';
 
 export const acceptCollab = async(io,socket,data) => {
     console.log("data.acceptNotif", data)
@@ -66,7 +65,7 @@ export const acceptCollab = async(io,socket,data) => {
     );
 
     const acceptCollabData = {
-      id : uuidv4(),
+      id : new Date()(),
       type: "COLLAB_ACCEPTED",
       accepterName: socket.user.fullName,
       documentId: doc._id,
@@ -95,7 +94,7 @@ export const declineCollab = async(io,socket,data) => {
       io
       .to(user._id)
       .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
-           notificationId: uuidv4(),
+           notificationId: new Date()(),
            message : "Token Expirted or used",
            type : "error"
           });
@@ -107,7 +106,7 @@ export const declineCollab = async(io,socket,data) => {
 
        
        const declineCollabData = {
-         id : uuidv4(), 
+         id : new Date()(), 
          type: "COLLAB_DECLINED",
          declineUserName: socket.user.fullName,
          documentId: doc._id,
