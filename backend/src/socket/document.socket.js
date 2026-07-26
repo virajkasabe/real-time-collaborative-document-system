@@ -213,8 +213,8 @@ export const mountDocumentRecivedOperation = (socket, io) => {
 
 
 export const startDocumentFlushScheduler = () => {
-  console.log("Auto-sync to MongoDB every 10s 🛜 💾");
-
+  console.log("🛜  socket + redis → 💾 MongoDB auto-sync enabled (every 10s)");
+ 
   setInterval(async () => {
     try {
       const dirtyIds = await getDirtyDocument();

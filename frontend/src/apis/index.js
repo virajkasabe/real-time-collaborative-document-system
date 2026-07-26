@@ -1,18 +1,16 @@
-import axios from 'axios'
+import axios from "axios";
 
-export const baseAPIURL = import.meta.env.VITE_SERVER_URI ||  "http://localhost:5000/api/v1/rtcds"
+export const baseAPIURL =
+  import.meta.env.VITE_SERVER_URI || "http://localhost:5000/api/v1/rtcds";
 
 export const apiClient = axios.create({
-    baseURL : baseAPIURL,
-    withCredentials : true,
-    timeout : 30000,
-    // headers :{ 
-    //     "Content-Type" : "application/json"
-    // }
-})
-
-
-
+  baseURL: baseAPIURL,
+  withCredentials: true,
+  timeout: 30000,
+  // headers :{
+  //     "Content-Type" : "application/json"
+  // }
+});
 
 export const requestHandler = async (api, setLoading, onSuccess, onError) => {
   let isMounted = true;
@@ -27,10 +25,12 @@ export const requestHandler = async (api, setLoading, onSuccess, onError) => {
 
     onSuccess?.(data);
 
-    return data
-    
+    return data;
   } catch (error) {
-    const errorMessage = error?.response?.data?.message || error?.message || "Something went wrong";
+    const errorMessage =
+      error?.response?.data?.message ||
+      error?.message ||
+      "Something went wrong";
     onError?.(error?.response?.data || { message: errorMessage });
     console.error("API error:", errorMessage);
 
@@ -43,9 +43,6 @@ export const requestHandler = async (api, setLoading, onSuccess, onError) => {
     if (isMounted) setLoading?.(false);
   }
 };
-
-
-
 
 export const isBrowser = typeof window !== "undefined";
 export class LocalStorage {
@@ -89,46 +86,40 @@ export class LocalStorage {
   }
 }
 
-
-
 apiClient.interceptors.response.use(
   (response) => response,
-  
+
   async (error) => {
-
-
-
     // return error.response.data
 
     // If 401 and request not retried
     // if (error.response?.status === 401 && !originalRequest._retry) {
     //   originalRequest._retry = true;
 
-      // try {
-      //   // Refresh token endpoint (httpOnly cookie sent automatically)
-      //   const refreshRes = await apiClient.post("/refresh-token");
-      //   const newAccessToken = refreshRes.data.accessToken;
+    // try {
+    //   // Refresh token endpoint (httpOnly cookie sent automatically)
+    //   const refreshRes = await apiClient.post("/refresh-token");
+    //   const newAccessToken = refreshRes.data.accessToken;
 
-      //   if (!newAccessToken) throw new Error("Refresh token failed");
+    //   if (!newAccessToken) throw new Error("Refresh token failed");
 
-      //   // Save new accessToken
-      //   LocalStorage.set("accessToken", newAccessToken);
+    //   // Save new accessToken
+    //   LocalStorage.set("accessToken", newAccessToken);
 
-      //   // Retry original request with new token
-      //   originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-      //   return apiClient(originalRequest);
-      // } catch (refreshError) {
-      //   // Refresh failed → clear storage + redirect to login
-      //   LocalStorage.clear();
-      //   window.location.href = "/login";
-      //   return Promise.reject(refreshError);
-      // }
+    //   // Retry original request with new token
+    //   originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+    //   return apiClient(originalRequest);
+    // } catch (refreshError) {
+    //   // Refresh failed → clear storage + redirect to login
+    //   LocalStorage.clear();
+    //   window.location.href = "/login";
+    //   return Promise.reject(refreshError);
+    // }
     // }
 
     return Promise.reject(error.response.data);
-  }
+  },
 );
-
 
 apiClient.interceptors.request.use((config) => {
   const token = LocalStorage.get("accessToken");
