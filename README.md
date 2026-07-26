@@ -126,3 +126,26 @@ on - reciver
 export PORT=5000 && node backend/src/server.js
 
 ```
+
+
+### Backend will be dockerise now you can only heet one line app will be no need to run manually directly run as dockerise
+
+- first create image 
+
+```
+
+docker build -t [IMAGE_NAME]
+
+```
+
+then run the container
+
+```
+
+docker run
+- e crediential1 = "values" \
+- e crediential2 = "values" \
+- e crediential3 = "values" \
+[IMAGE_NAME]
+
+```
