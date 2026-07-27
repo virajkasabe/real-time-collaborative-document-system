@@ -1,20 +1,6 @@
+import { OTPSERVICECOLORS } from '../utils/helper.js'
 import { apiInstance, senderEmail, senderName } from './brevoClient.js'
 
-// Color scheme constants for consistent branding
-const COLORS = {
-    primary: '#4F46E5',      // Indigo - main brand color
-    primaryLight: '#818CF8',  // Lighter indigo
-    primaryDark: '#3730A3',   // Darker indigo
-    secondary: '#10B981',     // Emerald green - success/verify
-    background: '#F9FAFB',    // Light gray background
-    cardBg: '#FFFFFF',       // White card background
-    text: '#1F2937',         // Dark gray text
-    textLight: '#6B7280',    // Medium gray text
-    textMuted: '#9CA3AF',    // Light gray text
-    border: '#E5E7EB',       // Border color
-    danger: '#EF4444',       // Red for warnings
-    warning: '#F59E0B',      // Amber for warnings
-}
 
 export const otpService = async (otp, email, options = {}) => {
     try {
@@ -28,7 +14,6 @@ export const otpService = async (otp, email, options = {}) => {
             includeBranding = true
         } = options
 
-        // Use provided sender info or fallback to imported values
         const finalSenderEmail = customSenderEmail || senderEmail || 'noreply@yourdomain.com'
         const finalSenderName = customSenderName || senderName || 'Your App Name'
 
@@ -41,7 +26,6 @@ export const otpService = async (otp, email, options = {}) => {
             subject: subject
         }
 
-        // If using a template
         if (templateId) {
             emailData.templateId = templateId
             emailData.params = {
@@ -50,7 +34,6 @@ export const otpService = async (otp, email, options = {}) => {
                 EXPIRY: expiryMinutes
             }
         } else {
-            // HTML email content with enhanced styling
             emailData.htmlContent = `
                 <!DOCTYPE html>
                 <html>
@@ -65,26 +48,26 @@ export const otpService = async (otp, email, options = {}) => {
                 <body style="
                     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
                     line-height: 1.6;
-                    color: ${COLORS.text};
+                    color: ${OTPSERVICECOLORS.text};
                     max-width: 600px;
                     margin: 0 auto;
                     padding: 20px;
-                    background-color: ${COLORS.background};
+                    background-color: ${OTPSERVICECOLORS.background};
                 ">
                     <div style="
-                        background-color: ${COLORS.cardBg};
+                        background-color: ${OTPSERVICECOLORS.cardBg};
                         border-radius: 16px;
                         padding: 40px 35px;
                         text-align: center;
                         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-                        border: 1px solid ${COLORS.border};
+                        border: 1px solid ${OTPSERVICECOLORS.border};
                     ">
                         <!-- Logo/Header Section -->
                         ${includeBranding ? `
                         <div style="margin-bottom: 25px;">
                             <div style="
                                 display: inline-block;
-                                background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryLight});
+                                background: linear-gradient(135deg, ${OTPSERVICECOLORS.primary}, ${OTPSERVICECOLORS.primaryLight});
                                 color: white;
                                 width: 60px;
                                 height: 60px;
@@ -97,7 +80,7 @@ export const otpService = async (otp, email, options = {}) => {
                                 🔐
                             </div>
                             <h1 style="
-                                color: ${COLORS.text};
+                                color: ${OTPSERVICECOLORS.text};
                                 font-size: 24px;
                                 font-weight: 700;
                                 margin: 0;
@@ -110,7 +93,7 @@ export const otpService = async (otp, email, options = {}) => {
 
                         <!-- Main Content -->
                         <h2 style="
-                            color: ${COLORS.text};
+                            color: ${OTPSERVICECOLORS.text};
                             font-size: 20px;
                             font-weight: 600;
                             margin-bottom: 15px;
@@ -120,7 +103,7 @@ export const otpService = async (otp, email, options = {}) => {
                         
                         <p style="
                             font-size: 16px;
-                            color: ${COLORS.textLight};
+                            color: ${OTPSERVICECOLORS.textLight};
                             margin-bottom: 30px;
                         ">
                             Please use the following One-Time Password (OTP) to complete your verification:
@@ -128,17 +111,17 @@ export const otpService = async (otp, email, options = {}) => {
 
                         <!-- OTP Code Box -->
                         <div style="
-                            background: linear-gradient(135deg, ${COLORS.background}, #F3F4F6);
+                            background: linear-gradient(135deg, ${OTPSERVICECOLORS.background}, #F3F4F6);
                             border-radius: 12px;
                             padding: 25px 20px;
                             margin: 20px 0 25px 0;
-                            border: 2px dashed ${COLORS.primaryLight};
+                            border: 2px dashed ${OTPSERVICECOLORS.primaryLight};
                         ">
                             <div style="
                                 font-size: 48px;
                                 font-weight: 700;
                                 letter-spacing: 12px;
-                                color: ${COLORS.primary};
+                                color: ${OTPSERVICECOLORS.primary};
                                 font-family: 'Courier New', monospace;
                                 background: white;
                                 padding: 15px 20px;
@@ -153,9 +136,9 @@ export const otpService = async (otp, email, options = {}) => {
                         <!-- Expiry Info -->
                         <div style="
                             background-color: #FEF3C7;
-                            border-left: 4px solid ${COLORS.warning};
+                            border-left: 4px solid ${OTPSERVICECOLORS.warning};
                             padding: 12px 16px;
-                            border-radius: 6px;
+                            border-radius: 6px;lock
                             margin: 20px 0;
                             text-align: left;
                         ">
@@ -172,7 +155,7 @@ export const otpService = async (otp, email, options = {}) => {
                         ${link ? `
                         <div style="margin: 25px 0 20px 0;">
                             <a href="${link}" style="
-                                background: linear-gradient(135deg, ${COLORS.secondary}, #059669);
+                                background: linear-gradient(135deg, ${OTPSERVICECOLORS.secondary}, #059669);
                                 color: white;
                                 padding: 14px 40px;
                                 text-decoration: none;
@@ -191,7 +174,7 @@ export const otpService = async (otp, email, options = {}) => {
                         <!-- Security Note -->
                         <div style="
                             background-color: #EFF6FF;
-                            border-left: 4px solid ${COLORS.primary};
+                            border-left: 4px solid ${OTPSERVICECOLORS.primary};
                             padding: 12px 16px;
                             border-radius: 6px;
                             margin: 20px 0 25px 0;
@@ -209,14 +192,14 @@ export const otpService = async (otp, email, options = {}) => {
 
                         <hr style="
                             border: none;
-                            border-top: 1px solid ${COLORS.border};
+                            border-top: 1px solid ${OTPSERVICECOLORS.border};
                             margin: 30px 0 20px 0;
                         ">
 
                         <!-- Footer -->
                         <div style="
                             font-size: 13px;
-                            color: ${COLORS.textMuted};
+                            color: ${OTPSERVICECOLORS.textMuted};
                             text-align: center;
                         ">
                             <p style="margin: 5px 0;">
@@ -226,7 +209,7 @@ export const otpService = async (otp, email, options = {}) => {
                                 or contact our support team immediately.
                             </p>
                             ${includeBranding ? `
-                            <p style="margin-top: 15px; font-size: 12px; color: ${COLORS.textMuted};">
+                            <p style="margin-top: 15px; font-size: 12px; color: ${OTPSERVICECOLORS.textMuted};">
                                 © ${new Date().getFullYear()} ${finalSenderName}. All rights reserved.
                             </p>
                             ` : ''}
@@ -236,7 +219,6 @@ export const otpService = async (otp, email, options = {}) => {
                 </html>
             `
 
-            // Plain text version for email clients that don't support HTML
             emailData.textContent = `
                 Email Verification
 
@@ -282,7 +264,6 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
             expiryHours = 24
         } = options
 
-        // Use provided sender info or fallback to imported values
         const finalSenderEmail = customSenderEmail || senderEmail || 'noreply@yourdomain.com'
         const finalSenderName = customSenderName || senderName || 'Your App Name'
 
@@ -307,26 +288,26 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                 <body style="
                     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
                     line-height: 1.6;
-                    color: ${COLORS.text};
+                    color: ${OTPSERVICECOLORS.text};
                     max-width: 600px;
                     margin: 0 auto;
                     padding: 20px;
-                    background-color: ${COLORS.background};
+                    background-color: ${OTPSERVICECOLORS.background};
                 ">
                     <div style="
-                        background-color: ${COLORS.cardBg};
+                        background-color: ${OTPSERVICECOLORS.cardBg};
                         border-radius: 16px;
                         padding: 40px 35px;
                         text-align: center;
                         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-                        border: 1px solid ${COLORS.border};
+                        border: 1px solid ${OTPSERVICECOLORS.border};
                     ">
                         <!-- Logo/Header Section -->
                         ${includeBranding ? `
                         <div style="margin-bottom: 25px;">
                             <div style="
                                 display: inline-block;
-                                background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryLight});
+                                background: linear-gradient(135deg, ${OTPSERVICECOLORS.primary}, ${OTPSERVICECOLORS.primaryLight});
                                 color: white;
                                 width: 60px;
                                 height: 60px;
@@ -339,7 +320,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                                 📧
                             </div>
                             <h1 style="
-                                color: ${COLORS.text};
+                                color: ${OTPSERVICECOLORS.text};
                                 font-size: 24px;
                                 font-weight: 700;
                                 margin: 0;
@@ -352,7 +333,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
 
                         <!-- Main Content -->
                         <h2 style="
-                            color: ${COLORS.text};
+                            color: ${OTPSERVICECOLORS.text};
                             font-size: 20px;
                             font-weight: 600;
                             margin-bottom: 15px;
@@ -362,7 +343,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                         
                         <p style="
                             font-size: 16px;
-                            color: ${COLORS.textLight};
+                            color: ${OTPSERVICECOLORS.textLight};
                             margin-bottom: 25px;
                         ">
                             Please verify your email address to complete your registration
@@ -372,7 +353,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                         <!-- Verify Button -->
                         <div style="margin: 30px 0;">
                             <a href="${link}" style="
-                                background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primaryDark});
+                                background: linear-gradient(135deg, ${OTPSERVICECOLORS.primary}, ${OTPSERVICECOLORS.primaryDark});
                                 color: white;
                                 padding: 16px 48px;
                                 text-decoration: none;
@@ -389,7 +370,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
 
                         <!-- Or copy link section -->
                         <div style="
-                            background-color: ${COLORS.background};
+                            background-color: ${OTPSERVICECOLORS.background};
                             border-radius: 8px;
                             padding: 15px;
                             margin: 20px 0;
@@ -398,19 +379,19 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                             <p style="
                                 margin: 0 0 8px 0;
                                 font-size: 13px;
-                                color: ${COLORS.textLight};
+                                color: ${OTPSERVICECOLORS.textLight};
                             ">
                                 Or copy and paste this link in your browser:
                             </p>
                             <code style="
                                 display: block;
                                 font-size: 12px;
-                                color: ${COLORS.primary};
+                                color: ${OTPSERVICECOLORS.primary};
                                 word-break: break-all;
                                 background: white;
                                 padding: 8px;
                                 border-radius: 4px;
-                                border: 1px solid ${COLORS.border};
+                                border: 1px solid ${OTPSERVICECOLORS.border};
                             ">
                                 ${link}
                             </code>
@@ -419,7 +400,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                         <!-- Expiry Info -->
                         <div style="
                             background-color: #FEF3C7;
-                            border-left: 4px solid ${COLORS.warning};
+                            border-left: 4px solid ${OTPSERVICECOLORS.warning};
                             padding: 12px 16px;
                             border-radius: 6px;
                             margin: 20px 0;
@@ -446,7 +427,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                                 margin: 0 0 8px 0;
                                 font-size: 14px;
                                 font-weight: 600;
-                                color: ${COLORS.primary};
+                                color: ${OTPSERVICECOLORS.primary};
                             ">
                                 Why verify your email?
                             </p>
@@ -454,7 +435,7 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
                                 margin: 5px 0;
                                 padding-left: 20px;
                                 font-size: 13px;
-                                color: ${COLORS.textLight};
+                                color: ${OTPSERVICECOLORS.textLight};
                             ">
                                 <li>Secure your account against unauthorized access</li>
                                 <li>Receive important notifications and updates</li>
@@ -465,21 +446,21 @@ export const emailVerifyLinkService = async (link, email, options = {}) => {
 
                         <hr style="
                             border: none;
-                            border-top: 1px solid ${COLORS.border};
+                            border-top: 1px solid ${OTPSERVICECOLORS.border};
                             margin: 30px 0 20px 0;
                         ">
 
                         <!-- Footer -->
                         <div style="
                             font-size: 13px;
-                            color: ${COLORS.textMuted};
+                            color: ${OTPSERVICECOLORS.textMuted};
                             text-align: center;
                         ">
                             <p style="margin: 5px 0;">
                                 If you didn't create an account with us, please ignore this email.
                             </p>
                             ${includeBranding ? `
-                            <p style="margin-top: 15px; font-size: 12px; color: ${COLORS.textMuted};">
+                            <p style="margin-top: 15px; font-size: 12px; color: ${OTPSERVICECOLORS.textMuted};">
                                 © ${new Date().getFullYear()} ${finalSenderName}. All rights reserved.
                             </p>
                             ` : ''}

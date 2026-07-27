@@ -1,5 +1,7 @@
 import { apiInstance, senderEmail } from './brevoClient.js'
 
+// Define the icon URL once at the top
+const WEBSITE_ICON = 'https://res.cloudinary.com/qnf2f4fq/image/upload/v1785166465/favicon_z4byb1.png';
 
 export const registerAndJoinCollab = async (documentName, inviterName, acceptLink, declineLink, recipientEmail, inviterEmail, recipientName = null, registrationLink) => {
   try {
@@ -29,8 +31,8 @@ export const registerAndJoinCollab = async (documentName, inviterName, acceptLin
                 <!-- Header with gradient -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                    <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: inline-block; line-height: 60px; margin-bottom: 20px;">
-                      <span style="font-size: 30px;">🤝</span>
+                    <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: inline-block; line-height: 60px; margin-bottom: 20px; overflow: hidden;">
+                      <img src="${WEBSITE_ICON}" alt="Website Icon" style="width: 100%; height: 100%; object-fit: contain; display: block;" />
                     </div>
                     <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Collaboration Invitation</h1>
                     <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px;">Complete registration to join</p>
@@ -188,8 +190,8 @@ export const joinCollab = async (documentName, inviterName, acceptLink, declineL
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); padding: 35px 30px; text-align: center;">
-                    <div style="width: 65px; height: 65px; background: rgba(255,255,255,0.2); border-radius: 50%; display: inline-block; line-height: 65px; margin-bottom: 15px;">
-                      <span style="font-size: 32px;">🔐</span>
+                    <div style="width: 65px; height: 65px; background: rgba(255,255,255,0.2); border-radius: 50%; display: inline-block; line-height: 65px; margin-bottom: 15px; overflow: hidden;">
+                      <img src="${WEBSITE_ICON}" alt="Website Icon" style="width: 100%; height: 100%; object-fit: contain; display: block;" />
                     </div>
                     <h2 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Action Required: Login First</h2>
                     <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px;">Please login to join the collaboration</p>

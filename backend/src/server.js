@@ -14,17 +14,14 @@ const startServer = () => {
 
 if (ENV.NODE_ENV !== "test") {
   try {
-    // 🌿 MongoDB
     await connectDB();
     console.log("🌿 MongoDB connected successfully");
 
-    // 📦 Redis
     await RedisConnect();
     console.log(`🏠 Redis Host : ${client.options.host}`);
     console.log(`🔌 Redis Port : ${client.options.port}`);
     console.log("📦 Redis connected successfully");
 
-    // 🚀 HTTP Server
     startServer();
   } catch (error) {
     console.error("❌ Failed to start application");

@@ -197,8 +197,6 @@ export const fetchDocumentFolder = asyncHandler(async (req, res) => {
     await fetchDoc(d._id)
   })
 
-  // console.log("doc", documentFolder)
-
   return res
     .status(200)
     .json(
