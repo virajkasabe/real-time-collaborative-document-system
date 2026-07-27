@@ -102,3 +102,19 @@ export const OTPSERVICECOLORS = {
     danger: '#EF4444',      
     warning: '#F59E0B',     
 }
+
+
+export const generateRandomId = (length = 12) => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let id = "";
+
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        id += characters[randomIndex];
+    }
+
+    return id;
+}
+
+const collabId = generateRandomId();
+console.log(collabId);

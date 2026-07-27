@@ -231,9 +231,9 @@ export default function ShareModal({
                   value={shareRole} 
                   onChange={(e) => setShareRole(e.target.value)}
                 >
-                  <option value={DOCUMENT_ROLES.OWNER} style={{ fontWeight: '600', color: '#7c3aed' }}>Owner</option>
-                  <option value={DOCUMENT_ROLES.EDITOR} style={{ fontWeight: '500', color: '#2563eb' }}>Editor</option>
-                  <option value={DOCUMENT_ROLES.VIEWER} style={{ fontWeight: '400', color: '#64748b' }}>Viewer</option>
+                  <option value={DOCUMENT_ROLES.OWNER} style={{ fontWeight: '600', color: '#7c3aed' }}>{DOCUMENT_ROLES.OWNER}</option>
+                  <option value={DOCUMENT_ROLES.EDITOR} style={{ fontWeight: '500', color: '#2563eb' }}>{DOCUMENT_ROLES.EDITOR}</option>
+                  <option value={DOCUMENT_ROLES.VIEWER} style={{ fontWeight: '400', color: '#64748b' }}>{DOCUMENT_ROLES.VIEWER}</option>
                 </select>
               </div>
               
