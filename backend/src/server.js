@@ -1,7 +1,7 @@
 import { httpServer } from "./app.js";
 import { ENV } from "./config/ENV.js";
 import { connectDB } from "./db/index.js";
-import { client, RedisConnect } from "./redis/client.js";
+import { RedisConnect } from "./redis/client.js";
 
 const startServer = () => {
   httpServer.listen(ENV.PORT, () => {
@@ -18,8 +18,6 @@ if (ENV.NODE_ENV !== "test") {
     console.log("🌿 MongoDB connected successfully");
 
     await RedisConnect();
-    console.log(`🏠 Redis Host : ${client.options.host}`);
-    console.log(`🔌 Redis Port : ${client.options.port}`);
     console.log("📦 Redis connected successfully");
 
     startServer();
