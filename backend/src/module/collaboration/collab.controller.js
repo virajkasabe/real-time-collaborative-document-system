@@ -136,17 +136,27 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
     
     
     if (!accepter) {
-      await notregisteredUser(io, pendingNotification, collabData, email);
+      await notregisteredUser(pendingNotification, collabData, email);
+
+       const documentName = document.title 
+       const inviterName =  req.user.fullName
+       const  acceptLink =  null
+       const declineLink = null
+       const recipientEmail = email 
+       const inviterEmail = req.user.email
+       const recipientName = null
+       const registrationLink = `${ENV.CORS_ORIGIN}/register`
       
-      registerAndJoinCollab(
-        documentName = document.title ,
-        inviterName =  req.user.fullName,
-        acceptLink =  null,
-        declineLink = null,
-        recipientEmail = email ,
-        inviterEmail = req.user.email,
-        recipientName = null,
-        registrationLink = `${ENV.CORS_ORIGIN}/register`
+      
+      await registerAndJoinCollab(
+        documentName  ,
+        inviterName ,
+        acceptLink,
+        declineLink ,
+        recipientEmail  ,
+        inviterEmail ,
+        recipientName ,
+        registrationLink 
       );
       
       return res

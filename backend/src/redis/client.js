@@ -103,7 +103,6 @@ export const deleteDocumet = async (docId) => {
 // ?? ===== COLLABORATION =====
 // ***** send collab *****
 export const setCollaboration = async (collabId, payload, expiry = 15) => {
-  console.log("setCollaboration")
   if (!client || !isConnected) return null;
   const key = `collab:${collabId}`;
   await client.setex(key, expiry, JSON.stringify(payload));
@@ -152,7 +151,6 @@ export const setNotification = async (
   if (!client || !isConnected) return null;
   const key = `notify:${notifyKey}`;
   await client.rpush(key, JSON.stringify(payload));
-  console.log("notification")
   await client.expire(key, expiry);
 };
 

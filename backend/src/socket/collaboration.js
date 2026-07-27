@@ -6,7 +6,7 @@ import {
   setDocument,
 } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
-import { fetchDoc, secureUser } from "../utils/helper.js";
+import { fetchDoc, generateRandomId, secureUser } from "../utils/helper.js";
 import {
   COLLABORATION_ERROR_EVENT,
   COLLABORATION_EVENT,
@@ -16,7 +16,6 @@ import {
 } from "./socketEvents.js";
 
 export const acceptCollab = async(io,socket,data) => {
-    console.log("data.acceptNotif", data)
     const { collabId } = data
     console.log("data",data)
 
@@ -65,7 +64,7 @@ export const acceptCollab = async(io,socket,data) => {
     );
 
     const acceptCollabData = {
-      id : new Date()(),
+      id : generateRandomId(),
       type: "COLLAB_ACCEPTED",
       accepterName: socket.user.fullName,
       documentId: doc._id,
@@ -106,7 +105,7 @@ export const declineCollab = async(io,socket,data) => {
 
        
        const declineCollabData = {
-         id : new Date()(), 
+         id : generateRandomId(), 
          type: "COLLAB_DECLINED",
          declineUserName: socket.user.fullName,
          documentId: doc._id,

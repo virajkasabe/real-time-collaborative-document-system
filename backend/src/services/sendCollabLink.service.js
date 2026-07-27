@@ -64,6 +64,8 @@ export const registerAndJoinCollab = async (
   recipientName = null,
   registrationLink
 ) => {
+
+
   try {
     // Validate required fields
     if (!recipientEmail) {
