@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, Star, Lightbulb, FileText, Shield, MessageSquare } from "lucide-react";
+import { Users, Star, Lightbulb, FileText, Shield, MessageSquare, Zap } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 function RevealOnScroll({ children, delay = 0 }) {
@@ -52,8 +52,8 @@ const values = [
 ];
 
 const highlights = [
-  { emoji: "⚡", title: "Live Document Sync", desc: "Changes appear instantly across all connected users without manual refresh.", avatarCls: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300" },
-  { emoji: "🛡️", title: "Secure Authentication", desc: "Protected access with JWT authentication and secure user management.", avatarCls: "bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300" },
+  { icon: <Zap size={20} />, title: "Live Document Sync", desc: "Changes appear instantly across all connected users without manual refresh.", avatarCls: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300" },
+  { icon: <Shield size={20} />, title: "Secure Authentication", desc: "Protected access with JWT authentication and secure user management.", avatarCls: "bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300" },
 ];
 
 const reasons = [
@@ -148,7 +148,7 @@ export default function AboutUs() {
             {highlights.map((h, i) => (
               <RevealOnScroll key={h.title} delay={i * 100}>
                 <div className={`spotlight-card glow-blue rounded-2xl border p-4 sm:p-5 flex gap-4 transition-colors duration-300 ${isDark ? "bg-zinc-900/60 border-white/5" : "bg-white border-blue-100 shadow-sm"}`}>
-                  <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${h.avatarCls}`}>{h.emoji}</div>
+                  <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${h.avatarCls}`}>{h.icon}</div>
                   <div>
                     <h3 className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : "text-slate-900"}`}>{h.title}</h3>
                     <p className={`text-xs sm:text-sm leading-6 mt-1 ${isDark ? "text-[#94A3B8]" : "text-slate-500"}`}>{h.desc}</p>

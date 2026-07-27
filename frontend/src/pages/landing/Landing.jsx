@@ -17,7 +17,8 @@ import {
   ChevronRight, 
   Terminal,
   Layers,
-  Play
+  Play,
+  Rocket
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import ThemeToggle from '../../components/common/ThemeToggle';
@@ -271,13 +272,7 @@ export default function Landing() {
             {/* HERO LEFT COPY (45% width, vertically centered) */}
             <div className="w-full lg:w-[45%] text-left flex flex-col items-start justify-center">
               
-              {/* Badge directly above headline */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0D6EFD]/8 dark:bg-[#0D6EFD]/12 border border-[#0D6EFD]/20 text-[#0D6EFD] text-[10px] font-bold rounded-full uppercase tracking-wider">
-                <Sparkles size={11} className="animate-spin-slow" />
-                <span>Real-time co-authoring workspace</span>
-              </div>
-
-              {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px, gap to badge = 16px */}
+              {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px */}
               <h1 className="font-sans hero-headline-clamp text-[#0F172A] dark:text-white mt-[16px] max-w-[650px]">
                 The collaborative canvas for <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0D6EFD] to-indigo-500 dark:from-[#3FA3FF] dark:to-cyan-400">modern</span> engineering teams.
               </h1>
@@ -338,7 +333,8 @@ export default function Landing() {
                 {/* 2. Editor Toolbar */}
                 <div className="px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#0F172A]/50 flex items-center justify-between gap-4 h-12 shrink-0">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] dark:text-white truncate">
-                    <span>🚀 Docs</span>
+                    <Rocket size={13} className="text-[#0D6EFD]" />
+                    <span>Docs</span>
                     <span className="text-slate-300 dark:text-white/10">/</span>
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Sync_v2.md</span>
                   </div>
@@ -517,7 +513,7 @@ export default function Landing() {
           <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 space-y-16">
             <RevealOnScroll>
               <div className="text-center space-y-4 max-w-3xl mx-auto">
-                <span className="text-[#0D6EFD] text-xs font-extrabold uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-3.5 py-1.5 rounded-full border border-blue-200/50 dark:border-blue-900/30">Built For Engineering Teams</span>
+                <h3 className="font-sans font-bold text-lg sm:text-xl text-[#081B3A] dark:text-white tracking-tight">Built for Engineering Teams</h3>
                 <h2 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl text-[#081B3A] dark:text-white leading-tight tracking-tight pt-2">
                   Enterprise speed. Minimalist control.
                 </h2>
@@ -534,7 +530,7 @@ export default function Landing() {
                 <div className="spotlight-card glow-blue p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/30 text-[#0D6EFD] flex items-center justify-center shrink-0 shadow-inner">
-                      <Activity size={20} className="animate-float-fast text-[#0D6EFD]" />
+                      <Activity size={20} className="text-[#0D6EFD]" />
                     </div>
                     <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
                       Real-time Sync Layer
@@ -555,7 +551,7 @@ export default function Landing() {
                 <div className="spotlight-card glow-purple p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-900/30 text-purple-500 flex items-center justify-center shrink-0 shadow-inner">
-                      <Layers size={20} className="animate-float-slow text-purple-500" />
+                      <Layers size={20} className="text-purple-500" />
                     </div>
                     <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
                       Engineering Outlines
@@ -576,7 +572,7 @@ export default function Landing() {
                 <div className="spotlight-card glow-amber p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/30 text-amber-500 flex items-center justify-center shrink-0 shadow-inner">
-                      <Shield size={20} className="animate-float-medium text-amber-500" />
+                      <Shield size={20} className="text-amber-500" />
                     </div>
                     <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
                       Role Authorization
@@ -597,7 +593,7 @@ export default function Landing() {
                 <div className="spotlight-card glow-emerald p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/30 text-emerald-500 flex items-center justify-center shrink-0 shadow-inner">
-                      <Clock size={20} className="animate-float-fast text-emerald-500" />
+                      <Clock size={20} className="text-emerald-500" />
                     </div>
                     <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
                       Checkpoint Commits
