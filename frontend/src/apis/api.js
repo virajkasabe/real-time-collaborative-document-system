@@ -21,7 +21,7 @@ export const userLogin = async (data) => {
 }
 
 // ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
-export const googleLoginApi = `${baseAPIURL}/auth/google`
+export const googleLoginApi = import.meta.env.VITE_SERVER_URI || "http://localhost:5000/api/v1/rtcds/auth/callback/google"
 
 
 export const userLogout = () => {
