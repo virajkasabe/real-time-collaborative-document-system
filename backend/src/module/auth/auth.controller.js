@@ -8,7 +8,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { otpGenerator, requiredField, secureUser } from "../../utils/helper.js";
 import User from "./auth.model.js";
-import { otpService } from "../../services/otp.service.js";
+import { emailVerifyLinkService, otpService } from "../../services/otp.service.js";
 import { link } from "fs";
 
 const option = {
@@ -72,30 +72,21 @@ export const registerUser = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
 
-  console.log("OTP", otp);
+  // console.log("OTP", otp);
 
   // TODO : SEND EMAIL FOR OTP
 
-  const link = `${ENV.VERIFY_EMAIL}/${unHashedToken}`
-  console.log(`${ENV.CLIENT_URL}/verify-email/email=${email}/token=${unHashedToken}`)
-  console.log(`${link}`)
+  const link = `${ENV.CLIENT_URL}/verify-email/email=${email}/token=${unHashedToken}`
+  await otpService(otp,email)
+  await emailVerifyLinkService(link,email)
 
-  const rest = await otpService(
-    otp,
-    link,
-    email = email
-  )
-
-    console.log("res", rest)
-
-    
 
   console.log("user register");
 
   return res
     .status(201)
     .json(
-      new ApiResponse(201, { link }, `user created  successfully`)
+      new ApiResponse(201, { "link" : "link" }, `user created  successfully`)
     );
 });
 
@@ -445,11 +436,6 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { otp, email, unHashedToken } = req.body;
-
-  console.log("req.body",req.body)
- 
-  // console.log("otp",otp)
-  // console.log("otp", req.body)
 
   const findUser = await User.findOne({ email });
 
