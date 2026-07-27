@@ -1,4 +1,4 @@
-export const RIBBON_TABS = ['home', 'insert', 'design', 'layout', 'review', 'view'];
+export const RIBBON_TABS = ['home', 'insert', 'design', 'layout', 'references', 'mailings', 'review', 'view', 'help'];
 
 export const STATIC_MENU_ALERTS = {
   file: 'File Options:\n- Back to Dashboard\n- Document is auto-saved locally.',
@@ -21,6 +21,37 @@ export const PAGE_LAYOUTS = {
   narrow: { label: 'Narrow', maxWidth: '680px' },
   normal: { label: 'Normal', maxWidth: '816px' },
   wide: { label: 'Wide', maxWidth: '1000px' },
+};
+
+export const PAGE_MARGIN_PRESETS = {
+  normal: {
+    label: 'Normal',
+    top: '60px',
+    bottom: '80px',
+    left: 'clamp(40px, 6vw, 80px)',
+    right: 'clamp(40px, 6vw, 80px)',
+  },
+  narrow: {
+    label: 'Narrow',
+    top: '30px',
+    bottom: '40px',
+    left: '30px',
+    right: '30px',
+  },
+  moderate: {
+    label: 'Moderate',
+    top: '60px',
+    bottom: '80px',
+    left: '50px',
+    right: '50px',
+  },
+  wide: {
+    label: 'Wide',
+    top: '60px',
+    bottom: '80px',
+    left: '120px',
+    right: '120px',
+  },
 };
 
 export const SIMULATED_TEAM_REPLIES = [

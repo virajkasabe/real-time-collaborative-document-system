@@ -4,6 +4,7 @@ import { inviteCollab } from '../../apis/api';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { DOCUMENT_ROLES } from '../../utils/constants';
+import { useNavigate } from 'react-router-dom';
 import EditorHeader from './components/EditorHeader';
 import FindReplacePane from './components/FindReplacePane';
 import LeftSidebar from './components/LeftSidebar';
@@ -11,6 +12,7 @@ import RibbonTabsBar from './components/RibbonTabsBar';
 import RibbonToolbar from './components/RibbonToolbar';
 import RightSidebar from './components/RightSidebar';
 import ShareModal from './components/ShareModal';
+import FileBackstagePanel from './components/FileBackstagePanel';
 import SidebarToggle from './components/SidebarToggle';
 import StatusBar from './components/StatusBar';
 import useActiveCollaborators from './hooks/useActiveCollaborators';
@@ -20,6 +22,7 @@ import {
   FONT_SIZE_GROW,
   FONT_SIZE_SHRINK,
   PAGE_LAYOUTS,
+  PAGE_MARGIN_PRESETS,
   SIMULATED_TEAM_MEMBERS,
   SIMULATED_TEAM_REPLIES,
   TITLE_SAVE_DEBOUNCE_MS,
@@ -32,6 +35,8 @@ export default function EditingPageContent({
 }) {
   const { socket } = useSocket();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [showFileMenu, setShowFileMenu] = useState(false);
   const isMobile = useIsMobile();
   const [title, setTitle] = useState(() => {
     const rawTitle = doc.title || 'Untitled Document';
@@ -39,11 +44,14 @@ export default function EditingPageContent({
   });
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [documentLanguage, setDocumentLanguage] = useState('English (India)');
+  const [documentProtected, setDocumentProtected] = useState(false);
+
   const isOwner = docUserRole === DOCUMENT_ROLES.OWNER;
   const isEditor = docUserRole === DOCUMENT_ROLES.EDITOR;
-  const canEdit = isOwner || isEditor;
+  const canEdit = (isOwner || isEditor) && !documentProtected;
   const canShare = isOwner;
-  console.log("EditingPageContent render - docUserRole:", docUserRole, "isOwner:", isOwner, "isEditor:", isEditor, "canEdit:", canEdit);
+  console.log("EditingPageContent render - docUserRole:", docUserRole, "isOwner:", isOwner, "isEditor:", isEditor, "canEdit:", canEdit, "documentProtected:", documentProtected);
 
   // Who else is currently present in the document (drives the header avatar
   // stack — added on join, removed on leave).
@@ -56,11 +64,21 @@ export default function EditingPageContent({
   const [rightTab, setRightTab] = useState('chat');
   const [activeRibbonTab, setActiveRibbonTab] = useState('home');
   const [zoomPercent, setZoomPercent] = useState(100);
+  const [viewMode, setViewMode] = useState('print'); // 'print' | 'web'
   const [autoSaveActive, setAutoSaveActive] = useState(true);
   const [copiedFormat, setCopiedFormat] = useState(null);
   const [formatPainterActive, setFormatPainterActive] = useState(false);
   const [accentColor, setAccentColor] = useState(null);
   const [pageLayout, setPageLayout] = useState('normal');
+  const [pageMargins, setPageMargins] = useState('normal');
+  const [pageOrientation, setPageOrientation] = useState('portrait');
+  const [pageColumns, setPageColumns] = useState(1);
+  const [currentParagraphFormat, setCurrentParagraphFormat] = useState({
+    marginLeft: '0 cm',
+    marginRight: '0 cm',
+    marginTop: '0 pt',
+    marginBottom: '8 pt',
+  });
   const [documentTheme, setDocumentTheme] = useState('modern');
   const [pageBackgroundColor, setPageBackgroundColor] = useState('');
 
@@ -344,6 +362,286 @@ export default function EditingPageContent({
     quillInstance.on('selection-change', handleSelectionChange);
     return () => quillInstance.off('selection-change', handleSelectionChange);
   }, [quillInstance, formatPainterActive, copiedFormat]);
+
+  // Synchronize selection block format for Indent & Spacing inputs
+  useEffect(() => {
+    if (!quillInstance) return undefined;
+    const handleSelection = () => {
+      const range = quillInstance.getSelection();
+      if (range) {
+        const formats = quillInstance.getFormat(range.index, range.length);
+        const marginLeft = formats['margin-left'] || '0 cm';
+        const marginRight = formats['margin-right'] || '0 cm';
+        const marginTop = formats['margin-top'] || '0 pt';
+        const marginBottom = formats['margin-bottom'] || '8 pt';
+        setCurrentParagraphFormat({ marginLeft, marginRight, marginTop, marginBottom });
+      }
+    };
+    quillInstance.on('selection-change', handleSelection);
+    quillInstance.on('text-change', handleSelection);
+    // query initial values
+    handleSelection();
+    return () => {
+      quillInstance.off('selection-change', handleSelection);
+      quillInstance.off('text-change', handleSelection);
+    };
+  }, [quillInstance]);
+
+  // ---- References Tab: TOC & Footnotes ----
+  const scanFootnotes = useCallback((quill) => {
+    if (!quill) return [];
+    const delta = quill.getContents();
+    let markers = [];
+    let currentIdx = 0;
+    
+    delta.ops.forEach(op => {
+      if (typeof op.insert === 'string') {
+        if (op.attributes && op.attributes.script === 'super') {
+          if (/^\d+$/.test(op.insert)) {
+            markers.push({
+              number: parseInt(op.insert),
+              index: currentIdx,
+              length: op.insert.length
+            });
+          }
+        }
+        currentIdx += op.insert.length;
+      } else {
+        currentIdx += 1;
+      }
+    });
+    return markers;
+  }, []);
+
+  const removeExistingTOC = useCallback((quill) => {
+    if (!quill) return null;
+    const lines = quill.getLines();
+    let deleteRanges = [];
+    let currentIdx = 0;
+    
+    lines.forEach(line => {
+      const length = line.length();
+      const formats = line.formats();
+      if (formats['toc-line']) {
+        deleteRanges.push({ index: currentIdx, length });
+      }
+      currentIdx += length;
+    });
+    
+    if (deleteRanges.length === 0) return null;
+    
+    // Delete in reverse order
+    deleteRanges.reverse().forEach(range => {
+      quill.deleteText(range.index, range.length, 'user');
+    });
+    
+    return deleteRanges[deleteRanges.length - 1].index;
+  }, []);
+
+  const handleInsertTOC = useCallback(() => {
+    if (!quillInstance) return;
+    const range = quillInstance.getSelection();
+    const idx = range ? range.index : 0;
+    
+    // Remove any existing TOC
+    const firstIdx = removeExistingTOC(quillInstance);
+    const targetIdx = firstIdx !== null ? firstIdx : idx;
+    
+    // Update outline synchronously from DOM
+    const headings = Array.from(quillInstance.root.querySelectorAll('h1, h2, h3')).map((h, i) => {
+      if (!h.id) h.id = `heading-ref-${i}`;
+      return { id: h.id, text: h.innerText || h.textContent || '', level: h.tagName.toLowerCase() };
+    });
+    
+    let insertIdx = targetIdx;
+    
+    // Insert TOC title
+    quillInstance.insertText(insertIdx, "Table of Contents\n", 'user');
+    quillInstance.formatLine(insertIdx, 18, {
+      'toc-line': 'header',
+      'margin-top': '12pt',
+      'margin-bottom': '8pt'
+    }, 'user');
+    insertIdx += 18;
+    
+    // Insert links
+    if (headings.length > 0) {
+      headings.forEach(heading => {
+        const itemText = `  ${heading.text}\n`;
+        quillInstance.insertText(insertIdx, itemText, 'user');
+        quillInstance.formatText(insertIdx, itemText.length - 1, 'link', `#${heading.id}`, 'user');
+        
+        const indentVal = heading.level === 'h1' ? '10px' : heading.level === 'h2' ? '24px' : '38px';
+        quillInstance.formatLine(insertIdx, itemText.length, {
+          'toc-line': 'item',
+          'margin-left': indentVal,
+          'margin-top': '4px',
+          'margin-bottom': '4px'
+        }, 'user');
+        
+        insertIdx += itemText.length;
+      });
+    } else {
+      const emptyText = "  (No headings found. Add headings to generate Table of Contents.)\n";
+      quillInstance.insertText(insertIdx, emptyText, 'user');
+      quillInstance.formatLine(insertIdx, emptyText.length, {
+        'toc-line': 'item',
+        'margin-left': '10px'
+      }, 'user');
+    }
+    
+    showToast('Table of Contents generated', 'success');
+  }, [quillInstance, showToast, removeExistingTOC]);
+
+  const handleUpdateTOC = useCallback(() => {
+    if (!quillInstance) return;
+    const firstIdx = removeExistingTOC(quillInstance);
+    if (firstIdx !== null) {
+      let insertIdx = firstIdx;
+      
+      quillInstance.insertText(insertIdx, "Table of Contents\n", 'user');
+      quillInstance.formatLine(insertIdx, 18, {
+        'toc-line': 'header',
+        'margin-top': '12pt',
+        'margin-bottom': '8pt'
+      }, 'user');
+      insertIdx += 18;
+      
+      const headings = Array.from(quillInstance.root.querySelectorAll('h1, h2, h3')).map((h, i) => {
+        if (!h.id) h.id = `heading-ref-${i}`;
+        return { id: h.id, text: h.innerText || h.textContent || '', level: h.tagName.toLowerCase() };
+      });
+      
+      if (headings.length > 0) {
+        headings.forEach(heading => {
+          const itemText = `  ${heading.text}\n`;
+          quillInstance.insertText(insertIdx, itemText, 'user');
+          quillInstance.formatText(insertIdx, itemText.length - 1, 'link', `#${heading.id}`, 'user');
+          
+          const indentVal = heading.level === 'h1' ? '10px' : heading.level === 'h2' ? '24px' : '38px';
+          quillInstance.formatLine(insertIdx, itemText.length, {
+            'toc-line': 'item',
+            'margin-left': indentVal,
+            'margin-top': '4px',
+            'margin-bottom': '4px'
+          }, 'user');
+          
+          insertIdx += itemText.length;
+        });
+      } else {
+        const emptyText = "  (No headings found. Add headings to generate Table of Contents.)\n";
+        quillInstance.insertText(insertIdx, emptyText, 'user');
+        quillInstance.formatLine(insertIdx, emptyText.length, {
+          'toc-line': 'item',
+          'margin-left': '10px'
+        }, 'user');
+      }
+      showToast('Table of Contents updated', 'success');
+    } else {
+      showToast('No Table of Contents found to update. Click "Table of Contents" first.', 'warning');
+    }
+  }, [quillInstance, showToast, removeExistingTOC]);
+
+  const handleInsertFootnote = useCallback(() => {
+    if (!quillInstance) return;
+    const range = quillInstance.getSelection();
+    if (!range) {
+      showToast('Please place your cursor where you want to insert the footnote', 'warning');
+      return;
+    }
+    
+    const text = prompt('Enter footnote text:');
+    if (!text || text.trim() === '') return;
+    
+    const markers = scanFootnotes(quillInstance);
+    const nextNum = markers.length + 1;
+    
+    const insertIdx = range.index;
+    quillInstance.insertText(insertIdx, `${nextNum}`, { script: 'super' }, 'user');
+    
+    // Check if there is already a footnote separator in the editor
+    let hasSeparator = false;
+    const lines = quillInstance.getLines();
+    lines.forEach(line => {
+      if (line.formats()['footnote-separator']) {
+        hasSeparator = true;
+      }
+    });
+    
+    let currentLength = quillInstance.getLength();
+    if (!hasSeparator) {
+      quillInstance.insertText(currentLength - 1, "\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n", 'user');
+      quillInstance.formatLine(currentLength, 12, { 'footnote-separator': 'true' }, 'user');
+      currentLength = quillInstance.getLength();
+    }
+    
+    const fnText = `[${nextNum}] ${text.trim()}\n`;
+    quillInstance.insertText(currentLength - 1, fnText, 'user');
+    quillInstance.formatLine(currentLength - 1, fnText.length, { 'footnote-item': 'true' }, 'user');
+    
+    quillInstance.setSelection(insertIdx + `${nextNum}`.length, 0);
+    showToast(`Inserted Footnote ${nextNum}`, 'success');
+  }, [quillInstance, showToast, scanFootnotes]);
+
+  const handleNextFootnote = useCallback(() => {
+    if (!quillInstance) return;
+    const markers = scanFootnotes(quillInstance);
+    if (markers.length === 0) {
+      showToast('No footnotes found in the document', 'info');
+      return;
+    }
+    
+    const range = quillInstance.getSelection();
+    const currentIdx = range ? range.index : 0;
+    
+    let nextMarker = markers.find(m => m.index > currentIdx);
+    if (!nextMarker) {
+      nextMarker = markers[0]; // Wrap around
+    }
+    
+    quillInstance.setSelection(nextMarker.index, nextMarker.length);
+    quillInstance.scrollIntoView();
+    showToast(`Jumped to Footnote marker ${nextMarker.number}`, 'success');
+  }, [quillInstance, showToast, scanFootnotes]);
+
+  const handleShowNotes = useCallback(() => {
+    if (!quillInstance) return;
+    const lines = quillInstance.getLines();
+    let fnLineIdx = -1;
+    let currentIdx = 0;
+    
+    lines.forEach(line => {
+      if (line.formats()['footnote-separator'] || line.formats()['footnote-item']) {
+        if (fnLineIdx === -1) fnLineIdx = currentIdx;
+      }
+      currentIdx += line.length();
+    });
+    
+    if (fnLineIdx !== -1) {
+      quillInstance.setSelection(fnLineIdx, 0);
+      quillInstance.scrollIntoView();
+      showToast('Jumped to footnotes section', 'success');
+    } else {
+      showToast('No footnotes section found in this document', 'info');
+    }
+  }, [quillInstance, showToast]);
+
+  // Click interceptor inside editor for heading-ref links
+  useEffect(() => {
+    if (!quillInstance) return undefined;
+    const handleEditorClick = (e) => {
+      const target = e.target.closest('a');
+      if (target && target.getAttribute('href')?.startsWith('#heading-ref-')) {
+        e.preventDefault();
+        const id = target.getAttribute('href').substring(1);
+        handleOutlineClick(id);
+      }
+    };
+    quillInstance.root.addEventListener('click', handleEditorClick);
+    return () => {
+      quillInstance.root.removeEventListener('click', handleEditorClick);
+    };
+  }, [quillInstance]);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -682,6 +980,7 @@ export default function EditingPageContent({
         setActiveRibbonTab={setActiveRibbonTab}
         theme={theme}
         isMobile={isMobile}
+        onFileMenuClick={() => setShowFileMenu(true)}
       />
 
       <RibbonToolbar
@@ -706,6 +1005,28 @@ export default function EditingPageContent({
         toggleTheme={toggleTheme}
         pageLayout={pageLayout}
         setPageLayout={setPageLayout}
+        pageMargins={pageMargins}
+        setPageMargins={setPageMargins}
+        pageOrientation={pageOrientation}
+        setPageOrientation={setPageOrientation}
+        pageColumns={pageColumns}
+        setPageColumns={setPageColumns}
+        currentParagraphFormat={currentParagraphFormat}
+        onInsertTOC={handleInsertTOC}
+        onUpdateTOC={handleUpdateTOC}
+        onInsertFootnote={handleInsertFootnote}
+        onNextFootnote={handleNextFootnote}
+        onShowNotes={handleShowNotes}
+        documentLanguage={documentLanguage}
+        setDocumentLanguage={setDocumentLanguage}
+        documentProtected={documentProtected}
+        setDocumentProtected={setDocumentProtected}
+        isOwner={isOwner}
+        isEditor={isEditor}
+        rightTab={rightTab}
+        setRightTab={setRightTab}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
         quillInstance={quillInstance}
         handleInsertCoverPage={handleInsertCoverPage}
         handleInsertBlankPage={handleInsertBlankPage}
@@ -752,15 +1073,23 @@ export default function EditingPageContent({
 
         <section className="editor-canvas-pane">
           <div
-            className={`editor-paper-container doc-theme-${documentTheme || 'modern'}`}
+            className={`editor-paper-container doc-theme-${documentTheme || 'modern'} ${viewMode === 'web' ? 'view-mode-web' : 'view-mode-print'}`}
             style={{
               transform: `scale(${zoomPercent / 100})`,
               transformOrigin: 'top center',
               transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.2s ease',
-              maxWidth: isMobile ? '100%' : PAGE_LAYOUTS[pageLayout].maxWidth,
+              maxWidth: isMobile ? '100%' : (pageOrientation === 'landscape' ? '1056px' : PAGE_LAYOUTS[pageLayout].maxWidth),
               margin: '0 auto',
               '--paper-bg': pageBackgroundColor || '',
               '--paper-text': pageBackgroundColor ? (['#ffffff', '#fff9f0', '#f5f5f5', '#f0f7ff', '#f0fff4'].includes(pageBackgroundColor.toLowerCase()) ? '#081B3A' : '#FFFFFF') : '',
+              '--page-container-width': pageOrientation === 'landscape' ? '1056px' : PAGE_LAYOUTS[pageLayout].maxWidth,
+              '--page-width': pageOrientation === 'landscape' ? '1056px' : PAGE_LAYOUTS[pageLayout].maxWidth,
+              '--page-height': pageOrientation === 'landscape' ? PAGE_LAYOUTS[pageLayout].maxWidth : '1056px',
+              '--page-margin-top': PAGE_MARGIN_PRESETS[pageMargins].top,
+              '--page-margin-bottom': PAGE_MARGIN_PRESETS[pageMargins].bottom,
+              '--page-margin-left': PAGE_MARGIN_PRESETS[pageMargins].left,
+              '--page-margin-right': PAGE_MARGIN_PRESETS[pageMargins].right,
+              '--page-columns': pageColumns,
             }}
           >
             <div ref={quillRef} style={{ minHeight: '100%' }} />
@@ -804,6 +1133,7 @@ export default function EditingPageContent({
         zoomPercent={zoomPercent}
         setZoomPercent={setZoomPercent}
         isMobile={isMobile}
+        documentLanguage={documentLanguage}
       />
 
       {showShareModal && canShare && (
@@ -819,6 +1149,18 @@ export default function EditingPageContent({
           onCopyLink={handleCopyLink}
         />
       )}
+
+      <FileBackstagePanel
+        isOpen={showFileMenu}
+        onClose={() => setShowFileMenu(false)}
+        doc={doc}
+        onBack={onBack}
+        onSave={onSave}
+        onShareClick={handleOpenShare}
+        wordCount={wordCount}
+        user={user}
+        showToast={showToast}
+      />
     </div>
   );
 }

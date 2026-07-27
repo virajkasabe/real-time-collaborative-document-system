@@ -75,12 +75,22 @@ const INITIAL_DOCS = [
 ];
 
 const getDB = () => {
-  const db = localStorage.getItem('collabdocs_db');
-  if (!db) {
+  try {
+    const db = localStorage.getItem('collabdocs_db');
+    if (!db) {
+      localStorage.setItem('collabdocs_db', JSON.stringify(INITIAL_DOCS));
+      return INITIAL_DOCS;
+    }
+    const parsed = JSON.parse(db);
+    if (!Array.isArray(parsed)) {
+      localStorage.setItem('collabdocs_db', JSON.stringify(INITIAL_DOCS));
+      return INITIAL_DOCS;
+    }
+    return parsed;
+  } catch (e) {
     localStorage.setItem('collabdocs_db', JSON.stringify(INITIAL_DOCS));
     return INITIAL_DOCS;
   }
-  return JSON.parse(db);
 };
 
 const saveDB = (data) => {
@@ -146,7 +156,26 @@ export const documentService = {
       saveDB(db);
       return db[index];
     }
-    return null;
+    
+    // Upsert fallback for cloud documents: create a local storage entry
+    const newDoc = {
+      id,
+      name: updates.name || 'Untitled Document',
+      content: updates.content || { ops: [] },
+      wordCount: updates.wordCount || 0,
+      starred: false,
+      trash: false,
+      sharedUsers: [],
+      owner: { name: 'You', email: 'you@company.com' },
+      category: 'blank',
+      updatedAt: 'Just now',
+      lastModified: new Date().toISOString(),
+      comments: [],
+      versions: []
+    };
+    db.push(newDoc);
+    saveDB(db);
+    return newDoc;
   },
 
   delete: (id) => {

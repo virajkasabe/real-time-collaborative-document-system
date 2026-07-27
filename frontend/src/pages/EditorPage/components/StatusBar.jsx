@@ -3,6 +3,7 @@ import { LuCheck } from 'react-icons/lu';
 
 export default function StatusBar({
   wordCount, isSyncing, zoomPercent, setZoomPercent, isMobile,
+  documentLanguage = 'English (India)',
 }) {
   return (
     <footer className="word-status-bar" style={isMobile ? { flexWrap: 'wrap', gap: '6px', fontSize: '11px' } : undefined}>
@@ -17,7 +18,7 @@ export default function StatusBar({
               <LuCheck size={12} style={{ color: '#10b981' }} /> Spelling: Checked
             </span>
             <span className="status-bar-separator">|</span>
-            <span>English (India)</span>
+            <span>{documentLanguage}</span>
             <span className="status-bar-separator">|</span>
             <span>Accessibility: Good to go</span>
           </>

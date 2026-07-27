@@ -1653,7 +1653,7 @@ h1, h2, h3, h4, h5, h6 {
    A4 SHEET COMPONENT REFINEMENTS (AUTOMATIC MULTI-PAGE FLOW)
    ========================================== */
 .editor-paper-container {
-  width: 816px !important; /* A4 96 DPI Width */
+  width: var(--page-container-width, 816px) !important; /* A4 96 DPI Width */
   margin: 12px auto !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -1661,30 +1661,32 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .ql-editor {
-  padding: 60px clamp(40px, 6vw, 80px) 80px !important; /* Word page margins */
+  padding: var(--page-margin-top, 60px) var(--page-margin-right, clamp(40px, 6vw, 80px)) var(--page-margin-bottom, 80px) var(--page-margin-left, clamp(40px, 6vw, 80px)) !important; /* Dynamic page margins */
   line-height: 1.65 !important;
   color: var(--text-h) !important;
   outline: none !important;
   box-sizing: border-box !important;
-  min-height: 1056px !important;
+  min-height: var(--page-height, 1056px) !important;
+  column-count: var(--page-columns, 1) !important;
+  column-gap: 40px !important;
   
   /* Render repeating physical A4 sheets separated by visual desktop gaps & dividers */
   background-image: linear-gradient(
     to bottom,
     var(--paper-bg) 0px,
-    var(--paper-bg) 1026px,
-    rgba(15, 23, 42, 0.05) 1026px,
-    rgba(15, 23, 42, 0.05) 1027px,
-    var(--editor-pane-bg) 1027px,
-    var(--editor-pane-bg) 1040px,
-    rgba(15, 23, 42, 0.08) 1040px,
-    rgba(15, 23, 42, 0.08) 1041px,
-    var(--editor-pane-bg) 1041px,
-    var(--editor-pane-bg) 1055px,
-    rgba(15, 23, 42, 0.05) 1055px,
-    rgba(15, 23, 42, 0.05) 1056px
+    var(--paper-bg) calc(var(--page-height, 1056px) - 30px),
+    rgba(15, 23, 42, 0.05) calc(var(--page-height, 1056px) - 30px),
+    rgba(15, 23, 42, 0.05) calc(var(--page-height, 1056px) - 29px),
+    var(--editor-pane-bg) calc(var(--page-height, 1056px) - 29px),
+    var(--editor-pane-bg) calc(var(--page-height, 1056px) - 16px),
+    rgba(15, 23, 42, 0.08) calc(var(--page-height, 1056px) - 16px),
+    rgba(15, 23, 42, 0.08) calc(var(--page-height, 1056px) - 15px),
+    var(--editor-pane-bg) calc(var(--page-height, 1056px) - 15px),
+    var(--editor-pane-bg) calc(var(--page-height, 1056px) - 1px),
+    rgba(15, 23, 42, 0.05) calc(var(--page-height, 1056px) - 1px),
+    rgba(15, 23, 42, 0.05) var(--page-height, 1056px)
   ) !important;
-  background-size: 100% 1056px !important;
+  background-size: 100% var(--page-height, 1056px) !important;
   background-repeat: repeat-y !important;
   
   border-left: 1px solid rgba(0, 0, 0, 0.06) !important;
@@ -1697,17 +1699,17 @@ h1, h2, h3, h4, h5, h6 {
   background-image: linear-gradient(
     to bottom,
     var(--paper-bg, #1e293b) 0px,
-    var(--paper-bg, #1e293b) 1026px,
-    rgba(255, 255, 255, 0.04) 1026px,
-    rgba(255, 255, 255, 0.04) 1027px,
-    #0b0f19 1027px,
-    #0b0f19 1040px,
-    rgba(255, 255, 255, 0.08) 1040px,
-    rgba(255, 255, 255, 0.08) 1041px,
-    #0b0f19 1041px,
-    #0b0f19 1055px,
-    rgba(255, 255, 255, 0.04) 1055px,
-    rgba(255, 255, 255, 0.04) 1056px
+    var(--paper-bg, #1e293b) calc(var(--page-height, 1056px) - 30px),
+    rgba(255, 255, 255, 0.04) calc(var(--page-height, 1056px) - 30px),
+    rgba(255, 255, 255, 0.04) calc(var(--page-height, 1056px) - 29px),
+    #0b0f19 calc(var(--page-height, 1056px) - 29px),
+    #0b0f19 calc(var(--page-height, 1056px) - 16px),
+    rgba(255, 255, 255, 0.08) calc(var(--page-height, 1056px) - 16px),
+    rgba(255, 255, 255, 0.08) calc(var(--page-height, 1056px) - 15px),
+    #0b0f19 calc(var(--page-height, 1056px) - 15px),
+    #0b0f19 calc(var(--page-height, 1056px) - 1px),
+    rgba(255, 255, 255, 0.04) calc(var(--page-height, 1056px) - 1px),
+    rgba(255, 255, 255, 0.04) var(--page-height, 1056px)
   ) !important;
   
   border-left-color: rgba(255, 255, 255, 0.05) !important;
@@ -3047,4 +3049,266 @@ h1, h2, h3, h4, h5, h6 {
   gap: 4px !important;
   font-size: 10px !important;
   width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-h, #1e293b) !important;
+}
+
+.word-ribbon-toolbar-panel .effects-setdefault-column .ribbon-custom-btn:hover {
+  background: var(--accent-bg, rgba(13, 110, 253, 0.08)) !important;
+  border-radius: 4px !important;
+  color: var(--accent, #0d6efd) !important;
+}
+
+.dark .word-ribbon-toolbar-panel .effects-setdefault-column .ribbon-custom-btn {
+  color: var(--text, #e5e7eb) !important;
+}
+
+.dark .word-ribbon-toolbar-panel .effects-setdefault-column .ribbon-custom-btn:hover {
+  background: var(--accent-bg, rgba(59, 130, 246, 0.15)) !important;
+  color: var(--accent, #3b82f6) !important;
+}
+
+/* ==========================================
+   WORD PARAGRAPH RIBBON GROUP STYLES
+   ========================================== */
+.paragraph-input-grid {
+  display: grid !important;
+  grid-template-columns: auto auto !important;
+  grid-row-gap: 4px !important;
+  grid-column-gap: 12px !important;
+  align-items: center !important;
+  font-size: 10px !important;
+  height: 52px !important;
+  margin-top: 2px !important;
+  align-self: center !important;
+}
+
+.paragraph-input-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.paragraph-input-group label {
+  width: 42px !important;
+  text-align: right !important;
+  color: var(--text-h, #334155) !important;
+  font-weight: 500 !important;
+  user-select: none !important;
+  font-size: 10px !important;
+}
+
+.dark .paragraph-input-group label {
+  color: var(--text-h, #cbd5e1) !important;
+}
+
+.paragraph-numeric-container {
+  display: flex !important;
+  align-items: center !important;
+  border: 1px solid var(--border, #cbd5e1) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-radius: 4px !important;
+  height: 22px !important;
+  width: 72px !important;
+  padding: 0 4px !important;
+  box-sizing: border-box !important;
+}
+
+.dark .paragraph-numeric-container {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 23, 42, 0.4) !important;
+}
+
+.paragraph-numeric-container input {
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  font-size: 10px !important;
+  color: var(--text-h) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.paragraph-numeric-spinners {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  height: 100% !important;
+  border-left: 1px solid var(--border, #cbd5e1) !important;
+  padding-left: 3px !important;
+  margin-left: 3px !important;
+}
+
+.dark .paragraph-numeric-spinners {
+  border-left-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.paragraph-numeric-spinners button {
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  font-size: 6px !important;
+  line-height: 1 !important;
+  height: 10px !important;
+  padding: 0 1px !important;
+  color: var(--text, #64748b) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.dark .paragraph-numeric-spinners button {
+  color: var(--text, #94a3b8) !important;
+}
+
+.paragraph-numeric-spinners button:hover {
+  color: var(--accent) !important;
+}
+
+/* ==========================================
+   TABLE OF CONTENTS & FOOTNOTES STYLES
+   ========================================== */
+.ql-editor .ql-toc-line-header {
+  font-size: 16px !important;
+  font-weight: bold !important;
+  color: var(--text-h, #081B3A) !important;
+  border-bottom: 1px solid var(--border, #e2e8f0) !important;
+  padding-bottom: 4px !important;
+}
+
+.ql-editor .ql-toc-line-item {
+  font-size: 13px !important;
+}
+
+.ql-editor .ql-toc-line-item a {
+  text-decoration: none !important;
+  color: var(--accent, #0d6efd) !important;
+  font-weight: 500 !important;
+}
+
+.ql-editor .ql-toc-line-item a:hover {
+  text-decoration: underline !important;
+}
+
+.ql-editor .ql-footnote-separator-true {
+  border-top: 1px solid var(--border, #cbd5e1) !important;
+  margin-top: 32px !important;
+  margin-bottom: 12px !important;
+  width: 150px !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.ql-editor .ql-footnote-item-true {
+  font-size: 11px !important;
+  color: var(--text, #64748b) !important;
+  line-height: 1.4 !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+/* ==========================================
+   VIEW TAB: WEB LAYOUT OVERRIDES
+   ========================================== */
+.editor-paper-container.view-mode-web {
+  max-width: 100% !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.editor-paper-container.view-mode-web .ql-editor {
+  background-image: none !important;
+  box-shadow: none !important;
+  min-height: calc(100vh - 250px) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 24px 40px !important;
+}
+
+/* ==========================================
+   PRINT MEDIA QUERY OVERRIDES
+   ========================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .word-editor-layout {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+  .word-editor-header,
+  .word-ribbon-tabs-bar,
+  .word-ribbon-toolbar-panel,
+  .left-sidebar-container,
+  .right-sidebar-container,
+  .sidebar-toggle-btn,
+  .editor-status-bar,
+  .file-backstage-panel,
+  #quill-hidden-toolbar {
+    display: none !important;
+  }
+  .editor-canvas-pane {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .editor-paper-container {
+    transform: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  .ql-editor {
+    background-image: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+}
+
+/* ==========================================
+   BACKSTAGE THEME SUPPORT VARIABLES
+   ========================================== */
+.file-backstage-panel {
+  --bg: #ffffff !important;
+  --bg-secondary: #f8fafc !important;
+  --text: #1e293b !important;
+  --border: #e2e8f0 !important;
+  --accent: #0D6EFD !important;
+}
+
+.dark .file-backstage-panel,
+[data-theme="dark"] .file-backstage-panel,
+.file-backstage-panel.dark {
+  --bg: #18181b !important;
+  --bg-secondary: #27272a !important;
+  --text: #e5e7eb !important;
+  --border: #3f3f46 !important;
+  --accent: #3b82f6 !important;
+}
+
+.file-backstage-sidebar {
+  background: var(--bg) !important;
+}
+
+.dark .file-backstage-sidebar,
+[data-theme="dark"] .file-backstage-sidebar,
+.file-backstage-panel.dark .file-backstage-sidebar {
+  background: #111827 !important; /* Near-black sidebar in dark mode */
 }

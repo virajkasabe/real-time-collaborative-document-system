@@ -15,6 +15,25 @@ import 'quill/dist/quill.snow.css';
 
 // Register custom blots
 const BlockEmbed = Quill.import('blots/block/embed');
+const Parchment = Quill.import('parchment');
+
+const MarginLeftStyle = new Parchment.StyleAttributor('margin-left', 'margin-left', { scope: Parchment.Scope.BLOCK });
+const MarginRightStyle = new Parchment.StyleAttributor('margin-right', 'margin-right', { scope: Parchment.Scope.BLOCK });
+const MarginTopStyle = new Parchment.StyleAttributor('margin-top', 'margin-top', { scope: Parchment.Scope.BLOCK });
+const MarginBottomStyle = new Parchment.StyleAttributor('margin-bottom', 'margin-bottom', { scope: Parchment.Scope.BLOCK });
+
+Quill.register(MarginLeftStyle, true);
+Quill.register(MarginRightStyle, true);
+Quill.register(MarginTopStyle, true);
+Quill.register(MarginBottomStyle, true);
+
+const TOCLineClass = new Parchment.ClassAttributor('toc-line', 'ql-toc-line', { scope: Parchment.Scope.BLOCK });
+const FootnoteSeparatorClass = new Parchment.ClassAttributor('footnote-separator', 'ql-footnote-separator', { scope: Parchment.Scope.BLOCK });
+const FootnoteItemClass = new Parchment.ClassAttributor('footnote-item', 'ql-footnote-item', { scope: Parchment.Scope.BLOCK });
+
+Quill.register(TOCLineClass, true);
+Quill.register(FootnoteSeparatorClass, true);
+Quill.register(FootnoteItemClass, true);
 
 class PageBreakBlot extends BlockEmbed {
   static create() {
@@ -89,10 +108,12 @@ export default function EditingPage() {
         setSaveStatus('saved');
         showToast('Document saved successfully.', 'success');
       } else {
+        console.error('handleSave failed: documentService.update returned null');
         setSaveStatus('error');
         showToast('Failed to save document.', 'error');
       }
     } catch (err) {
+      console.error('handleSave exception:', err);
       setSaveStatus('error');
       showToast('Failed to save document.', 'error');
     }
