@@ -10,6 +10,7 @@ import { otpGenerator, requiredField, secureUser } from "../../utils/helper.js";
 import User from "./auth.model.js";
 import { emailVerifyLinkService, otpService } from "../../services/otp.service.js";
 import { link } from "fs";
+import { forgetPasswordService } from "../../services/forgetPasswordRequest.service.js";
 
 const option = {
   httpOnly: true,
@@ -320,10 +321,12 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  console.log(`${ENV.RESET_PASSWORD_URL}/${unHashedToken}`);
+
+  const forgetPasswordLink = `${ENV.RESET_PASSWORD_URL}/${unHashedToken}`
+  await forgetPasswordService(forgetPasswordLink, email)
 
   return res
-    .status(200)
+    .status(200)                                      
     .json(
       new ApiResponse(
         200,
@@ -474,17 +477,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.emailVerificationToken = undefined;
   user.emailVerificationExpiry = undefined;
 
-  /*  
-
-      //   .cookie("accessToken", accessToken, option)
-      //   .cookie("refreshToken", refreshToken, option)
-      // {
-      //   user: secureUSER,
-      //   accessToken: accessToken,
-      //   refreshToken: refreshToken,
-      // }
-      
-  */
 
   await user.save({ validateBeforeSave: false });
 
