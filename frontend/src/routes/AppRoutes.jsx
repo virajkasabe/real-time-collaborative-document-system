@@ -44,11 +44,11 @@ export default function AppRoutes() {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
-        path="/verify-email/:unHashedToken"
+        path="/verify-email/:email/:token"
         element={<EmailVerificationPage />}
       />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/set-new-password" element={<ResetPasswordPage />} />
       <Route
         path="/reset-password/:unHashedToken"

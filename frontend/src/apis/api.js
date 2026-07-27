@@ -8,8 +8,8 @@ export const userRegister = (data) => {
     return apiClient.post("/auth/register",data)
 }
 
-export const verifyUserEmail = async(otp, email) => {
-    return await apiClient.post(`/auth/verify-email`, {otp, email})
+export const verifyUserEmail = async(otp, email, token) => {
+    return await apiClient.post(`/auth/verify-email`, { otp, email, unHashedToken : token })
 }
 
 export const verifyUserEmailRequest = async(email) => {

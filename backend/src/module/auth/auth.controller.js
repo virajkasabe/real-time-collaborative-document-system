@@ -77,6 +77,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   // TODO : SEND EMAIL FOR OTP
 
   const link = `${ENV.VERIFY_EMAIL}/${unHashedToken}`
+  console.log(`${ENV.CLIENT_URL}/verify-email/email=${email}/token=${unHashedToken}`)
   console.log(`${link}`)
 
   const rest = await otpService(
@@ -87,7 +88,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
     console.log("res", rest)
 
-    console.log(`${ENV.CLIENT_URL}/verify-email/${unHashedToken}`)
+    
 
   console.log("user register");
 
@@ -431,6 +432,7 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   console.log("OTP", otp);
+  console.log(`${ENV.CLIENT_URL}/verify-email/email=${email}/token=${unHashedToken}`)
 
   // TODO : SEND EMAIL FOR OTP
 
@@ -442,7 +444,10 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
-  const { otp, email } = req.body;
+  const { otp, email, unHashedToken } = req.body;
+
+  console.log("req.body",req.body)
+ 
   // console.log("otp",otp)
   // console.log("otp", req.body)
 
@@ -450,16 +455,16 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 
   const redisOTPData = await getOTP(findUser._id)
 
-  console.log("unHashedToken",redisOTPData.emailToken)
+  console.log("unHashedToken",unHashedToken)
   console.log("otp",otp)
 
-  if (!redisOTPData.emailToken) {
+  if (!unHashedToken) {
     throw new ApiError(400, "Email verification token missing");
   }
 
   const hashedToken = crypto
     .createHash("sha256")
-    .update(redisOTPData.emailToken)
+    .update(unHashedToken)
     .digest("hex");
 
   const user = await User.findOne({

@@ -75,10 +75,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const verifyEmail = useCallback(async (email, otp) => {
+  const verifyEmail = useCallback(async (email, otp, token) => {
     setError(null);
     try {
-      const res = await verifyUserEmail(otp, email);
+      const res = await verifyUserEmail(otp, email, token);
       if (res.data.success) {
         return res.data;
       }
