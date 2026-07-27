@@ -1,4 +1,4 @@
-import  { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { 
   Plus, 
@@ -23,7 +23,8 @@ import {
   FileDown,
   FileBadge,
   ChevronDown,
-  Inbox
+  Inbox,
+  Loader2
 } from 'lucide-react';
 import ShareDocumentModal from '../../components/modals/ShareDocumentModal';
 import RenameDocumentModal from '../../components/modals/RenameDocumentModal';
@@ -31,10 +32,18 @@ import { documentService } from '../../services/documentService';
 import { useAuth } from '../../context/AuthContext';
 import { createDoc, docMoveToTrash, fetchDocumentFolder } from '../../apis/api';
 
+// Extensions the Import Document action accepts. Keep this in sync with the
+// `accept` attribute on the hidden <input type="file"> below.
+const IMPORT_ACCEPT_EXTENSIONS = ['.doc', '.docx', '.pdf', '.txt', '.rtf', '.odt', '.md', '.pages', '.tex', '.html'];
+
+// Formats we can safely read and convert to plain text/HTML directly in the
+// browser, without any backend help.
+const CLIENT_PARSEABLE_EXTENSIONS = ['.txt', '.md', '.tex', '.html'];
+
 export default function Dashboard() {
   const { user, triggerToast } = useAuth();
   const navigate = useNavigate();
-  const { sidebarOpen, searchQuery } = useOutletContext();
+  const { sidebarOpen, searchQuery, setSearchQuery } = useOutletContext();
   
   // State
   const [rawDocs, setRawDocs] = useState([]);
@@ -52,6 +61,9 @@ export default function Dashboard() {
   const [shareOpen, setShareOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [rowMenuOpen, setRowMenuOpen] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const importInputRef = useRef(null);
 
   // Click outside handler
   useEffect(() => {
@@ -61,8 +73,6 @@ export default function Dashboard() {
   }, []);
 
   // Fetch documents
-  
-
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
@@ -247,9 +257,14 @@ export default function Dashboard() {
 
   const handleDelete = async (e, docId) => {
     e.stopPropagation();
-    console.log("docId", docId)
-    await docMoveToTrash(docId);
-    triggerToast('Moved file to trash', 'info');
+    try {
+      const res = await docMoveToTrash(docId);
+      console.log(res.data.message)
+      triggerToast(res.data.message, 'info');
+    } catch (error) {
+      console.log(error.message)
+      triggerToast(error.message, 'info');
+    }
     setRowMenuOpen(null);
     triggerReload();
   };
@@ -259,10 +274,6 @@ export default function Dashboard() {
     setSelectedDoc(doc);
     setShareOpen(true);
     setRowMenuOpen(null);
-
-    console.log("doc",doc)
-
-
   };
 
   const openRename = (e, doc) => {
@@ -274,7 +285,12 @@ export default function Dashboard() {
 
   const handleBulkDelete = async () => {
     for (const id of selectedDocIds) {
-      await docMoveToTrash(id);
+       try {
+          const res = await docMoveToTrash(id);
+          triggerToast(res.data.message, 'info');
+        } catch (error) {
+          triggerToast(error.message, 'info');
+        }
     }
     triggerToast(`Moved ${selectedDocIds.size} files to Trash`, 'success');
     triggerReload();
@@ -296,6 +312,110 @@ export default function Dashboard() {
     }
   };
 
+  const getExtension = (filename) => {
+    const match = /\.[^.]+$/.exec(filename || '');
+    return match ? match[0].toLowerCase() : '';
+  };
+
+  const stripExtension = (filename) => filename.replace(/\.[^.]+$/, '');
+
+  // Reads a text-based file (.txt, .md, .tex, .html) in the browser and
+  // returns its raw text content.
+  const readFileAsText = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+
+  // Opens the OS file picker restricted to supported import formats.
+  const handleImportClick = () => {
+    if (isImporting) return;
+    importInputRef.current?.click();
+  };
+
+  // Fired when the user picks a file from the OS dialog. Handles both:
+  //  1) formats we can parse client-side (.txt/.md/.tex/.html)
+  //  2) formats that need server-side conversion (.doc/.docx/.pdf/.rtf/.odt/.pages)
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    // Always reset the input so selecting the same file twice still fires onChange
+    e.target.value = '';
+    if (!file) return;
+
+    const ext = getExtension(file.name);
+    if (!IMPORT_ACCEPT_EXTENSIONS.includes(ext)) {
+      triggerToast(`Unsupported file type: ${ext || 'unknown'}`, 'error');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      if (CLIENT_PARSEABLE_EXTENSIONS.includes(ext)) {
+        // --- Client-side path: plain text formats ---
+        const content = await readFileAsText(file);
+        const category = ext === '.html' ? 'html-import' : 'text-import';
+        const newDoc = await createDoc(stripExtension(file.name), category, user?.email, user?.fullName);
+
+        if (!newDoc) {
+          throw new Error('createDoc did not return a document');
+        }
+
+        // If documentService exposes a way to persist body content, use it so
+        // the imported text actually lands in the new doc instead of an
+        // empty shell. Guarded with a feature check since this method may
+        // not exist yet on the backend/service layer.
+        if (typeof documentService.updateContent === 'function') {
+          await documentService.updateContent(newDoc._id, content);
+        } else {
+          console.warn(
+            'documentService.updateContent(docId, content) is not implemented — ' +
+            'the new document was created but the imported text was not saved. ' +
+            'Add this method (or pass content through createDoc) to finish wiring import.'
+          );
+        }
+
+        triggerToast(`Imported "${file.name}"`, 'success');
+        triggerReload();
+        navigate(`/editor/${newDoc._id}`);
+        return;
+      }
+
+      // --- Server-side path: binary/rich formats ---
+      // .doc, .docx, .pdf, .rtf, .odt, .pages can't be reliably parsed in the
+      // browser. This expects a backend endpoint that accepts the raw file,
+      // converts it, creates the document, and returns the new doc's id.
+      if (typeof documentService.importDocument === 'function') {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('email', user?.email || '');
+        formData.append('fullName', user?.fullName || '');
+
+        const imported = await documentService.importDocument(formData);
+        const newDocId = imported?.data?._id || imported?._id;
+
+        if (!newDocId) {
+          throw new Error('Import endpoint did not return a document id');
+        }
+
+        triggerToast(`Imported "${file.name}"`, 'success');
+        triggerReload();
+        navigate(`/editor/${newDocId}`);
+      } else {
+        // No backend support yet — fail clearly instead of silently doing nothing.
+        triggerToast(
+          `Importing ${ext} files requires backend support (documentService.importDocument) that isn't set up yet.`,
+          'error'
+        );
+      }
+    } catch (error) {
+      console.error('Error importing document:', error);
+      triggerToast(`Failed to import "${file.name}"`, 'error');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // Quick Action Cards
   const quickActionCards = [
     {
@@ -314,10 +434,10 @@ export default function Dashboard() {
     },
     {
       title: 'Import Document',
-      desc: 'Import markdown/HTML specs',
-      icon: Download,
+      desc: 'Import Word/PDF/text specs',
+      icon: isImporting ? Loader2 : Download,
       color: 'text-amber-500 bg-amber-500/10',
-      action: () => triggerToast('Select Markdown or HTML file to import', 'info')
+      action: handleImportClick
     },
     {
       title: 'Upload File',
@@ -394,10 +514,23 @@ export default function Dashboard() {
     }
   };
 
+  // Shared hidden file input used by the Import Document quick action.
+  // Rendered once, reused across loading/empty/main states.
+  const importInputEl = (
+    <input
+      ref={importInputRef}
+      type="file"
+      accept={IMPORT_ACCEPT_EXTENSIONS.join(',')}
+      className="hidden"
+      onChange={handleImportFile}
+    />
+  );
+
   // Loading State
   if (isLoading) {
     return (
       <div className="px-5 pt-3.5 pb-6 md:px-6 md:pt-4 md:pb-8 max-w-7xl w-full mx-auto">
+        {importInputEl}
         <div className="space-y-0.5 text-left mb-5 pb-2 border-b border-[#E5E7EB] dark:border-white/5">
           <div className="h-8 w-40 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
           <div className="h-4 w-56 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mt-1"></div>
@@ -425,6 +558,7 @@ export default function Dashboard() {
   if (!isLoading && rawDocs.length === 0) {
     return (
       <div className="px-5 pt-3.5 pb-6 md:px-6 md:pt-4 md:pb-8 max-w-7xl w-full mx-auto">
+        {importInputEl}
         {/* Header */}
         <div className="space-y-0.5 text-left mb-5 select-none pb-2 border-b border-[#E5E7EB] dark:border-white/5">
           <h1 className="font-sans font-bold text-[22px] text-[#081B3A] dark:text-white leading-tight tracking-tight">
@@ -450,7 +584,7 @@ export default function Dashboard() {
                   className="glass-card p-2 px-3 border border-[#E5E7EB] dark:border-white/5 bg-white dark:bg-[#0F172A]/40 transition-all duration-300 ease-in-out cursor-pointer flex items-center gap-3 group relative rounded-xl min-h-[52px] py-2 min-w-[120px] hover:border-[#0D6EFD]/35 dark:hover:border-blue-500/25 hover:shadow-[0_0_15px_rgba(13,110,253,0.12)] hover:scale-[1.01] hover:-translate-y-0.5"
                 >
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm ${card.color}`}>
-                    <Icon size={14} />
+                    <Icon size={14} className={card.title === 'Import Document' && isImporting ? 'animate-spin' : ''} />
                   </div>
                   <div className="min-w-0 flex-1 text-left py-0.5">
                     <h5 className="font-semibold text-[13.5px] text-[#081B3A] dark:text-slate-200 leading-tight group-hover:text-blue-500 dark:group-hover:text-white transition-colors break-words">
@@ -487,11 +621,12 @@ export default function Dashboard() {
                 Create Document
               </button>
               <button
-                onClick={() => triggerToast('Import document feature coming soon', 'info')}
-                className="px-6 py-2.5 border border-[#E5E7EB] dark:border-white/10 text-[#6B7280] dark:text-[#94A3B8] rounded-lg font-semibold hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A] transition-colors flex items-center gap-2"
+                onClick={handleImportClick}
+                disabled={isImporting}
+                className="px-6 py-2.5 border border-[#E5E7EB] dark:border-white/10 text-[#6B7280] dark:text-[#94A3B8] rounded-lg font-semibold hover:bg-[#F7FAFF] dark:hover:bg-[#0F172A] transition-colors flex items-center gap-2 disabled:opacity-60"
               >
-                <Upload size={18} />
-                Import File
+                {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                {isImporting ? 'Importing…' : 'Import File'}
               </button>
             </div>
           </div>
@@ -503,6 +638,7 @@ export default function Dashboard() {
   // Main Render with Documents
   return (
     <div className="px-5 pt-3.5 pb-6 md:px-6 md:pt-4 md:pb-8 space-y-4 max-w-7xl w-full mx-auto">
+      {importInputEl}
       {/* Dashboard Page Header */}
       <div className="space-y-0.5 text-left mb-5 select-none pb-2 border-b border-[#E5E7EB] dark:border-white/5 transition-colors duration-300">
         <h1 className="font-sans font-bold text-[22px] text-[#081B3A] dark:text-white leading-tight tracking-tight">
@@ -528,7 +664,7 @@ export default function Dashboard() {
                 className="glass-card p-2 px-3 border border-[#E5E7EB] dark:border-white/5 bg-white dark:bg-[#0F172A]/40 transition-all duration-300 ease-in-out cursor-pointer flex items-center gap-3 group relative rounded-xl min-h-[52px] py-2 min-w-[120px] hover:border-[#0D6EFD]/35 dark:hover:border-blue-500/25 hover:shadow-[0_0_15px_rgba(13,110,253,0.12)] hover:scale-[1.01] hover:-translate-y-0.5"
               >
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-sm ${card.color}`}>
-                  <Icon size={14} />
+                  <Icon size={14} className={card.title === 'Import Document' && isImporting ? 'animate-spin' : ''} />
                 </div>
                 <div className="min-w-0 flex-1 text-left py-0.5">
                   <h5 className="font-semibold text-[13.5px] text-[#081B3A] dark:text-slate-200 leading-tight group-hover:text-blue-500 dark:group-hover:text-white transition-colors break-words">

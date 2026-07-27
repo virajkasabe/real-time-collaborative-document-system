@@ -5,3 +5,4 @@ export {
     ATHENURA_CIRCLE_IMAGE,
     ATHENURA_LOGO
 }
+

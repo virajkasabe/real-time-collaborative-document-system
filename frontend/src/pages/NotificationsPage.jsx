@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiBell, FiMail, FiUserCheck, FiUserX, FiCheck, FiX, FiTrash2 } from 'react-icons/fi';
+import { FiBell, FiMail, FiUserCheck, FiUserX, FiCheck, FiX, FiTrash2, FiUserPlus, FiUserMinus } from 'react-icons/fi';
 import { useNotifications } from '../context/NotificationContext';
 import { useSocket } from '../context/SocketContext';
 import { INVITATION_EVENT } from '../utils/constants';
@@ -10,6 +10,7 @@ export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const { socket } = useSocket()
   const { triggerToast } = useAuth()
+  
   const tabs = [
     { id: 'all', label: 'All' },
     { id: 'unread', label: 'Unread' },
@@ -77,6 +78,113 @@ export default function NotificationsPage() {
     }
   };
 
+  // Avatar component with fallback to first letter
+  const UserAvatar = ({ name, size = 'md', status }) => {
+    const getInitials = (name) => {
+      if (!name) return '?';
+      const names = name.trim().split(' ');
+      if (names.length === 1) return names[0].charAt(0).toUpperCase();
+      return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+    };
+
+    const getSizeClasses = () => {
+      switch (size) {
+        case 'sm':
+          return 'w-8 h-8 text-xs';
+        case 'lg':
+          return 'w-14 h-14 text-lg';
+        default:
+          return 'w-10 h-10 text-sm';
+      }
+    };
+
+    const getAvatarColors = (name) => {
+      if (!name) return 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
+      
+      const colors = [
+        'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+        'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+        'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
+        'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+        'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400',
+        'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+        'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+      ];
+      
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    };
+
+    // Status badge for accepted/declined
+    const StatusBadge = () => {
+      if (!status) return null;
+      
+      if (status === 'accepted') {
+        return (
+          <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white dark:border-[#0F172A]">
+            <FiCheck className="w-3 h-3 text-white" />
+          </div>
+        );
+      }
+      
+      if (status === 'declined') {
+        return (
+          <div className="absolute -bottom-1 -right-1 bg-red-500 rounded-full p-0.5 border-2 border-white dark:border-[#0F172A]">
+            <FiX className="w-3 h-3 text-white" />
+          </div>
+        );
+      }
+      
+      if (status === 'pending') {
+        return (
+          <div className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full p-0.5 border-2 border-white dark:border-[#0F172A]">
+            <FiUserPlus className="w-3 h-3 text-white" />
+          </div>
+        );
+      }
+      
+      return null;
+    };
+
+    return (
+      <div className="relative flex-shrink-0">
+        <div className={`rounded-full flex items-center justify-center font-bold ${getSizeClasses()} ${getAvatarColors(name)}`}>
+          {getInitials(name)}
+        </div>
+        <StatusBadge />
+      </div>
+    );
+  };
+
+  const getStatusBadge = (type) => {
+    switch (type) {
+      case 'COLLAB_ACCEPTED':
+        return {
+          label: 'Accepted',
+          icon: <FiCheck className="w-3 h-3" />,
+          className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+        };
+      case 'COLLAB_DECLINED':
+        return {
+          label: 'Declined',
+          icon: <FiX className="w-3 h-3" />,
+          className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+        };
+      case 'COLLAB_INVITED':
+        return {
+          label: 'Pending',
+          icon: <FiUserPlus className="w-3 h-3" />,
+          className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+        };
+      default:
+        return null;
+    }
+  };
+
   const getIcon = (type) => {
     switch (type) {
       case 'COLLAB_INVITED':
@@ -107,12 +215,62 @@ export default function NotificationsPage() {
     switch (n.type) {
       case 'COLLAB_INVITED':
         return `${n.senderName} invited you to collaborate on "${n.documentTitle}"`;
+      
       case 'COLLAB_ACCEPTED':
-        return `${n.accepterName} accepted your invite for "${n.docname}"`;
+        return `${n.accepterName} accepted your invitation to collaborate on "${n.documentName}"`;
+      
       case 'COLLAB_DECLINED':
-        return `Invite for "${n.docname}" was declined`;
+        const declineReason = n.reason 
+          ? ` (Reason: ${n.reason})` 
+          : '';
+        const decliner = n.declineUserName || 'A collaborator';
+        const documentName = n.docname || n.documentName || 'your document';
+        
+        return `${decliner} declined your collaboration invitation for "${documentName}"${declineReason}`;
+      
       default:
         return 'New notification';
+    }
+  };
+
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return new Date().toLocaleString();
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return timestamp;
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return timestamp;
+    }
+  };
+
+  const getUserName = (notif) => {
+    if (notif.type === 'COLLAB_INVITED') {
+      return notif.senderName;
+    } else if (notif.type === 'COLLAB_ACCEPTED') {
+      return notif.accepterName;
+    } else if (notif.type === 'COLLAB_DECLINED') {
+      return notif.declineUserName;
+    }
+    return 'User';
+  };
+
+  const getStatusForAvatar = (type) => {
+    switch (type) {
+      case 'COLLAB_ACCEPTED':
+        return 'accepted';
+      case 'COLLAB_DECLINED':
+        return 'declined';
+      case 'COLLAB_INVITED':
+        return 'pending';
+      default:
+        return null;
     }
   };
 
@@ -191,65 +349,98 @@ export default function NotificationsPage() {
             </p>
           </div>
         ) : (
-          filtered.map(notif => (
-            <div
-              key={notif.id}
-              onClick={() => !notif.read && markAsRead(notif.id)}
-              className={`bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[16px] sm:rounded-[20px] p-3 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-300 hover:shadow-md ${
-                !notif.read ? 'border-l-4 border-l-[#2563EB]' : ''
-              }`}
-            >
-              <div className="flex items-start gap-3 sm:gap-4 text-left w-full">
-                {/* Icon Container */}
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${getBg(notif.type)}`}>
-                  {getIcon(notif.type)}
+          filtered.map(notif => {
+            const statusBadge = getStatusBadge(notif.type);
+            const avatarStatus = getStatusForAvatar(notif.type);
+            
+            return (
+              <div
+                key={notif.id}
+                onClick={() => !notif.read && markAsRead(notif.id)}
+                className={`bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/5 rounded-[16px] sm:rounded-[20px] p-3 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-300 hover:shadow-md ${
+                  !notif.read ? 'border-l-4 border-l-[#2563EB]' : ''
+                }`}
+              >
+                <div className="flex items-start gap-3 sm:gap-4 text-left w-full">
+                  {/* Avatar with status indicator */}
+                  {['COLLAB_INVITED', 'COLLAB_ACCEPTED', 'COLLAB_DECLINED'].includes(notif.type) ? (
+                    <UserAvatar 
+                      name={getUserName(notif)} 
+                      size="md"
+                      status={avatarStatus}
+                    />
+                  ) : (
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${getBg(notif.type)}`}>
+                      {getIcon(notif.type)}
+                    </div>
+                  )}
+
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs sm:text-sm font-semibold text-[#0F172A] dark:text-white leading-snug break-words">
+                        {getMessage(notif)}
+                      </p>
+                      {/* Status Badge */}
+                      {statusBadge && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge.className}`}>
+                          {statusBadge.icon}
+                          {statusBadge.label}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+                      {formatTimestamp(notif.createdAt)}
+                    </p>
+                    {notif.type === 'COLLAB_DECLINED' && notif.reason && (
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 italic mt-0.5">
+                        Reason: {notif.reason}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-1 flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold text-[#0F172A] dark:text-white leading-snug break-words">
-                    {getMessage(notif)}
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
-                    {new Date(notif.expiry).toLocaleString()}
-                  </p>
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 self-end sm:self-center shrink-0 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
+                  {notif.type === 'COLLAB_INVITED' && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          acceptCollab(notif);
+                        }}
+                        className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm flex-1 sm:flex-none justify-center"
+                      >
+                        <FiCheck size={13} />
+                        <span className="hidden xs:inline">Accept</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          declinedCollab(notif);
+                        }}
+                        className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex-1 sm:flex-none justify-center"
+                      >
+                        <FiX size={13} />
+                        <span className="hidden xs:inline">Decline</span>
+                      </button>
+                    </>
+                  )}
+                  {!notif.read && notif.type !== 'COLLAB_INVITED' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAsRead(notif.id);
+                      }}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex-1 sm:flex-none justify-center"
+                    >
+                      <span className="hidden xs:inline">Mark read</span>
+                      <span className="xs:hidden">Read</span>
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 self-end sm:self-center shrink-0 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
-                {notif.type === 'COLLAB_INVITED' && (
-                  <>
-                    <button
-                      onClick={() => acceptCollab(notif)}
-                      className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-sm flex-1 sm:flex-none justify-center"
-                    >
-                      <FiCheck size={13} />
-                      <span className="hidden xs:inline">Accept</span>
-                    </button>
-                    <button
-                      onClick={() => declinedCollab(notif)}
-                      className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex-1 sm:flex-none justify-center"
-                    >
-                      <FiX size={13} />
-                      <span className="hidden xs:inline">Decline</span>
-                    </button>
-                  </>
-                )}
-                {!notif.read && notif.type !== 'COLLAB_INVITED' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      markAsRead(notif.id);
-                    }}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[10px] sm:text-xs font-bold cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex-1 sm:flex-none justify-center"
-                  >
-                    <span className="hidden xs:inline">Mark read</span>
-                    <span className="xs:hidden">Read</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

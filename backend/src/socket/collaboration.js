@@ -6,7 +6,7 @@ import {
   setDocument,
 } from "../redis/client.js";
 import ApiError from "../utils/ApiError.js";
-import { fetchDoc, secureUser } from "../utils/helper.js";
+import { fetchDoc, generateRandomId, secureUser } from "../utils/helper.js";
 import {
   COLLABORATION_ERROR_EVENT,
   COLLABORATION_EVENT,
@@ -14,10 +14,8 @@ import {
   NOTIFICATION_EVENT,
   SOCKET_EVENT,
 } from "./socketEvents.js";
-import { v4 as uuidv4 } from 'uuid';
 
 export const acceptCollab = async(io,socket,data) => {
-    console.log("data.acceptNotif", data)
     const { collabId } = data
     console.log("data",data)
 
@@ -66,7 +64,7 @@ export const acceptCollab = async(io,socket,data) => {
     );
 
     const acceptCollabData = {
-      id : uuidv4(),
+      id : generateRandomId(),
       type: "COLLAB_ACCEPTED",
       accepterName: socket.user.fullName,
       documentId: doc._id,
@@ -84,29 +82,30 @@ export const acceptCollab = async(io,socket,data) => {
       .emit(COLLABORATION_EVENT.ACCEPT_COLLABORATION, acceptCollabData);
 }
 
-
 export const declineCollab = async(io,socket,data) => {
     const user = await secureUser(socket.user._id);
     const { collabId, senderId} = data
     const collabData = await getCollaboration(collabId);
     const inviter = await secureUser(senderId)
 
+    
     if (!collabData) {
-         io
-         .to(user._id)
-         .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
-           notificationId: uuidv4(),
+      io
+      .to(user._id)
+      .emit(COLLABORATION_ERROR_EVENT.ERROR_DECLINE_COLLABORATION, {
+           notificationId: new Date()(),
            message : "Token Expirted or used",
            type : "error"
-         });
-       }
+          });
+        }
+      
 
       if(collabData) {
           const doc = await fetchDoc(collabData.docId);
 
        
        const declineCollabData = {
-         id : uuidv4(), 
+         id : generateRandomId(), 
          type: "COLLAB_DECLINED",
          declineUserName: socket.user.fullName,
          documentId: doc._id,
@@ -120,7 +119,7 @@ export const declineCollab = async(io,socket,data) => {
         console.log("data",data)
         await deleteNotification(user.email, data)
 
-        console.log("declineCollabData",declineCollabData)
+        console.log("inviter._id",inviter._id)
 
         io.to(inviter._id).emit(COLLABORATION_EVENT.DECLINE_COLLABORATION, declineCollabData);
     }

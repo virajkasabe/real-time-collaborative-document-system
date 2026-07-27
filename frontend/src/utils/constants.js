@@ -44,6 +44,8 @@ export const DOCUMENT_EVENT = Object.freeze({
   USER_REMOVE: "userRemove",
   SEND_OPERATION: "sendOperation",
   RECEIVE_OPERATION: "receiveOperation",
+  SEND_COMMNET_OPERATION : "sendCommentOperation",
+  RECEIVE_COMMNET_OPERATION : "receiveCommentOperation",
   VERSION_SAVED: "versionSaved",
   ACTIVE_USERS: "activeUser",
   NEW_USER_JOIN : "newUserJoin"
@@ -74,6 +76,7 @@ export const INVITATION_EVENT = Object.freeze({
   ACCEPT_INVITATION: "acceptIneInvitation",
   DECLINE_INVITATION: "declineInvitation",
 });
+
 
 export const CONNECT_DISCONNET_EVENT = Object.freeze({
   CONNECTION: "connection",
