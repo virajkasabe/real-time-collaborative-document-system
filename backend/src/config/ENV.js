@@ -13,6 +13,7 @@ export const ENV = {
   CORS_ORIGIN: process.env.CORS_ORIGIN,
   CLIENT_URL: process.env.CLIENT_URL,
   BACKEND_URI: process.env.BACKEND_URI,
+  VERIFY_EMAIL : process.env.VERIFY_EMAIL,
   RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL,
   EXPRESS_SESSION_SECRET: process.env.EXPRESS_SESSION_SECRET,
 

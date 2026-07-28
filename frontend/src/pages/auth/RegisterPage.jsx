@@ -6,10 +6,10 @@ import { FcGoogle } from 'react-icons/fc';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import bgImage from '../../assets/collab-bg.png';
-import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 import { LocalStorage } from '../../apis';
 import { googleLoginApi } from '../../apis/api';
+import { ATHENURA_LOGO } from '../../assets';
 
 export default function RegisterPage() {
   const { register, login, triggerToast } = useAuth();
@@ -110,7 +110,7 @@ export default function RegisterPage() {
           <div className="flex flex-col gap-1.5 relative z-10 shrink-0">
             <div className="flex items-center gap-2.5">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura"
                 className="h-10 w-auto object-contain"
                 style={{ 

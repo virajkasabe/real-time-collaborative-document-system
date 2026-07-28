@@ -11,7 +11,7 @@ import { CONNECT_DISCONNET_EVENT } from "../utils/constants";
 
 const SocketContext = createContext();
 
-export function SocketProvider({ children }) {  
+export function SocketProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const [socket, setSocket] = useState(null);
@@ -36,7 +36,7 @@ export function SocketProvider({ children }) {
         reconnection: true,
         reconnectionDelay: 500,
         reconnectionAttempts: 5,
-      }
+      },
     );
 
     socketRef.current = newSocket;
@@ -61,7 +61,7 @@ export function SocketProvider({ children }) {
 
       if (err.message === "Authentication error") {
         // Avoid redirect loops
-        if (!window.location.pathname.includes('/login')) {
+        if (!window.location.pathname.includes("/login")) {
           window.location.href = "/login";
         }
       }
@@ -79,7 +79,7 @@ export function SocketProvider({ children }) {
     socketRef.current.disconnect();
     socketRef.current = null;
     setSocket(null);
-    
+
     setIsConnected(false);
     setSocketReady(false);
   }, []);

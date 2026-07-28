@@ -17,13 +17,13 @@ import {
   ChevronRight, 
   Terminal,
   Layers,
-  Play
+  Play,
+  Rocket
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import { BRAND_NAME } from '../../utils/constants';
 import { useTheme } from '../../context/ThemeContext';
-import athenuraLogo from '../../assets/athenura-logo.png';
 
 // 1. LIGHTWEIGHT SCROLL REVEAL COMPONENT ( IntersectionObserver )
 function RevealOnScroll({ children, delay = 0 }) {
@@ -379,14 +379,15 @@ export default function Landing() {
             {/* HERO LEFT COPY (45% width, vertically centered) */}
             <div className="w-full lg:w-[45%] text-left flex flex-col items-start justify-center">
               
+
               {/* Badge directly above headline */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0D6EFD]/8 dark:bg-[#0D6EFD]/12 border border-[#0D6EFD]/20 text-[#0D6EFD] text-[10px] font-bold rounded-full uppercase tracking-wider">
                 <Sparkles size={11} className="animate-spin-slow" />
                 <span>Real-time co-authoring workspace</span>
               </div>
 
-              {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px, gap to badge = 16px */}
-              <h1 className="font-sans text-3xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] dark:text-white mt-[16px] max-w-[650px] leading-tight tracking-tight">
+              {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px */}
+              <h1 className="font-sans hero-headline-clamp text-[#0F172A] dark:text-white mt-[16px] max-w-[650px]">
                 The collaborative canvas for <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0D6EFD] to-indigo-500 dark:from-[#3FA3FF] dark:to-cyan-400">modern</span> engineering teams.
               </h1>
 
@@ -439,7 +440,8 @@ export default function Landing() {
                 {/* 2. Editor Toolbar */}
                 <div className="px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#0F172A]/50 flex items-center justify-between gap-4 h-12 shrink-0">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] dark:text-white truncate">
-                    <span>🚀 Docs</span>
+                    <Rocket size={13} className="text-[#0D6EFD]" />
+                    <span>Docs</span>
                     <span className="text-slate-300 dark:text-white/10">/</span>
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Sync_v2.md</span>
                   </div>
@@ -728,6 +730,7 @@ export default function Landing() {
         <section className="py-16 px-4 sm:px-6 md:px-12 bg-[#F7FAFF] dark:bg-[#070B14] transition-colors duration-300">
           <div className="max-w-4xl mx-auto text-center space-y-6">
             <RevealOnScroll>
+
               <h2 className="text-3xl sm:text-4xl font-bold text-[#081B3A] dark:text-white tracking-tight">
                 Ready to collaborate?
               </h2>
@@ -749,29 +752,99 @@ export default function Landing() {
             <RevealOnScroll>
               <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
                 <span className="text-[#0D6EFD] text-xs font-extrabold uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-3.5 py-1.5 rounded-full border border-blue-200/50 dark:border-blue-900/30">Everything you need</span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white text-center leading-tight tracking-tight pt-2">
-                  Everything you need to collaborate
+                <h2 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl text-[#081B3A] dark:text-white leading-tight tracking-tight pt-2">
+                  Enterprise speed. Minimalist control.
                 </h2>
                 <p className="text-slate-500 dark:text-gray-400 text-center max-w-xl mx-auto text-base sm:text-lg">
                   Athenura brings your team together with powerful tools built for modern document collaboration.
                 </p>
               </div>
             </RevealOnScroll>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((f, i) => (
-                <RevealOnScroll key={i} delay={i * 75}>
-                  <div className="spotlight-card bg-white dark:bg-[#0F172A] border border-slate-200/70 dark:border-white/5 rounded-2xl p-6 hover:border-blue-500/30 hover:shadow-lg dark:hover:shadow-none transition-all duration-300 h-full flex flex-col justify-start">
-                    <div className="text-3xl mb-4 p-2.5 w-12 h-12 bg-slate-50 dark:bg-[#070B14] rounded-xl flex items-center justify-center border border-slate-100 dark:border-white/5 shadow-inner">{f.icon}</div>
-                    <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">
-                      {f.title}
-                    </h3>
-                    <p className="text-slate-600 dark:text-gray-400 text-sm leading-relaxed">
-                      {f.desc}
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+              {/* FEATURE 1: Real-time Sync */}
+              <RevealOnScroll delay={0}>
+                <div className="spotlight-card glow-blue p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/30 text-[#0D6EFD] flex items-center justify-center shrink-0 shadow-inner">
+                      <Activity size={20} className="text-[#0D6EFD]" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Real-time Sync Layer
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Co-author specs synchronously. Instantly replicate cursors, key carets, formatting adjustments, and typing highlights across the globe.
                     </p>
                   </div>
-                </RevealOnScroll>
-              ))}
+                  <div className="text-xs font-bold text-[#0D6EFD] hover:underline flex items-center gap-1 pt-2">
+                    <span>Explore socket layer</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* FEATURE 2: Intelligent Outlines */}
+              <RevealOnScroll delay={100}>
+                <div className="spotlight-card glow-purple p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-900/30 text-purple-500 flex items-center justify-center shrink-0 shadow-inner">
+                      <Layers size={20} className="text-purple-500" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Engineering Outlines
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Spin up pre-structured specs, release blueprints, roadmap targets, and API templates in standard fluid responsive canvas dimensions.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-purple-500 hover:underline flex items-center gap-1 pt-2">
+                    <span>Preview templates</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* FEATURE 3: Access Permissions */}
+              <RevealOnScroll delay={200}>
+                <div className="spotlight-card glow-amber p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/30 text-amber-500 flex items-center justify-center shrink-0 shadow-inner">
+                      <Shield size={20} className="text-amber-500" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Role Authorization
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Strict identity authentication. Transition users dynamically from Editor access to Viewer nodes, or lock folders securely in 1 click.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1 pt-2">
+                    <span>View access matrices</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* FEATURE 4: Checkpoint commits */}
+              <RevealOnScroll delay={300}>
+                <div className="spotlight-card glow-emerald p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/30 text-emerald-500 flex items-center justify-center shrink-0 shadow-inner">
+                      <Clock size={20} className="text-emerald-500" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Checkpoint Commits
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Never lose work. Enjoy microsecond auto-saving to secure databases combined with designated layout restoration points.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-emerald-500 hover:underline flex items-center gap-1 pt-2">
+                    <span>Browse version control</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
             </div>
           </div>
         </section>

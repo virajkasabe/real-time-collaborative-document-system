@@ -13,8 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import athenuraCircle from '../assets/athenura-circle.png';
-import athenuraLogo from '../assets/athenura-logo.png';
+import { ATHENURA_CIRCLE_IMAGE, ATHENURA_LOGO } from '../assets/index';
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const { theme } = useTheme();
@@ -81,29 +80,28 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       {/* Top Branding & Main Navigation */}
       <div className={`flex-1 flex flex-col min-h-0 ${sidebarOpen ? 'overflow-y-auto' : 'overflow-visible md:overflow-visible'}`}>
         {/* Header Branding */}
-        <div className="h-14 flex items-center px-4 border-b border-gray-200 dark:border-gray-700/50 shrink-0 relative overflow-hidden">
-          {/* Full Logo for expanded state */}
-          <img
-            src={athenuraLogo}
-            alt="Athenura"
-            className={`absolute h-8 w-auto object-contain transition-all duration-300 left-4 ${
-              sidebarOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
-            }`}
-            style={{
-              maxWidth: '140px',
-              mixBlendMode: blendMode
-            }}
-          />
-          {/* Circle Logo for collapsed state */}
-          <img 
-            src={athenuraCircle} 
-            alt="Athenura" 
-            className={`absolute w-7 h-7 object-contain transition-all duration-300 left-1/2 -translate-x-1/2 ${
-              !sidebarOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
-            }`}
-            style={{ mixBlendMode: blendMode }}
-          />
-        </div>
+        {sidebarOpen ? (
+          <div className="flex items-center px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+            <img
+              src={ATHENURA_LOGO}
+              alt="Athenura"
+              className="h-9 w-auto object-contain"
+              style={{
+                maxWidth: '150px',
+                mixBlendMode: blendMode
+              }}
+            />
+          </div>
+        ) : (
+          <div className="h-14 flex items-center justify-center border-b border-[#E5E7EB] dark:border-white/10 shrink-0">
+            <img 
+              src={ATHENURA_CIRCLE_IMAGE} 
+              alt="Athenura" 
+              className="w-7 h-7 object-contain"
+              style={{ mixBlendMode: blendMode }}
+            />
+          </div>
+        )}
 
         {/* Primary Navigation Menu */}
         <nav className="mt-3 px-2 space-y-1 shrink-0">

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { HiOutlineMail } from 'react-icons/hi';
-import athenuraLogo from "../../assets/athenura-logo.png";
 import { FiLock, FiEye, FiEyeOff, FiShield,
          FiCheckCircle, FiCircle, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { userForgetPassword } from '../../apis/api';
+import { ATHENURA_LOGO } from '../../assets';
 
 export default function ResetPasswordPage() {
   const { triggerToast } = useAuth();
@@ -108,7 +108,7 @@ export default function ResetPasswordPage() {
           <div className="flex flex-col text-left relative z-10 shrink-0">
             <div className="flex items-center gap-3">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura"
                 className="h-10 w-auto object-contain"
                 style={{ 

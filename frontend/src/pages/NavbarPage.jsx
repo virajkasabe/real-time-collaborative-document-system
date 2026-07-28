@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import athenuraLogo from '../assets/athenura-logo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext'; // Assuming you have this context
+import { useAuth } from '../context/AuthContext';
+import { ATHENURA_LOGO } from '../assets';
 import { Menu, X } from 'lucide-react';
 
 const NavbarPage = () => {
@@ -14,21 +14,34 @@ const NavbarPage = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const mobileMenuRef = useRef(null);
     
     const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
     
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsDropdownOpen(false);
+            }
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+                setIsMobileMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Get user initials for avatar
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
+
     const getUserInitials = () => {
         if (!user) return '';
         const fullName = user.fullName || '';
@@ -43,26 +56,31 @@ const NavbarPage = () => {
         try {
             await logout();
             setIsDropdownOpen(false);
+            setIsMobileMenuOpen(false);
             navigate('/');
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
 
+    const handleNavLinkClick = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
-            <div className="max-w-[1280px] mx-auto px-[24px] h-[72px] flex items-center justify-between">
-                {/* Logo */}
+            <div className="max-w-[1280px] mx-auto px-4 sm:px-[24px] h-[64px] sm:h-[72px] flex items-center justify-between">
+                {/* Logo - Left */}
                 <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => {
                     setMobileMenuOpen(false);
                     navigate('/');
                 }}>
                     <img 
-                        src={athenuraLogo}
+                        src={ATHENURA_LOGO}
                         alt="Athenura"
-                        className="h-10 w-auto object-contain"
+                        className="h-8 sm:h-10 w-auto object-contain"
                         style={{ 
-                            maxWidth: '160px',
+                            maxWidth: '140px',
                             filter: isDark 
                                 ? 'brightness(10)' 
                                 : 'brightness(0.2)',
@@ -71,8 +89,8 @@ const NavbarPage = () => {
                     />
                 </div>
 
-                {/* Navigation Links - Center */}
-                <div className="hidden md:flex items-center gap-6">
+                {/* Navigation Links - Center (Desktop) */}
+                <div className="hidden md:flex items-center gap-4 lg:gap-6">
                     <Link 
                         to="/" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
@@ -99,18 +117,26 @@ const NavbarPage = () => {
                     </Link>
                 </div>
 
-                {/* Right Side - Auth/User */}
-                <div className="flex items-center gap-3">
+                {/* Right Side */}
+                <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     
+                    {/* Mobile Menu Toggle - Sirf mobile mein */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                        aria-label="Toggle menu"
+                    >
+                        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+                    
+                    {/* Auth - Desktop */}
                     {user ? (
-                        // User is logged in
-                        <div className="relative" ref={dropdownRef}>
+                        <div className="hidden md:block relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                             >
-                                {/* Avatar */}
                                 {user.avatar ? (
                                     <img 
                                         src={user.avatar} 
@@ -136,9 +162,8 @@ const NavbarPage = () => {
                                 </svg>
                             </button>
 
-                            {/* Dropdown Menu */}
-                            {isDropdownOpen && (
-                                <div className="absolute top-full right-0 w-[220px] bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-white/10 rounded-xl shadow-xl z-[100] py-2 min-w-max">
+                             {isDropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0F172A] rounded-xl shadow-xl border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden z-[100]">
                                     <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-white/10">
                                         <p className="text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB]">
                                             {user.fullName || 'User'}
@@ -172,9 +197,8 @@ const NavbarPage = () => {
                             )}
                         </div>
                     ) : (
-                        // User not logged in (Desktop only buttons)
                         <div className="hidden md:flex items-center gap-3">
-                            <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
+                            <Link to="/login" className="text-sm font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors">
                                 Sign In
                             </Link>
                             <Button size="md" variant="primary" onClick={() => navigate('/register')} className="btn-shine shadow-md shadow-blue-500/10">

@@ -518,7 +518,6 @@ export default function Profile() {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Right Column - Information and Actions */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">

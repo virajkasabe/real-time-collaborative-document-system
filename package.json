@@ -19,8 +19,5 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "prettier": "^3.9.4"
-  },
-  "dependencies": {
-    "uuid": "^14.0.1"
   }
 }

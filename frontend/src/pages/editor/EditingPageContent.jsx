@@ -16,7 +16,7 @@ import RightSidebar from '../editor/RightSidebar'
 import StatusBar from '../editor/StatusBar'
 // import CommentPopup from '../editor/CommentPopup'
 import ShareModal from '../editor/ShareModal'
-import { inviteCollab } from '../../apis/api';
+import { inviteCollab } from '../../apis/api.js';
 import { useParams } from 'react-router-dom'
 import FindReplacePane from './FindReplacePane';
 
@@ -415,10 +415,12 @@ export default function EditingPageContent({
     setNewCommentText('');
   };
 
-  const handleSendCollabLink = async (e) => {
-    e.preventDefault();
+  const handleSendCollabLink = async () => {
+    // e.preventDefault();
     try {
+      console.log("first",{docId, email: shareEmail, role: shareRole})
       const res = await inviteCollab({ docId, email: shareEmail, role: shareRole });
+      console.log("res")
       showToast(res.data.message || 'Invitation sent', 'success');
       setShareEmail('');
     } catch (error) {

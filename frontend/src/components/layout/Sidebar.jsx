@@ -16,8 +16,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import SidebarItem from './SidebarItem';
-import athenuraLogo from '../../assets/athenura-logo.png';
-import athenuraCircle from '../../assets/athenura-circle.png';
+import { ATHENURA_CIRCLE_IMAGE, ATHENURA_LOGO } from '../../assets';
 
 export default function Sidebar({ sidebarCollapsed, setSidebarCollapsed }) {
   const { logout, triggerToast } = useAuth();
@@ -76,13 +75,12 @@ export default function Sidebar({ sidebarCollapsed, setSidebarCollapsed }) {
         flex flex-col h-full overflow-hidden shrink-0 z-40 select-none text-left
       `}
     >
-
       {/* Top Branding / Logo */}
       <div className="h-16 flex items-center px-4 border-b border-[#E5E7EB] dark:border-white/5 shrink-0 overflow-hidden">
         {isOpen ? (
           <div className="flex items-center gap-2.5">
             <img 
-              src={athenuraLogo} 
+              src={ATHENURA_LOGO} 
               alt="Athenura"
               className="h-7 w-auto object-contain"
               style={{
@@ -95,7 +93,7 @@ export default function Sidebar({ sidebarCollapsed, setSidebarCollapsed }) {
         ) : (
           <div className="mx-auto">
             <img 
-              src={athenuraCircle} 
+              src={ATHENURA_CIRCLE_IMAGE} 
               alt="Athenura"
               className="w-7 h-7 object-contain"
               style={{
