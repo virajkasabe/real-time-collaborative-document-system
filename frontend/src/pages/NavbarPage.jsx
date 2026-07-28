@@ -18,7 +18,6 @@ const NavbarPage = () => {
     
     const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
     
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -32,7 +31,6 @@ const NavbarPage = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Prevent body scroll when mobile menu is open
     useEffect(() => {
         if (isMobileMenuOpen) {
             document.body.style.overflow = 'hidden';
@@ -44,7 +42,6 @@ const NavbarPage = () => {
         };
     }, [isMobileMenuOpen]);
 
-    // Get user initials for avatar
     const getUserInitials = () => {
         if (!user) return '';
         const fullName = user.fullName || '';
@@ -74,7 +71,7 @@ const NavbarPage = () => {
         <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
             <div className="max-w-[1280px] mx-auto px-4 sm:px-[24px] h-[64px] sm:h-[72px] flex items-center justify-between">
                 {/* Logo - Left */}
-                <div className="flex items-center min-w-[120px] sm:min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
+                <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
                     <img 
                         src={ATHENURA_LOGO}
                         alt="Athenura"
@@ -89,11 +86,33 @@ const NavbarPage = () => {
                     />
                 </div>
 
-                {/* Right Side - Auth/User & Mobile Menu */}
+                {/* Navigation Links - Center (Desktop) */}
+                <div className="hidden md:flex items-center gap-4 lg:gap-6">
+                    <Link 
+                        to="/about" 
+                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                    >
+                        About
+                    </Link>
+                    <Link 
+                        to="/contact" 
+                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                    >
+                        Contact
+                    </Link>
+                    <Link 
+                        to="/help" 
+                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
+                    >
+                        Help
+                    </Link>
+                </div>
+
+                {/* Right Side */}
                 <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     
-                    {/* Mobile Menu Toggle - Three lines (visible on all screen sizes below md) */}
+                    {/* Mobile Menu Toggle - Sirf mobile mein */}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="md:hidden p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
@@ -102,14 +121,13 @@ const NavbarPage = () => {
                         {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
                     
+                    {/* Auth - Desktop */}
                     {user ? (
-                        // User is logged in - Desktop only
                         <div className="hidden md:block relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                             >
-                                {/* Avatar */}
                                 {user.avatar ? (
                                     <img 
                                         src={user.avatar} 
@@ -134,7 +152,6 @@ const NavbarPage = () => {
                                 </svg>
                             </button>
 
-                            {/* Dropdown Menu */}
                             {isDropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
                                     <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-white/10">
@@ -170,7 +187,6 @@ const NavbarPage = () => {
                             )}
                         </div>
                     ) : (
-                        // User not logged in - Desktop only
                         <div className="hidden md:flex items-center gap-3">
                             <Link to="/login" className="text-sm font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors">
                                 Sign In
@@ -183,23 +199,21 @@ const NavbarPage = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
+            {/* Mobile Menu - Isme About, Contact, Help BHI dikhenge */}
             {isMobileMenuOpen && (
                 <>
-                    {/* Backdrop */}
                     <div 
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
                         onClick={() => setIsMobileMenuOpen(false)}
                     />
                     
-                    {/* Mobile Menu */}
                     <div 
                         ref={mobileMenuRef}
                         className="fixed top-[64px] sm:top-[72px] left-0 right-0 bg-white dark:bg-[#070B14] border-b border-[#E5E7EB] dark:border-white/10 z-40 md:hidden shadow-xl animate-slideDown"
                     >
                         <nav className="max-w-[1280px] mx-auto px-4 py-4">
                             <div className="flex flex-col space-y-1">
-                                {/* Navigation Links */}
+                                {/* Mobile mein bhi About, Contact, Help dikhenge */}
                                 <Link 
                                     to="/about" 
                                     className="px-4 py-3 text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
@@ -225,9 +239,7 @@ const NavbarPage = () => {
                                 <div className="h-px bg-[#E5E7EB] dark:bg-white/10 my-2" />
                                 
                                 {user ? (
-                                    // User logged in - Mobile menu
                                     <>
-                                        {/* User info */}
                                         <div className="px-4 py-3 flex items-center gap-3">
                                             {user.avatar ? (
                                                 <img 
@@ -266,7 +278,6 @@ const NavbarPage = () => {
                                         </button>
                                     </>
                                 ) : (
-                                    // User not logged in - Mobile menu
                                     <>
                                         <Link 
                                             to="/login" 
