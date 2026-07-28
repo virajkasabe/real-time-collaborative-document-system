@@ -361,7 +361,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   }).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
-  console.log("user", user)
+
 
   user.password = newPassword;
 

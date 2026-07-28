@@ -169,13 +169,29 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
         )
       );
     }
-    
-    // const userId = user._id.toString();
-    // const socketsInRoom = await io.in(userId).fetchSockets();
-    // const isOnline = socketsInRoom.length > 0;
-    // console.log("isOnline", isOnline);
+
     const socketsInRoom = await io.in(accepter._id.toString()).fetchSockets();
     const isOnline = socketsInRoom.length > 0;
+
+
+    const userAlreadyExists = document.users.some(
+      (collaborator) =>
+        collaborator.userId.toString() === accepter._id.toString()
+    );
+
+
+    if (userAlreadyExists) {
+     return res
+      .status(400)
+      .json(
+        new ApiResponse(
+          400,
+          {},
+          "USER ALREADY EXIST"
+        )
+      );
+    }
+
 
     if (isOnline) {
       await onlineUser(io, realTimeNotificationData, collabData, email);
