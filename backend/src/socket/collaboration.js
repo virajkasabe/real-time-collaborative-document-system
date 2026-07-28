@@ -17,11 +17,9 @@ import {
 
 export const acceptCollab = async(io,socket,data) => {
     const { collabId } = data
-    console.log("data",data)
 
     const collabData = await getCollaboration(collabId);
     const user = await secureUser(socket.user._id)
-    console.log("user", user)
     if (!collabData) {
       socket
       .to(user._id)
@@ -116,7 +114,6 @@ export const declineCollab = async(io,socket,data) => {
 
           
         await deleteCollaboration(collabId)
-        console.log("data",data)
         await deleteNotification(user.email, data)
 
         console.log("inviter._id",inviter._id)
