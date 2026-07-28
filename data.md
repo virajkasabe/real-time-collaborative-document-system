@@ -1,5 +1,4 @@
-```json
-
+```
 {
   _id: ObjectId('6a35009b9a0f9ee57abf1128'),
   title: 'Untitle Document',
@@ -37,14 +36,7 @@
   }
 }
 
-
-
 ```
 
 
 
-
-```
-Google Console config barobar aahe. Issue ha ahe ki aplla frontend axios.get() ne OAuth callback call karto — pan te browser ne page redirect karun karaycha asto, axios ne nahi. Fix: button click zalyavar window.location.href ne redirect karaycha, axios call kadhun takaycha
-
-```
