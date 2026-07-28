@@ -61,7 +61,6 @@ export const userRefreshTokenRefreshed = (data) => {
 // ?? =============================================
 
 export const inviteCollab = ( { docId, ...data}) => {
-    console.log("data",data,docId)
     return apiClient.post(`/collab/send-collab/${docId}`,data)
 }
 
