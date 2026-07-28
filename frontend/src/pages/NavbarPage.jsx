@@ -3,15 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext'; // Assuming you have this context
+import { useAuth } from '../context/AuthContext';
 import { ATHENURA_LOGO } from '../assets';
+import { Menu, X } from 'lucide-react';
 
 const NavbarPage = () => {
     const { theme } = useTheme();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const mobileMenuRef = useRef(null);
     
     const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
     
@@ -21,10 +24,25 @@ const NavbarPage = () => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsDropdownOpen(false);
             }
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+                setIsMobileMenuOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
 
     // Get user initials for avatar
     const getUserInitials = () => {
@@ -41,23 +59,28 @@ const NavbarPage = () => {
         try {
             await logout();
             setIsDropdownOpen(false);
+            setIsMobileMenuOpen(false);
             navigate('/');
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
 
+    const handleNavLinkClick = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
-            <div className="max-w-[1280px] mx-auto px-[24px] h-[72px] flex items-center justify-between">
-                {/* Logo */}
-                <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
+            <div className="max-w-[1280px] mx-auto px-4 sm:px-[24px] h-[64px] sm:h-[72px] flex items-center justify-between">
+                {/* Logo - Left */}
+                <div className="flex items-center min-w-[120px] sm:min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
                     <img 
                         src={ATHENURA_LOGO}
                         alt="Athenura"
-                        className="h-10 w-auto object-contain"
+                        className="h-8 sm:h-10 w-auto object-contain"
                         style={{ 
-                            maxWidth: '160px',
+                            maxWidth: '140px',
                             filter: isDark 
                                 ? 'brightness(10)' 
                                 : 'brightness(0.2)',
@@ -66,41 +89,22 @@ const NavbarPage = () => {
                     />
                 </div>
 
-                {/* Navigation Links - Center */}
-                <div className="hidden md:flex items-center gap-6">
-                    {/* <Link 
-                        to="/dashboard" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                    >
-                        Dashboard
-                    </Link> */}
-                    <Link 
-                        to="/about" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                    >
-                        About
-                    </Link>
-                    <Link 
-                        to="/contact" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                    >
-                        Contact
-                    </Link>
-                    <Link 
-                        to="/help" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                    >
-                        Help
-                    </Link>
-                </div>
-
-                {/* Right Side - Auth/User */}
-                <div className="flex items-center gap-3">
+                {/* Right Side - Auth/User & Mobile Menu */}
+                <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     
+                    {/* Mobile Menu Toggle - Three lines (visible on all screen sizes below md) */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                        aria-label="Toggle menu"
+                    >
+                        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+                    
                     {user ? (
-                        // User is logged in
-                        <div className="relative" ref={dropdownRef}>
+                        // User is logged in - Desktop only
+                        <div className="hidden md:block relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
@@ -132,7 +136,7 @@ const NavbarPage = () => {
 
                             {/* Dropdown Menu */}
                             {isDropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
+                                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
                                     <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-white/10">
                                         <p className="text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB]">
                                             {user.fullName || 'User'}
@@ -141,17 +145,6 @@ const NavbarPage = () => {
                                             {user.email}
                                         </p>
                                     </div>
-                                    
-                                    {/* <Link 
-                                        to="/dashboard" 
-                                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#1F2937] dark:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                                        onClick={() => setIsDropdownOpen(false)}
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                        </svg>
-                                        Dashboard
-                                    </Link> */}
                                     
                                     <Link 
                                         to="/profile" 
@@ -177,18 +170,125 @@ const NavbarPage = () => {
                             )}
                         </div>
                     ) : (
-                        // User not logged in
-                        <>
-                            <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
+                        // User not logged in - Desktop only
+                        <div className="hidden md:flex items-center gap-3">
+                            <Link to="/login" className="text-sm font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors">
                                 Sign In
                             </Link>
                             <Button size="md" variant="primary" onClick={() => navigate('/register')} className="btn-shine shadow-md shadow-blue-500/10">
                                 Sign Up Free
                             </Button>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
+
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <>
+                    {/* Backdrop */}
+                    <div 
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                    
+                    {/* Mobile Menu */}
+                    <div 
+                        ref={mobileMenuRef}
+                        className="fixed top-[64px] sm:top-[72px] left-0 right-0 bg-white dark:bg-[#070B14] border-b border-[#E5E7EB] dark:border-white/10 z-40 md:hidden shadow-xl animate-slideDown"
+                    >
+                        <nav className="max-w-[1280px] mx-auto px-4 py-4">
+                            <div className="flex flex-col space-y-1">
+                                {/* Navigation Links */}
+                                <Link 
+                                    to="/about" 
+                                    className="px-4 py-3 text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
+                                    onClick={handleNavLinkClick}
+                                >
+                                    About
+                                </Link>
+                                <Link 
+                                    to="/contact" 
+                                    className="px-4 py-3 text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
+                                    onClick={handleNavLinkClick}
+                                >
+                                    Contact
+                                </Link>
+                                <Link 
+                                    to="/help" 
+                                    className="px-4 py-3 text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
+                                    onClick={handleNavLinkClick}
+                                >
+                                    Help
+                                </Link>
+                                
+                                <div className="h-px bg-[#E5E7EB] dark:bg-white/10 my-2" />
+                                
+                                {user ? (
+                                    // User logged in - Mobile menu
+                                    <>
+                                        {/* User info */}
+                                        <div className="px-4 py-3 flex items-center gap-3">
+                                            {user.avatar ? (
+                                                <img 
+                                                    src={user.avatar} 
+                                                    alt={user.fullName || 'User'}
+                                                    className="w-10 h-10 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+                                                    {getUserInitials()}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB]">
+                                                    {user.fullName || 'User'}
+                                                </p>
+                                                <p className="text-xs text-[#6B7280] dark:text-[#94A3B8] truncate">
+                                                    {user.email}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <Link 
+                                            to="/profile" 
+                                            className="px-4 py-3 text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
+                                            onClick={handleNavLinkClick}
+                                        >
+                                            Profile
+                                        </Link>
+                                        
+                                        <button 
+                                            onClick={handleLogout}
+                                            className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors text-left"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </>
+                                ) : (
+                                    // User not logged in - Mobile menu
+                                    <>
+                                        <Link 
+                                            to="/login" 
+                                            className="px-4 py-3 text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors"
+                                            onClick={handleNavLinkClick}
+                                        >
+                                            Sign In
+                                        </Link>
+                                        <Link 
+                                            to="/register" 
+                                            className="px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg transition-all text-center shadow-md shadow-blue-500/20"
+                                            onClick={handleNavLinkClick}
+                                        >
+                                            Sign Up Free
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        </nav>
+                    </div>
+                </>
+            )}
         </header>
     );
 };
