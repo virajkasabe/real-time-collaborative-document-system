@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import athenuraCircle from '../assets/athenura-circle.png';
-import athenuraLogo from '../assets/athenura-logo.png';
+import { ATHENURA_CIRCLE_IMAGE, ATHENURA_LOGO } from '../assets/index';
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const { theme } = useTheme();
@@ -83,7 +82,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         {sidebarOpen ? (
           <div className="flex items-center px-4 py-4 border-b border-gray-200 dark:border-gray-700">
             <img
-              src={athenuraLogo}
+              src={ATHENURA_LOGO}
               alt="Athenura"
               className="h-9 w-auto object-contain"
               style={{
@@ -95,7 +94,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         ) : (
           <div className="h-14 flex items-center justify-center border-b border-[#E5E7EB] dark:border-white/10 shrink-0">
             <img 
-              src={athenuraCircle} 
+              src={ATHENURA_CIRCLE_IMAGE} 
               alt="Athenura" 
               className="w-7 h-7 object-contain"
               style={{ mixBlendMode: blendMode }}

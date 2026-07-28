@@ -1,6 +1,6 @@
 import React from 'react';
-import athenuraLogo from '../../assets/athenura-logo.png';
 import { useTheme } from '../../context/ThemeContext';
+import { ATHENURA_LOGO } from '../../assets';
 
 export default function AthenuraLogo({ 
   className = "h-8", 
@@ -14,7 +14,7 @@ export default function AthenuraLogo({
 
   return (
     <img 
-      src={athenuraLogo}
+      src={ATHENURA_LOGO}
       alt="Athenura"
       className={`w-auto object-contain ${className}`}
       style={{ 

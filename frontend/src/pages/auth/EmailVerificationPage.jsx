@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import verifyImage from "../../assets/verify-email.png";
 import { useAuth } from "../../context/AuthContext";
-import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
+import { ATHENURA_LOGO } from "../../assets";
 
 export default function EmailVerificationPage() {
   const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
@@ -159,7 +159,7 @@ export default function EmailVerificationPage() {
           <div className="flex flex-col text-left relative z-10 shrink-0 mb-2">
             <div className="flex items-center gap-3">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura"
                 className="h-10 w-auto object-contain"
                 style={{ 

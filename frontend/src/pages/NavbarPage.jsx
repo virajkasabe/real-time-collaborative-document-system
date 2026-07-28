@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import athenuraLogo from '../assets/athenura-logo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext'; // Assuming you have this context
+import { ATHENURA_LOGO } from '../assets';
 
 const NavbarPage = () => {
     const { theme } = useTheme();
@@ -53,7 +53,7 @@ const NavbarPage = () => {
                 {/* Logo */}
                 <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
                     <img 
-                        src={athenuraLogo}
+                        src={ATHENURA_LOGO}
                         alt="Athenura"
                         className="h-10 w-auto object-contain"
                         style={{ 

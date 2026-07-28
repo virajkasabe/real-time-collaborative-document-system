@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import athenuraLogo from "../assets/athenura-logo.png";
 import { useTheme } from "../context/ThemeContext";
+import { ATHENURA_LOGO } from "../assets";
 
 function useInView(ref, threshold = 0.15) {
   const [vis, setVis] = useState(false);
@@ -206,7 +206,7 @@ export default function FooterPage() {
               <div className="brand-block">
                 <Link to="/" style={{ display:"inline-flex", alignItems:"center", marginBottom:"1rem" }}>
                   <img
-                    src={athenuraLogo}
+                    src={ATHENURA_LOGO}
                     alt="Athenura"
                     style={{
                       height: 36,

@@ -24,7 +24,6 @@ import Button from '../../components/common/Button';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import { BRAND_NAME } from '../../utils/constants';
 import { useTheme } from '../../context/ThemeContext';
-import athenuraLogo from '../../assets/athenura-logo.png';
 
 // 1. LIGHTWEIGHT SCROLL REVEAL COMPONENT ( IntersectionObserver )
 function RevealOnScroll({ children, delay = 0 }) {

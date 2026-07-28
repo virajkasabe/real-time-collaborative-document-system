@@ -20,13 +20,13 @@ import {
 } from 'react-router-dom';
 
 import { createDoc } from '../../apis/api';
-import athenuraLogo from '../../assets/athenura-logo.png';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../common/Button';
 import ThemeToggle from '../common/ThemeToggle';
 import NotificationBell from '../notifications/NotificationBell';
 import { randomUser } from '../../../public';
+import { ATHENURA_LOGO } from '../../assets';
 
 export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) {
   const { user, logout, triggerToast } = useAuth();
@@ -107,7 +107,7 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
         </button>
         <div className="flex items-center md:hidden">
           <img 
-            src={athenuraLogo}
+            src={ATHENURA_LOGO}
             alt="Athenura"
             className="h-7 sm:h-8 w-auto object-contain"
             style={{ 

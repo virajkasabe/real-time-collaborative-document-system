@@ -5,7 +5,7 @@ import ThemeToggle from './common/ThemeToggle';
 import { useAuth } from '../context/AuthContext';
 import Button from './common/Button';
 import NotificationBell from './notifications/NotificationBell';
-import athenuraLogo from '../assets/athenura-logo.png';
+import ATHENURA_LOGO from '../assets/index'
 import { useTheme } from '../context/ThemeContext';
 import { FiUser, FiSettings, FiLogOut } from 'react-icons/fi';
 import { createDoc } from '../apis/api';
@@ -70,7 +70,7 @@ export default function Navbar({ onSearchChange, sidebarOpen, setSidebarOpen }) 
         </button>
         <div className="flex items-center md:hidden">
           <img 
-            src={athenuraLogo}
+            src={ATHENURA_LOGO}
             alt="Athenura"
             className="h-8 w-auto object-contain"
             style={{ 
