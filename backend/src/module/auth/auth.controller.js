@@ -8,6 +8,8 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { otpGenerator, requiredField, secureUser } from "../../utils/helper.js";
 import User from "./auth.model.js";
+import { otpService } from "../../services/otp.service.js";
+import { link } from "fs";
 
 const option = {
   httpOnly: true,
@@ -61,27 +63,37 @@ export const registerUser = asyncHandler(async (req, res) => {
   console.log({
     otp,
   });
-  
+
 
   await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -emailVerificationToken -emailVerificationExpiry"
   );
 
   await user.save({ validateBeforeSave: false });
 
-  const { refreshToken, accessToken } = await generateAccessRefreshToken(
-    user._id
-  );
 
   console.log("OTP", otp);
 
   // TODO : SEND EMAIL FOR OTP
 
+  const link = `${ENV.CORS_ORIGIN}/verify-email/${unHashedToken}`
+
+  const rest = await otpService(
+    otp,
+    link,
+    email = email
+  )
+
+    console.log("res", rest)
+
+    console.log(`${ENV.CORS_ORIGIN}/verify-email/${unHashedToken}`)
+
   console.log("user register");
+
   return res
     .status(201)
     .json(
-      new ApiResponse(201, {}, `user created  successfully`)
+      new ApiResponse(201, { link }, `user created  successfully`)
     );
 });
 

@@ -48,9 +48,3 @@ export const getRandomColor = () => {
   
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 };
-
-export const formatDocumentName = (name) => {
-  if (!name) return 'Untitled Document';
-  if (name.trim() === 'Untitle Document') return 'Untitled Document';
-  return name;
-};

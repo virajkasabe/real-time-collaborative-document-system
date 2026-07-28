@@ -19,7 +19,6 @@ import { DOCUMENT_ROLES } from "../../utils/constant.js";
 import { fetchDoc, secureUser } from "../../utils/helper.js";
 import User from "../auth/auth.model.js";
 import Doc from "../document/document.model.js";
-import { v4 as uuidv4 } from 'uuid';
 
 
 const onlineUser = async(io, realTimeNotificationData, collabData, email) => {
@@ -59,7 +58,7 @@ export const sendCollaboration = asyncHandler(async(req,res) => {
      const io = req.app.get("io");
      const accepter = await User.findOne({email})
      const inviter = await secureUser(req.user._id)
-     const collabId = uuidv4()
+     const collabId = new Date.now()
    
      const document = await fetchDoc(docId)
      if(!document) {

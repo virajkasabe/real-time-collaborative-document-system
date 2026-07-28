@@ -21,7 +21,7 @@ export const userLogin = async (data) => {
 }
 
 // ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
-export const googleLoginApi = `${baseAPIURL}/callback/google`
+export const googleLoginApi = `${baseAPIURL}/auth/google`
 
 
 export const userLogout = () => {
@@ -79,6 +79,11 @@ export const declinedCollab = (email,tokenId) => {
 export const createDoc = (data) => {
     return apiClient.post("/doc/create-doc", data)
 }
+
+export const updateDocumentTitle = (data) => {
+    return apiClient.put(`/doc/update-doc-title/${data}`, data)
+}
+
 
 export const fetchDocumentFolder = () => {
     return apiClient.get(`/doc/fetch-folder`)

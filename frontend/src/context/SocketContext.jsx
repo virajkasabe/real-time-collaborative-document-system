@@ -11,7 +11,7 @@ import { CONNECT_DISCONNET_EVENT } from "../utils/constants";
 
 const SocketContext = createContext();
 
-export function SocketProvider({ children }) {
+export function SocketProvider({ children }) {  
   const [isConnected, setIsConnected] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
   const [socket, setSocket] = useState(null);
@@ -25,7 +25,7 @@ export function SocketProvider({ children }) {
       }
     }
 
-    console.log("🔌 Connecting socket...");
+    // console.log("🔌 Connecting socket...");
 
     const newSocket = io(
       import.meta.env.VITE_SOCKET_URL || "http://localhost:5000",
@@ -49,13 +49,13 @@ export function SocketProvider({ children }) {
     });
 
     newSocket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (reason) => {
-      console.log("❌ Socket Disconnected:", reason);
+      // console.log("❌ Socket Disconnected:", reason);
       setIsConnected(false);
       setSocketReady(false);
     });
 
     newSocket.on(CONNECT_DISCONNET_EVENT.CONNECT_ERROR, (err) => {
-      console.log("🚫 Socket Error:", err.message);
+      // console.log("🚫 Socket Error:", err.message);
       setIsConnected(false);
       setSocketReady(false);
 
@@ -73,7 +73,7 @@ export function SocketProvider({ children }) {
   const disconnectSocket = useCallback(() => {
     if (!socketRef.current) return;
 
-    console.log("🔌 Disconnecting socket...");
+    // console.log("🔌 Disconnecting socket...");
 
     socketRef.current.removeAllListeners();
     socketRef.current.disconnect();
