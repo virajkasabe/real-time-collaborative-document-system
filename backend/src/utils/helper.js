@@ -115,6 +115,3 @@ export const generateRandomId = (length = 12) => {
 
     return id;
 }
-
-const collabId = generateRandomId();
-console.log(collabId);

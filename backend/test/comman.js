@@ -7,3 +7,5 @@ export const getApiContext = async (playwright) => {
     baseURL: ENV.BACKEND_URI || `http://localhost:${PORT}`,
   });
 };
+
+export const backendUrl = '/api/v1/rtcds'

@@ -39,13 +39,13 @@ describe("Auth - Register", () => {
     });
 
     const payload = {
-      name: "Laxman",
+      fullName: "Laxman",
       email: "test@test.com",
       password: "12345678",
     };
 
     const response = await request(app)
-      .post("/api/v1/rtcds/auth/register")
+      .post(`${backendUrl}/auth/register`)
       .send(payload);
 
     expect(response.status).toBe(201);
