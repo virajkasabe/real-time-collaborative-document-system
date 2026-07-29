@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import Button from '../components/common/Button';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../context/AuthContext'; // Assuming you have this context
+import { useAuth } from '../context/AuthContext';
+import { ATHENURA_LOGO } from '../assets';
 
 const NavbarPage = () => {
     const { theme } = useTheme();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const dropdownRef = useRef(null);
     const mobileMenuRef = useRef(null);
     
@@ -85,12 +88,6 @@ const NavbarPage = () => {
 
                 {/* Navigation Links - Center */}
                 <div className="hidden md:flex items-center gap-6">
-                    {/* <Link 
-                        to="/dashboard" 
-                        className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                    >
-                        Dashboard
-                    </Link> */}
                     <Link 
                         to="/about" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
@@ -115,10 +112,10 @@ const NavbarPage = () => {
                 <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     
-                    {/* Mobile Menu Toggle - Sirf mobile mein */}
+                    {/* Mobile Menu Toggle */}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="md:hidden p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                        className="md:hidden p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                         aria-label="Toggle menu"
                     >
                         {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -157,7 +154,7 @@ const NavbarPage = () => {
                             </button>
 
                             {isDropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
+                                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden z-50">
                                     <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-white/10">
                                         <p className="text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB]">
                                             {user.fullName || 'User'}
@@ -192,26 +189,82 @@ const NavbarPage = () => {
                         </div>
                     ) : (
                         // User not logged in
-                        <>
+                        <div className="hidden md:flex items-center gap-3">
                             <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
                                 Sign In
                             </Link>
                             <Button size="md" variant="primary" onClick={() => navigate('/register')} className="btn-shine shadow-md shadow-blue-500/10">
                                 Sign Up Free
                             </Button>
-                        </>
+                        </div>
                     )}
-
-                    {/* Hamburger Button for Mobile/Tablet */}
-                    <button
-                        className="md:hidden p-2 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        aria-label="Toggle Menu"
-                    >
-                        {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-                    </button>
                 </div>
             </div>
+
+            {/* Mobile Navigation Drawer */}
+            {isMobileMenuOpen && (
+                <div 
+                    ref={mobileMenuRef}
+                    className="md:hidden bg-white dark:bg-[#070B14] border-b border-[#E5E7EB] dark:border-white/10 px-6 py-4 space-y-3 shadow-lg"
+                >
+                    <Link 
+                        to="/about" 
+                        onClick={handleNavLinkClick}
+                        className="block text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] py-1"
+                    >
+                        About
+                    </Link>
+                    <Link 
+                        to="/contact" 
+                        onClick={handleNavLinkClick}
+                        className="block text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] py-1"
+                    >
+                        Contact
+                    </Link>
+                    <Link 
+                        to="/help" 
+                        onClick={handleNavLinkClick}
+                        className="block text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] py-1"
+                    >
+                        Help
+                    </Link>
+                    {user ? (
+                        <div className="pt-2 border-t border-gray-100 dark:border-white/10 space-y-2">
+                            <Link 
+                                to="/profile" 
+                                onClick={handleNavLinkClick}
+                                className="block text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB] py-1"
+                            >
+                                Profile
+                            </Link>
+                            <button 
+                                onClick={handleLogout}
+                                className="block w-full text-left text-sm font-medium text-red-600 dark:text-red-400 py-1"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="pt-2 border-t border-gray-100 dark:border-white/10 flex flex-col gap-2">
+                            <Link 
+                                to="/login" 
+                                onClick={handleNavLinkClick}
+                                className="block text-center text-sm font-bold text-[#6B7280] dark:text-[#94A3B8] py-1"
+                            >
+                                Sign In
+                            </Link>
+                            <Button 
+                                size="md" 
+                                variant="primary" 
+                                onClick={() => { handleNavLinkClick(); navigate('/register'); }} 
+                                className="w-full btn-shine"
+                            >
+                                Sign Up Free
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
         </header>
     );
 };
