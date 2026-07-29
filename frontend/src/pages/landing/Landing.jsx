@@ -17,13 +17,13 @@ import {
   ChevronRight, 
   Terminal,
   Layers,
-  Play
+  Play,
+  Rocket
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import ThemeToggle from '../../components/common/ThemeToggle';
 import { BRAND_NAME } from '../../utils/constants';
 import { useTheme } from '../../context/ThemeContext';
-import athenuraLogo from '../../assets/athenura-logo.png';
 
 // 1. LIGHTWEIGHT SCROLL REVEAL COMPONENT ( IntersectionObserver )
 function RevealOnScroll({ children, delay = 0 }) {
@@ -386,7 +386,7 @@ export default function Landing() {
               </div>
 
               {/* Headline: clamp font-size, line-height 1, letter-spacing -2px, max-width 650px, gap to badge = 16px */}
-              <h1 className="font-sans text-3xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] dark:text-white mt-[16px] max-w-[650px] leading-tight tracking-tight">
+              <h1 className="font-sans hero-headline-clamp text-[#0F172A] dark:text-white mt-[16px] max-w-[650px]">
                 The collaborative canvas for <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0D6EFD] to-indigo-500 dark:from-[#3FA3FF] dark:to-cyan-400">modern</span> engineering teams.
               </h1>
 
@@ -446,7 +446,8 @@ export default function Landing() {
                 {/* 2. Editor Toolbar */}
                 <div className="px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#0F172A]/50 flex items-center justify-between gap-4 h-12 shrink-0">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0F172A] dark:text-white truncate">
-                    <span>🚀 Docs</span>
+                    <Rocket size={13} className="text-[#0D6EFD]" />
+                    <span>Docs</span>
                     <span className="text-slate-300 dark:text-white/10">/</span>
                     <span className="text-[#64748B] dark:text-[#94A3B8]">Sync_v2.md</span>
                   </div>
@@ -680,62 +681,98 @@ export default function Landing() {
         <section className="py-20 px-6 bg-white dark:bg-[#080F1E] transition-colors duration-300">
           <div className="max-w-5xl mx-auto">
             <RevealOnScroll>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white text-center mb-16 tracking-tight">
-                Loved by teams everywhere
-              </h2>
-            </RevealOnScroll>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {testimonials.map((t, i) => (
-                <RevealOnScroll key={i} delay={i * 100}>
-                  <div className="bg-slate-50/50 dark:bg-[#0F172A] border border-slate-200/60 dark:border-white/5 rounded-2xl p-6 h-full flex flex-col justify-between shadow-sm dark:shadow-none hover:shadow-md transition-shadow duration-300">
-                    <p className="text-slate-700 dark:text-gray-300 text-sm sm:text-base leading-relaxed mb-6 italic">
-                      "{t.text}"
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
-                        {t.avatar}
-                      </div>
-                      <div>
-                        <div className="text-slate-900 dark:text-white text-sm font-bold">
-                          {t.name}
-                        </div>
-                        <div className="text-slate-500 dark:text-gray-500 text-xs font-semibold">{t.role}</div>
-                      </div>
-                    </div>
-                  </div>
-                </RevealOnScroll>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 6 — CTA BANNER */}
-        <section className="py-20 px-6 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-900/25 dark:to-indigo-900/15 border-y border-slate-200/60 dark:border-blue-500/10 transition-colors duration-300">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <RevealOnScroll>
-              <div className="space-y-4">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Ready to collaborate smarter?
+              <div className="text-center space-y-4 max-w-3xl mx-auto">
+                <span className="text-[#0D6EFD] text-xs font-extrabold uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-3.5 py-1.5 rounded-full border border-blue-200/50 dark:border-blue-900/30">Built For Engineering Teams</span>
+                <h2 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl text-[#081B3A] dark:text-white leading-tight tracking-tight pt-2">
+                  Enterprise speed. Minimalist control.
                 </h2>
-                <p className="text-slate-600 dark:text-gray-400 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-                  Join thousands of teams already using Athenura. Free to get started.
+                <p className="text-base sm:text-lg text-[#6B7280] dark:text-[#94A3B8] max-w-2xl mx-auto font-normal leading-relaxed">
+                  Designed to eliminate friction, sync active Caret vectors instantly, and safeguard your engineering layout blueprint securely.
                 </p>
               </div>
             </RevealOnScroll>
-            
-            <RevealOnScroll delay={150}>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
-                <a href="/register"
-                  className="px-8 py-3 bg-[#0D6EFD] hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-[0_4px_15px_rgba(13,110,253,0.15)] flex items-center justify-center cursor-pointer">
-                  Get Started Free
-                </a>
-                <a href="/login"
-                  className="px-8 py-3 border border-slate-300 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-white font-bold rounded-xl transition backdrop-blur-sm flex items-center justify-center cursor-pointer">
-                  Sign In
-                </a>
-              </div>
-            </RevealOnScroll>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+              
+              {/* FEATURE 1: Real-time Sync */}
+              <RevealOnScroll delay={0}>
+                <div className="spotlight-card glow-blue p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/30 text-[#0D6EFD] flex items-center justify-center shrink-0 shadow-inner">
+                      <Activity size={20} className="animate-float-fast text-[#0D6EFD]" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Real-time Sync Layer
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Co-author specs synchronously. Instantly replicate cursors, key carets, formatting adjustments, and typing highlights across the globe.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-[#0D6EFD] hover:underline flex items-center gap-1 pt-2">
+                    <span>Explore socket layer</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* FEATURE 2: Intelligent Outlines */}
+              <RevealOnScroll delay={100}>
+                <div className="spotlight-card glow-purple p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-100 dark:border-purple-900/30 text-purple-500 flex items-center justify-center shrink-0 shadow-inner">
+                      <Layers size={20} className="animate-float-slow text-purple-500" />
+                    </div>
+                  </div>
+                  <div className="text-xs font-bold text-purple-500 hover:underline flex items-center gap-1 pt-2">
+                    <span>Preview templates</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* FEATURE 3: Access Permissions */}
+              <RevealOnScroll delay={200}>
+                <div className="spotlight-card glow-amber p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/30 text-amber-500 flex items-center justify-center shrink-0 shadow-inner">
+                      <Shield size={20} className="animate-float-medium text-amber-500" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Role Authorization
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Strict identity authentication. Transition users dynamically from Editor access to Viewer nodes, or lock folders securely in 1 click.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1 pt-2">
+                    <span>View access matrices</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+              {/* FEATURE 4: Checkpoint commits */}
+              <RevealOnScroll delay={300}>
+                <div className="spotlight-card glow-emerald p-6 backdrop-blur-md shadow-sm rounded-xl space-y-6 hover:-translate-y-2 cursor-pointer h-full flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/30 text-emerald-500 flex items-center justify-center shrink-0 shadow-inner">
+                      <Clock size={20} className="animate-float-fast text-emerald-500" />
+                    </div>
+                    <h4 className="font-sans font-bold text-lg text-[#081B3A] dark:text-white">
+                      Checkpoint Commits
+                    </h4>
+                    <p className="text-sm leading-relaxed text-[#6B7280] dark:text-[#94A3B8]">
+                      Never lose work. Enjoy microsecond auto-saving to secure databases combined with designated layout restoration points.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-emerald-500 hover:underline flex items-center gap-1 pt-2">
+                    <span>Browse version control</span>
+                    <ChevronRight size={12} />
+                  </div>
+                </div>
+              </RevealOnScroll>
+
+            </div>
           </div>
         </section>
 

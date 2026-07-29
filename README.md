@@ -1,128 +1,302 @@
-# real-time-collaborative-document-system
-A secure real-time collaborative document editor inspired by Google Docs and Microsoft Word using React, Node.js, Socket.IO, MongoDB, and Redis.
+# 📄 Real-Time Collaborative Document System
 
-## REDIS
+A secure real-time collaborative document editor inspired by **Google Docs** and **Microsoft Word**, built using **React, Node.js, Socket.IO, MongoDB, and Redis**.
 
+---
 
-###### ===============================================
+# 🚀 Tech Stack
 
- NOTE : FIRSTLY RUN THE SERVER OF REDIS USING DOCKER
+- ⚛️ React
+- 🟢 Node.js
+- 🚂 Express.js
+- 🔌 Socket.IO
+- 🍃 MongoDB
+- ⚡ Redis
+- 🔐 JWT Authentication
+- 🐳 Docker
 
-###### ===============================================
+---
 
-#
+# 📦 Prerequisites
 
-- when you don't have a redis on docker
+Before starting the project, make sure you have installed:
 
-#### STEP : 1
+- Node.js
+- Docker
+- Git
 
-``` docker
+---
 
-docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
+# 🟥 Redis Setup (Docker)
 
+## Step 1: Create the Redis Stack Container
+
+If you don't already have a Redis container, run:
+
+```bash
+docker run -d \
+  --name redis-stack \
+  -p 6379:6379 \
+  -p 8001:8001 \
+  redis/redis-stack:latest
 ```
 
-###### ===============================================
+---
 
- NOTE : YOU CAN SEE THE REDIS LOCALLY USING GIVEN COMMAND
+## Step 2: Verify the Container
 
-###### ===============================================
-
-```
-
-http://localhost:8001
-
-```
-- using this url you can see your changes also
-
-### ----- xxxxx -----
-
-
-#### STEP : 2
-- for test which container was runining
-
-``` docker
-
+```bash
 docker ps
-
 ```
 
-#### STEP : 3
-- for our normal terminal ( own machine terminal so what will we do )
+You should see the `redis-stack` container running.
 
+---
 
-``` docker
+## Step 3: Open Redis CLI
 
-docker exec -it [CONTAINER_ID] bash
+Enter the container:
 
+```bash
+docker exec -it redis-stack bash
 ```
 
-#### STEP : 4
-- for our normal terminal ( own machine terminal so what will we do )
+Then launch Redis CLI:
 
-``` docker
-
+```bash
 redis-cli
-
 ```
 
-- now you'r in redis terminal
+---
 
+## Step 4: Test Redis
 
-- you wan't to check the redis server was up an runing or not then
-- write like "ping" on terminal
+Inside the Redis CLI:
 
-``` redis
-
-ping
-
+```redis
+PING
 ```
 
-- when you'll get output like
+Expected output:
 
-```
-
+```text
 PONG
-
 ```
 
-- then your redis server is up an runing successfully
+This confirms Redis is running successfully.
 
+---
 
+## Redis Insight (Web UI)
 
-## THIS COMMANDS FOR WHO USE THE MONGO AND REDIS WILL USING DOCKER
+Redis Stack includes a built-in web interface.
 
-docker_mongo_image
-
-```
-
-docker run -d --name mongodb-lts -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password mongo:6.0      
+Open:
 
 ```
-
-
-```docker
-
-docker start mongodb
-
+http://localhost:8001
 ```
-/// ----- ///
 
-```docker
+You can inspect:
 
+- Keys
+- Values
+- Memory usage
+- Commands
+- Real-time changes
+
+---
+
+# 🍃 MongoDB Setup (Docker)
+
+## Create MongoDB Container
+
+```bash
+docker run -d \
+  --name mongodb-lts \
+  -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=password \
+  mongo:6.0
+```
+
+---
+
+## Start MongoDB
+
+```bash
+docker start mongodb-lts
+```
+
+---
+
+# ▶️ Start Existing Containers
+
+If you've already created the containers, simply start them:
+
+### MongoDB
+
+```bash
+docker start mongodb-lts
+```
+
+### Redis
+
+```bash
 docker start redis-stack
-
 ```
 
-### SOCKET
+---
 
-emit - sender
-on - reciver
+# 🔌 Socket.IO Basics
 
+| Method | Purpose |
+|---------|---------|
+| `socket.emit()` | Send an event |
+| `socket.on()` | Receive an event |
 
-## YOU CAN TEST A SERVER LIKE MULTIPLES
+Example:
 
+```javascript
+// Sender
+socket.emit("message", data);
+
+// Receiver
+socket.on("message", (data) => {
+    console.log(data);
+});
 ```
+
+---
+
+# 🧪 Running Multiple Backend Servers
+
+For testing multiple server instances:
+
+```bash
 export PORT=5000 && node backend/src/server.js
-
 ```
+
+Example:
+
+```bash
+export PORT=5001 && node backend/src/server.js
+```
+
+---
+
+# 🐳 Dockerizing the Backend
+
+Once the backend is Dockerized, you won't need to start it manually. Simply build the image and run a container.
+
+## Build the Docker Image
+
+```bash
+docker build -t <IMAGE_NAME> .
+```
+
+Example:
+
+```bash
+docker build -t rtcds-backend .
+```
+
+---
+
+## Run the Docker Container
+
+```bash
+docker run -d \
+  --name rtcds-backend \
+  -p 5000:5000 \
+  -e PORT=5000 \
+  -e MONGO_URI="<YOUR_MONGODB_URI>" \
+  -e REDIS_URI="<YOUR_REDIS_URI>" \
+  -e JWT_SECRET="<YOUR_SECRET>" \
+  rtcds-backend
+```
+
+Replace the environment variables with your own values.
+
+---
+
+# 📂 Useful Docker Commands
+
+## Running Containers
+
+```bash
+docker ps
+```
+
+---
+
+## All Containers
+
+```bash
+docker ps -a
+```
+
+---
+
+## Stop a Container
+
+```bash
+docker stop <CONTAINER_NAME>
+```
+
+---
+
+## Start a Container
+
+```bash
+docker start <CONTAINER_NAME>
+```
+
+---
+
+## Remove a Container
+
+```bash
+docker rm <CONTAINER_NAME>
+```
+
+---
+
+## Remove an Image
+
+```bash
+docker rmi <IMAGE_NAME>
+```
+
+---
+
+# ✅ Project Workflow
+
+1. Start MongoDB.
+2. Start Redis.
+3. Start the backend server (or Docker container).
+4. Start the frontend.
+5. Open the application in your browser.
+6. Collaborate in real time.
+
+---
+
+# 🎯 Features
+
+- 🔐 JWT Authentication
+- 👥 Real-time Collaboration
+- ⚡ Socket.IO Communication
+- 📝 Live Document Editing
+- 💾 Redis Caching
+- 🍃 MongoDB Persistence
+- 🐳 Docker Support
+- 🚀 Multi-server Testing
+- 📄 Google Docs–style Editing
+
+---
+
+# 👥 Contributors
+
+This project is collaboratively developed and maintained by the project team.
+
+Built with ❤️ using React, Node.js, Socket.IO, MongoDB, Redis, and Docker.

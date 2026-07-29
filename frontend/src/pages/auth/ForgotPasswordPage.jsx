@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HiOutlineMail } from 'react-icons/hi';
-import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { FiLock, FiSend, FiShield, FiUsers,
          FiClock, FiRefreshCw, FiCheck,
          FiArrowLeft } from 'react-icons/fi';
 import { userForgetPasswordRequest } from '../../apis/api';
+import { ATHENURA_LOGO } from '../../assets';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
           <div className="flex flex-col relative z-10 shrink-0">
             <div className="flex items-center gap-3">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura"
                 className="h-10 w-auto object-contain"
                 style={{ 

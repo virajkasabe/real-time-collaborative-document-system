@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import verifyImage from "../../assets/verify-email.png";
 import { useAuth } from "../../context/AuthContext";
-import athenuraLogo from "../../assets/athenura-logo.png";
 import { useTheme } from "../../context/ThemeContext";
 import { HiOutlineMail } from 'react-icons/hi';
 import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
+import { ATHENURA_LOGO } from "../../assets";
 
 export default function EmailVerificationPage() {
   const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
@@ -13,17 +13,22 @@ export default function EmailVerificationPage() {
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || '';
-  const token = location.state?.token || '';
+  const email = location.pathname.split("/",)[2].replace("email=","") || '';
+  const token = location.pathname.split("/",)[3].replace("token=","") || '';
+
+  console.log("email",email)
+  console.log("token",token)
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [verificationError, setVerificationError] = useState(null);
   const inputRefs = useRef([]);
 
-  useEffect(() => {
-    if (!email) navigate('/forgot-password');
-  }, [email, navigate]);
+  // useEffect(() => {
+  //   if (!email) navigate('/forgot-password');
+  // }, [email, navigate]);
+
+  
 
   // Clear error when OTP changes
   useEffect(() => {
@@ -89,7 +94,8 @@ export default function EmailVerificationPage() {
     setVerificationError(null);
 
     try {
-      const result = await verifyEmail(email, code);
+      console.log("token", token)
+      const result = await verifyEmail(email, code, token);
       
       if (result.success) {
         triggerToast("Verification code confirmed!", "success");
@@ -153,7 +159,7 @@ export default function EmailVerificationPage() {
           <div className="flex flex-col text-left relative z-10 shrink-0 mb-2">
             <div className="flex items-center gap-3">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura"
                 className="h-10 w-auto object-contain"
                 style={{ 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, FileText, Shield, MessageSquare } from "lucide-react";
+import { Users, Star, Lightbulb, FileText, Shield, MessageSquare, Zap } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 function RevealOnScroll({ children, delay = 0 }) {
@@ -22,6 +22,50 @@ function RevealOnScroll({ children, delay = 0 }) {
     </div>
   );
 }
+
+// Pastel blue / lavender / green — work in both light & dark
+const values = [
+  {
+    icon: <Users size={22} />,
+    title: "Real-Time Collaboration",
+    desc: "Collaborate together with instant updates.",
+    iconColor: "text-blue-500 dark:text-blue-300",
+    bg: "bg-[#DBEAFE] dark:bg-[#172554]/60",
+    border: "border-[#BFDBFE] dark:border-blue-800/40",
+    glow: "glow-blue",
+  },
+  {
+    icon: <Star size={22} />,
+    title: "Security & Trust",
+    desc: "Secure sharing with role-based access.",
+    iconColor: "text-violet-500 dark:text-violet-300",
+    bg: "bg-[#EDE9FE] dark:bg-[#2E1065]/60",
+    border: "border-[#DDD6FE] dark:border-violet-800/40",
+    glow: "glow-purple",
+  },
+  {
+    icon: <Lightbulb size={22} />,
+    title: "Innovation",
+    desc: "Pushing for innovation, collaboration and solutions.",
+    iconColor: "text-emerald-600 dark:text-emerald-300",
+    bg: "bg-[#D1FAE5] dark:bg-[#064E3B]/50",
+    border: "border-[#A7F3D0] dark:border-emerald-800/40",
+    glow: "glow-emerald",
+  },
+];
+
+const highlights = [
+  { icon: <Zap size={20} />, title: "Live Document Sync", desc: "Changes appear instantly across all connected users without manual refresh.", avatarCls: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300" },
+  { icon: <Shield size={20} />, title: "Secure Authentication", desc: "Protected access with JWT authentication and secure user management.", avatarCls: "bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300" },
+];
+
+const reasons = [
+  "Real-time collaborative editing",
+  "Secure role-based document sharing",
+  "Automatic version tracking",
+  "Cloud-based document access",
+  "Seamless team productivity",
+];
 
 export default function AboutUs() {
   const { theme } = useTheme();
@@ -48,7 +92,7 @@ export default function AboutUs() {
   return (
     <div
       onPointerMove={handlePointerMove}
-      className={`min-h-screen relative overflow-x-hidden dot-grid-bg transition-colors duration-300 ${isDark ? "bg-[#070B14] text-[#E5E7EB]" : "bg-[#F7FAFF] text-[#081B3A]"}`}
+      className={`min-h-[calc(100vh-72px)] relative overflow-x-hidden dot-grid-bg transition-colors duration-300 ${isDark ? "bg-[#070B14] text-[#E5E7EB]" : "bg-[#F7FAFF] text-[#081B3A]"}`}
     >
       {/* Gradient glows */}
       <div className="absolute top-1/4 left-1/4 w-[20rem] sm:w-[35rem] h-[20rem] sm:h-[35rem] rounded-full bg-blue-500/10 dark:bg-blue-600/5 blur-3xl pointer-events-none animate-pulse-slow z-0" />
@@ -60,7 +104,7 @@ export default function AboutUs() {
       <div className="absolute bottom-[38%] left-[6%] text-cyan-500/20 dark:text-white/5 animate-float-fast z-0 pointer-events-none hidden lg:block"><MessageSquare size={38} /></div>
       <div className="absolute bottom-[25%] right-[8%] text-blue-500/20 dark:text-white/5 animate-float-slow z-0 pointer-events-none hidden lg:block"><Shield size={36} /></div>
 
-      <main className="relative z-10 pt-16">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 relative z-10">
         {/* Heading */}
         <RevealOnScroll>
           <div className="text-center mb-16 px-4">
@@ -77,7 +121,7 @@ export default function AboutUs() {
         </RevealOnScroll>
 
         {/* MISSION SECTION */}
-        <section className="py-16 px-6">
+        <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <RevealOnScroll>
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -93,20 +137,20 @@ export default function AboutUs() {
         </section>
 
         {/* STORY SECTION */}
-        <section className="py-20 px-6 bg-slate-50 dark:bg-[#080F1E] border-y border-slate-200/50 dark:border-white/5 transition-colors duration-300">
+        <section className="py-16 px-6 bg-slate-50 dark:bg-[#080F1E] border-y border-slate-200/50 dark:border-white/5 rounded-2xl transition-colors duration-300">
           <div className="max-w-3xl mx-auto space-y-6">
             <RevealOnScroll>
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight text-center">
                 Our Story
               </h2>
             </RevealOnScroll>
             <RevealOnScroll delay={100}>
-              <div className="space-y-4 text-slate-600 dark:text-gray-400 leading-relaxed text-base sm:text-lg">
+              <div className="space-y-4 text-slate-600 dark:text-gray-400 leading-relaxed text-base sm:text-lg text-center">
                 <p>
-                  Athenura started as a college project by a group of developers who were frustrated with existing document tools. We wanted something faster, cleaner, and built for real-time teamwork.
+                  Athenura started as a project by a group of developers who were frustrated with existing document tools. We wanted something faster, cleaner, and built for real-time teamwork.
                 </p>
                 <p>
-                  Today, Athenura powers collaboration for hundreds of teams — from startups to student groups — all built with the same vision: documents should bring people together.
+                  Today, Athenura powers collaboration for teams — from startups to student groups — all built with the same vision: documents should bring people together.
                 </p>
               </div>
             </RevealOnScroll>
@@ -114,7 +158,7 @@ export default function AboutUs() {
         </section>
 
         {/* VALUES SECTION */}
-        <section className="py-20 px-6 bg-white dark:bg-[#070B14] transition-colors duration-300">
+        <section className="py-16 px-6 transition-colors duration-300">
           <div className="max-w-4xl mx-auto">
             <RevealOnScroll>
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white text-center mb-10 tracking-tight">
@@ -139,15 +183,49 @@ export default function AboutUs() {
           </div>
         </section>
 
+        {/* HIGHLIGHTS & WHY CHOOSE SECTION */}
+        <section className="py-12 px-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {highlights.map((h, i) => (
+              <RevealOnScroll key={h.title} delay={i * 100}>
+                <div className={`spotlight-card glow-blue rounded-2xl border p-4 sm:p-5 flex gap-4 transition-colors duration-300 ${isDark ? "bg-zinc-900/60 border-white/5" : "bg-white border-blue-100 shadow-sm"}`}>
+                  <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${h.avatarCls}`}>{h.icon}</div>
+                  <div>
+                    <h3 className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : "text-slate-900"}`}>{h.title}</h3>
+                    <p className={`text-xs sm:text-sm leading-6 mt-1 ${isDark ? "text-[#94A3B8]" : "text-slate-500"}`}>{h.desc}</p>
+                  </div>
+                </div>
+              </RevealOnScroll>
+            ))}
+
+            <RevealOnScroll delay={200}>
+              <div className={`spotlight-card glow-purple rounded-2xl border p-4 sm:p-5 transition-colors duration-300 ${isDark ? "bg-zinc-900/60 border-white/5" : "bg-white border-blue-100 shadow-sm"}`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Star size={14} className="text-blue-500 dark:text-blue-400 fill-blue-500 dark:fill-blue-400 flex-shrink-0" />
+                  <h3 className={`font-semibold text-sm sm:text-base ${isDark ? "text-white" : "text-slate-900"}`}>Why Choose Our Platform</h3>
+                </div>
+                <div className="space-y-3">
+                  {reasons.map((item) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 flex-shrink-0" />
+                      <span className={`text-xs sm:text-sm ${isDark ? "text-[#94A3B8]" : "text-slate-600"}`}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </RevealOnScroll>
+          </div>
+        </section>
+
         {/* TEAM GRID */}
-        <section className="py-20 px-6 bg-slate-50 dark:bg-[#080F1E] border-t border-slate-200/50 dark:border-white/5 transition-colors duration-300">
+        <section className="py-16 px-6 bg-slate-50 dark:bg-[#080F1E] border-t border-slate-200/50 dark:border-white/5 rounded-2xl transition-colors duration-300">
           <div className="max-w-4xl mx-auto">
             <RevealOnScroll>
               <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white text-center mb-10 tracking-tight">
                 Meet the Team
               </h2>
             </RevealOnScroll>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
               {team.map((m, i) => (
                 <RevealOnScroll key={i} delay={i * 75}>
                   <div className="text-center space-y-3 group">

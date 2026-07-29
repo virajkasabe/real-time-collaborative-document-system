@@ -8,6 +8,9 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { otpGenerator, requiredField, secureUser } from "../../utils/helper.js";
 import User from "./auth.model.js";
+import { emailVerifyLinkService, otpService } from "../../services/otp.service.js";
+import { link } from "fs";
+import { forgetPasswordService } from "../../services/forgetPasswordRequest.service.js";
 
 const option = {
   httpOnly: true,
@@ -61,27 +64,30 @@ export const registerUser = asyncHandler(async (req, res) => {
   console.log({
     otp,
   });
-  
+
 
   await User.findById(user._id).select(
-    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -emailVerificationToken -emailVerificationExpiry"
   );
 
   await user.save({ validateBeforeSave: false });
 
-  const { refreshToken, accessToken } = await generateAccessRefreshToken(
-    user._id
-  );
 
-  console.log("OTP", otp);
+  // console.log("OTP", otp);
 
   // TODO : SEND EMAIL FOR OTP
 
+  const link = `${ENV.CLIENT_URL}/verify-email/email=${email}/token=${unHashedToken}`
+  await otpService(otp,email)
+  await emailVerifyLinkService(link,email)
+
+
   console.log("user register");
+
   return res
     .status(201)
     .json(
-      new ApiResponse(201, {}, `user created  successfully`)
+      new ApiResponse(201, { "link" : "link" }, `user created  successfully`)
     );
 });
 
@@ -315,10 +321,12 @@ export const forgetPasswordRequest = asyncHandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  console.log(`${ENV.RESET_PASSWORD_URL}/${unHashedToken}`);
+
+  const forgetPasswordLink = `${ENV.RESET_PASSWORD_URL}/${unHashedToken}`
+  await forgetPasswordService(forgetPasswordLink, email)
 
   return res
-    .status(200)
+    .status(200)                                      
     .json(
       new ApiResponse(
         200,
@@ -418,6 +426,7 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   console.log("OTP", otp);
+  console.log(`${ENV.CLIENT_URL}/verify-email/email=${email}/token=${unHashedToken}`)
 
   // TODO : SEND EMAIL FOR OTP
 
@@ -429,24 +438,22 @@ export const verifyEmailRequest = asyncHandler(async (req, res) => {
 });
 
 export const verifyEmail = asyncHandler(async (req, res) => {
-  const { otp, email } = req.body;
-  // console.log("otp",otp)
-  // console.log("otp", req.body)
+  const { otp, email, unHashedToken } = req.body;
 
   const findUser = await User.findOne({ email });
 
   const redisOTPData = await getOTP(findUser._id)
 
-  console.log("unHashedToken",redisOTPData.emailToken)
+  console.log("unHashedToken",unHashedToken)
   console.log("otp",otp)
 
-  if (!redisOTPData.emailToken) {
+  if (!unHashedToken) {
     throw new ApiError(400, "Email verification token missing");
   }
 
   const hashedToken = crypto
     .createHash("sha256")
-    .update(redisOTPData.emailToken)
+    .update(unHashedToken)
     .digest("hex");
 
   const user = await User.findOne({
@@ -470,17 +477,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   user.emailVerificationToken = undefined;
   user.emailVerificationExpiry = undefined;
 
-  /*  
-
-      //   .cookie("accessToken", accessToken, option)
-      //   .cookie("refreshToken", refreshToken, option)
-      // {
-      //   user: secureUSER,
-      //   accessToken: accessToken,
-      //   refreshToken: refreshToken,
-      // }
-      
-  */
 
   await user.save({ validateBeforeSave: false });
 

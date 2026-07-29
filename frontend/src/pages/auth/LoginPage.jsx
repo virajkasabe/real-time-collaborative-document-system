@@ -5,10 +5,11 @@ import { HiOutlineMail } from "react-icons/hi";
 import { FiLock, FiEye, FiEyeOff, FiUsers, FiShield, FiClock, FiUserCheck } from "react-icons/fi";
 import bgImage from "../../assets/collab-bg.png";
 import { useAuth } from "../../context/AuthContext";
-import athenuraLogo from "../../assets/athenura-logo.png";
+
 import { useTheme } from "../../context/ThemeContext";
 import { LocalStorage } from '../../apis';
 import { googleLoginApi } from '../../apis/api';
+import { ATHENURA_LOGO } from '../../assets';
 
 export default function LoginPage() {
   const { login, triggerToast, error: authError } = useAuth();
@@ -88,7 +89,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-1 relative z-10">
             <div className="flex items-center gap-2.5">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura"
                 className="h-10 w-auto object-contain"
                 style={{ 
@@ -176,7 +177,7 @@ export default function LoginPage() {
             {/* Logo - Positioned at the TOP of right panel */}
             <div className="flex justify-center pt-2 pb-4">
               <img 
-                src={athenuraLogo}
+                src={ATHENURA_LOGO}
                 alt="Athenura" 
                 className="h-14 w-auto object-contain"
                 style={{

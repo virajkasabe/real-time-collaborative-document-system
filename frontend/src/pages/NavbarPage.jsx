@@ -1,34 +1,44 @@
 import React, { useState, useRef, useEffect } from 'react';
-import athenuraLogo from '../assets/athenura-logo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext'; // Assuming you have this context
-import { Menu, X } from 'lucide-react';
 
 const NavbarPage = () => {
     const { theme } = useTheme();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const mobileMenuRef = useRef(null);
     
     const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
     
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsDropdownOpen(false);
+            }
+            if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+                setIsMobileMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Get user initials for avatar
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
+
     const getUserInitials = () => {
         if (!user) return '';
         const fullName = user.fullName || '';
@@ -43,26 +53,28 @@ const NavbarPage = () => {
         try {
             await logout();
             setIsDropdownOpen(false);
+            setIsMobileMenuOpen(false);
             navigate('/');
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
 
+    const handleNavLinkClick = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <header className="w-full border-b border-[#E5E7EB] dark:border-white/10 transition-colors duration-300 bg-white/60 dark:bg-[#070B14]/60 backdrop-blur-lg sticky top-0 z-50 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.02)]">
             <div className="max-w-[1280px] mx-auto px-[24px] h-[72px] flex items-center justify-between">
                 {/* Logo */}
-                <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate('/');
-                }}>
+                <div className="flex items-center min-w-[160px] group cursor-pointer" onClick={() => navigate('/')}>
                     <img 
-                        src={athenuraLogo}
+                        src={ATHENURA_LOGO}
                         alt="Athenura"
-                        className="h-10 w-auto object-contain"
+                        className="h-8 sm:h-10 w-auto object-contain"
                         style={{ 
-                            maxWidth: '160px',
+                            maxWidth: '140px',
                             filter: isDark 
                                 ? 'brightness(10)' 
                                 : 'brightness(0.2)',
@@ -73,12 +85,12 @@ const NavbarPage = () => {
 
                 {/* Navigation Links - Center */}
                 <div className="hidden md:flex items-center gap-6">
-                    <a 
-                        href="/#features" 
+                    {/* <Link 
+                        to="/dashboard" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
                     >
-                        Features
-                    </a>
+                        Dashboard
+                    </Link> */}
                     <Link 
                         to="/about" 
                         className="text-sm font-medium text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
@@ -99,18 +111,26 @@ const NavbarPage = () => {
                     </Link>
                 </div>
 
-                {/* Right Side - Auth/User */}
-                <div className="flex items-center gap-3">
+                {/* Right Side */}
+                <div className="flex items-center gap-2 sm:gap-3">
                     <ThemeToggle />
                     
+                    {/* Mobile Menu Toggle - Sirf mobile mein */}
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden p-1.5 rounded-lg text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                        aria-label="Toggle menu"
+                    >
+                        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+                    
+                    {/* Auth - Desktop */}
                     {user ? (
-                        // User is logged in
-                        <div className="relative" ref={dropdownRef}>
+                        <div className="hidden md:block relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                             >
-                                {/* Avatar */}
                                 {user.avatar ? (
                                     <img 
                                         src={user.avatar} 
@@ -136,9 +156,8 @@ const NavbarPage = () => {
                                 </svg>
                             </button>
 
-                            {/* Dropdown Menu */}
                             {isDropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
+                                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0F172A] rounded-lg shadow-lg border border-[#E5E7EB] dark:border-white/10 py-1 overflow-hidden">
                                     <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-white/10">
                                         <p className="text-sm font-medium text-[#1F2937] dark:text-[#E5E7EB]">
                                             {user.fullName || 'User'}
@@ -172,8 +191,8 @@ const NavbarPage = () => {
                             )}
                         </div>
                     ) : (
-                        // User not logged in (Desktop only buttons)
-                        <div className="hidden md:flex items-center gap-3">
+                        // User not logged in
+                        <>
                             <Link to="/login" className="text-xs font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors mr-1">
                                 Sign In
                             </Link>
@@ -193,80 +212,6 @@ const NavbarPage = () => {
                     </button>
                 </div>
             </div>
-
-            {/* Mobile Menu Dropdown */}
-            {mobileMenuOpen && (
-                <div className="md:hidden bg-white dark:bg-[#0F172A] border-t border-[#E5E7EB] dark:border-white/5 px-6 py-4 space-y-4 animate-fade-in shadow-lg">
-                    <a 
-                        href="/#features" 
-                        onClick={() => setMobileMenuOpen(false)} 
-                        className="block text-sm font-semibold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors py-2"
-                    >
-                        Features
-                    </a>
-                    <Link 
-                        to="/about" 
-                        onClick={() => setMobileMenuOpen(false)} 
-                        className="block text-sm font-semibold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors py-2"
-                    >
-                        About
-                    </Link>
-                    <Link 
-                        to="/contact" 
-                        onClick={() => setMobileMenuOpen(false)} 
-                        className="block text-sm font-semibold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors py-2"
-                    >
-                        Contact
-                    </Link>
-                    <Link 
-                        to="/help" 
-                        onClick={() => setMobileMenuOpen(false)} 
-                        className="block text-sm font-semibold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors py-2"
-                    >
-                        Help
-                    </Link>
-                    
-                    {!user ? (
-                        <div className="flex flex-col gap-3 pt-3 border-t border-slate-100 dark:border-white/5">
-                            <Link 
-                                to="/login" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="block text-center w-full py-2.5 text-sm font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                            >
-                                Sign In
-                            </Link>
-                            <button
-                                onClick={() => {
-                                    setMobileMenuOpen(false);
-                                    navigate('/register');
-                                }}
-                                className="block w-full text-center px-4 py-2.5 bg-[#0D6EFD] hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-[0_4px_12px_rgba(13,110,253,0.15)] cursor-pointer"
-                            >
-                                Get Started Free
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-3 pt-3 border-t border-slate-100 dark:border-white/5">
-                            <Link 
-                                to="/profile" 
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="block w-full text-center py-2.5 text-sm font-bold text-[#6B7280] dark:text-[#94A3B8] hover:text-[#081B3A] dark:hover:text-[#E5E7EB] transition-colors"
-                            >
-                                Profile
-                            </Link>
-                            <button
-                                onClick={() => {
-                                    setMobileMenuOpen(false);
-                                    handleLogout();
-                                }}
-                                className="block w-full text-center px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition cursor-pointer"
-                            >
-                                Sign Out
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
         </header>
     );
 };

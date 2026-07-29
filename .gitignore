@@ -67,6 +67,7 @@ web_modules/
 
 # dotenv environment variable files
 .env
+*.env
 .env.*
 !.env.example
 
@@ -144,3 +145,4 @@ emoji_pack_.js
 test.html
 info.html
 *.md
+*.idea

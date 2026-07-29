@@ -87,3 +87,31 @@ export const textToHtmlConvertor = (textString) => {
   
   return content;
 };
+
+export const OTPSERVICECOLORS = {
+    primary: '#4F46E5',     
+    primaryLight: '#818CF8', 
+    primaryDark: '#3730A3',   
+    secondary: '#10B981',     
+    background: '#F9FAFB',   
+    cardBg: '#FFFFFF',       
+    text: '#1F2937',        
+    textLight: '#6B7280',    
+    textMuted: '#9CA3AF',    
+    border: '#E5E7EB',      
+    danger: '#EF4444',      
+    warning: '#F59E0B',     
+}
+
+
+export const generateRandomId = (length = 12) => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let id = "";
+
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        id += characters[randomIndex];
+    }
+
+    return id;
+}

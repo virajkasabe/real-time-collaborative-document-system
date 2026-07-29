@@ -13,7 +13,6 @@ export const formatBytes = (bytes, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-// Generates a mock UUID-like key
 export const generateId = () => {
   return 'doc-' + Math.random().toString(36).substr(2, 9);
 };
@@ -48,3 +47,5 @@ export const getRandomColor = () => {
   
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 };
+
+

@@ -25,7 +25,7 @@ export function SocketProvider({ children }) {
       }
     }
 
-    console.log("🔌 Connecting socket...");
+    // console.log("🔌 Connecting socket...");
 
     const newSocket = io(
       import.meta.env.VITE_SOCKET_URL || "http://localhost:5000",
@@ -36,7 +36,7 @@ export function SocketProvider({ children }) {
         reconnection: true,
         reconnectionDelay: 500,
         reconnectionAttempts: 5,
-      }
+      },
     );
 
     socketRef.current = newSocket;
@@ -49,19 +49,19 @@ export function SocketProvider({ children }) {
     });
 
     newSocket.on(CONNECT_DISCONNET_EVENT.DISCONNECT, (reason) => {
-      console.log("❌ Socket Disconnected:", reason);
+      // console.log("❌ Socket Disconnected:", reason);
       setIsConnected(false);
       setSocketReady(false);
     });
 
     newSocket.on(CONNECT_DISCONNET_EVENT.CONNECT_ERROR, (err) => {
-      console.log("🚫 Socket Error:", err.message);
+      // console.log("🚫 Socket Error:", err.message);
       setIsConnected(false);
       setSocketReady(false);
 
       if (err.message === "Authentication error") {
         // Avoid redirect loops
-        if (!window.location.pathname.includes('/login')) {
+        if (!window.location.pathname.includes("/login")) {
           window.location.href = "/login";
         }
       }
@@ -73,13 +73,13 @@ export function SocketProvider({ children }) {
   const disconnectSocket = useCallback(() => {
     if (!socketRef.current) return;
 
-    console.log("🔌 Disconnecting socket...");
+    // console.log("🔌 Disconnecting socket...");
 
     socketRef.current.removeAllListeners();
     socketRef.current.disconnect();
     socketRef.current = null;
     setSocket(null);
-    
+
     setIsConnected(false);
     setSocketReady(false);
   }, []);

@@ -8,8 +8,8 @@ export const userRegister = (data) => {
     return apiClient.post("/auth/register",data)
 }
 
-export const verifyUserEmail = async(otp, email) => {
-    return await apiClient.post(`/auth/verify-email`, {otp, email})
+export const verifyUserEmail = async(otp, email, token) => {
+    return await apiClient.post(`/auth/verify-email`, { otp, email, unHashedToken : token })
 }
 
 export const verifyUserEmailRequest = async(email) => {
@@ -21,7 +21,7 @@ export const userLogin = async (data) => {
 }
 
 // ?? NOT FOR GOOD PRACTICS ONLY FOR TESTING ENVIROMENT 
-export const googleLoginApi = `${baseAPIURL}/callback/google`
+export const googleLoginApi = import.meta.env.VITE_SERVER_URI || "http://localhost:5000/api/v1/rtcds/auth/callback/google"
 
 
 export const userLogout = () => {
@@ -61,6 +61,7 @@ export const userRefreshTokenRefreshed = (data) => {
 // ?? =============================================
 
 export const inviteCollab = ( { docId, ...data}) => {
+    console.log("data",data,docId)
     return apiClient.post(`/collab/send-collab/${docId}`,data)
 }
 
@@ -79,6 +80,11 @@ export const declinedCollab = (email,tokenId) => {
 export const createDoc = (data) => {
     return apiClient.post("/doc/create-doc", data)
 }
+
+export const updateDocumentTitle = (data) => {
+    return apiClient.put(`/doc/update-doc-title/${data}`, data)
+}
+
 
 export const fetchDocumentFolder = () => {
     return apiClient.get(`/doc/fetch-folder`)
