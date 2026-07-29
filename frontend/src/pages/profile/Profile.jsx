@@ -235,13 +235,6 @@ export default function Profile() {
     }, 500);
   };
 
-  // Trigger file input
-  const handleAvatarClick = () => {
-    setShowAvatarOptions(true);
-    setSelectedFile(null);
-    setPreviewUrl(null);
-  };
-
   // Trigger file input click
   const handleChooseFile = () => {
     fileInputRef.current?.click();
@@ -652,14 +645,13 @@ export default function Profile() {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Right Column - Information and Actions */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           
           {/* Personal Information Card */}
           <div className={`${styles.bgCard} border ${styles.borderColor} rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg ${styles.shadowColor} transition-all duration-300 ${styles.shadowHover}`}>
-            <div className="flex items-center gap-2 pb-3 sm:pb-4 mb-3 sm:mb-4 border-b ${styles.borderColor}">
+            <div className={`flex items-center gap-2 pb-3 sm:pb-4 mb-3 sm:mb-4 border-b ${styles.borderColor}`}>
               <div className="p-1 bg-gradient-to-br from-emerald-400 to-teal-400 rounded-lg">
                 <Settings size={12} sm:size={14} className="text-white" />
               </div>

@@ -199,7 +199,7 @@ const NavbarPage = () => {
                             <Button size="md" variant="primary" onClick={() => navigate('/register')} className="btn-shine shadow-md shadow-blue-500/10">
                                 Sign Up Free
                             </Button>
-                        </div>
+                        </>
                     )}
 
                     {/* Hamburger Button for Mobile/Tablet */}
