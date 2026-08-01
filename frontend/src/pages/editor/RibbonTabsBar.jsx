@@ -7,7 +7,12 @@ export default function RibbonTabsBar({
   return (
     <div
       className="word-ribbon-tabs-bar"
-      style={isMobile ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'nowrap' } : undefined}
+      style={{
+        background: theme === 'dark' ? '#0d1117' : '#f8fafc',
+        color: theme === 'dark' ? '#ffffff' : '#0f172a',
+        borderBottom: theme === 'dark' ? '1px solid rgba(255,255,255,0.07)' : '1px solid #e2e8f0',
+        ...(isMobile ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', flexWrap: 'nowrap' } : {})
+      }}
     >
       <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.file)}>File</button>
       {RIBBON_TABS.map((tab) => (
@@ -20,9 +25,6 @@ export default function RibbonTabsBar({
           {tab.charAt(0).toUpperCase() + tab.slice(1)}
         </button>
       ))}
-      <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.references)}>References</button>
-      <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.mailings)}>Mailings</button>
-      <button className="ribbon-tab-header-btn" onClick={() => alert(STATIC_MENU_ALERTS.help)}>Help</button>
       {theme && null}
     </div>
   );

@@ -4,7 +4,7 @@ import { DOCUMENT_ROLES } from '../../utils/constants';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { useIsMobile } from '../../hooks/useIsMobil'
-import { countWords, FONT_SIZE_GROW, FONT_SIZE_SHRINK, PAGE_LAYOUTS, quillDeltaToCustomDelta, SIMULATED_TEAM_MEMBERS, SIMULATED_TEAM_REPLIES, TITLE_SAVE_DEBOUNCE_MS } from '../../utils/editingpage.helper';
+import { countWords, FONT_SIZE_GROW, FONT_SIZE_SHRINK, PAGE_LAYOUTS, quillDeltaToCustomDelta, SIMULATED_TEAM_MEMBERS, SIMULATED_TEAM_REPLIES, TITLE_SAVE_DEBOUNCE_MS, formatDocumentTitle } from '../../utils/editingpage.helper';
 import { useActiveCollaborators } from '../../hooks/useActiveCollaborators'
 import { useCollaborativeQuill } from '../../hooks/useCollaborativeQuill'
 import EditorHeader from '../editor/EditorHeader'
@@ -29,7 +29,7 @@ export default function EditingPageContent({
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
-  const [title, setTitle] = useState(doc.title || 'Untitled Document');
+  const [title, setTitle] = useState(() => formatDocumentTitle(doc.title || doc.name));
   const [isSyncing, setIsSyncing] = useState(false);
 
   const isOwner = docUserRole === DOCUMENT_ROLES.OWNER;
@@ -454,7 +454,7 @@ export default function EditingPageContent({
   // ?? Renders Compo
 
   return (
-    <div className="word-editor-layout" style={{ position: 'relative' }}>
+    <div className="word-editor-layout editing-page" style={{ background: theme === 'dark' ? '#0d1117' : '#f8fafc', color: theme === 'dark' ? '#ffffff' : '#0f172a', height: '100vh', maxHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', transition: 'background 0.2s ease, color 0.2s ease' }}>
       <EditorHeader
         onBack={onBack}
         autoSaveActive={autoSaveActive}
@@ -472,6 +472,7 @@ export default function EditingPageContent({
         canShare={canShare}
         isEditor={isEditor}
         onShareClick={handleOpenShare}
+        onToggleCollaborators={toggleRightSidebar}
         activeUsers={activeUsers}
         currentUser={user}
         isMobile={isMobile}
@@ -532,14 +533,7 @@ export default function EditingPageContent({
         />
       )} */}
 
-      <main className="editor-workspace" style={isMobile ? { position: 'relative' } : undefined}>
-        <SidebarToggle
-          side="left"
-          collapsed={leftSidebarCollapsed}
-          onClick={toggleLeftSidebar}
-          isMobile={isMobile}
-        />
-
+      <main className="editor-workspace" style={{ display: 'flex', flex: '1 1 auto', height: 'calc(100vh - 212px)', maxHeight: 'calc(100vh - 212px)', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
         <LeftSidebar
           collapsed={leftSidebarCollapsed}
           leftTab={leftTab}
@@ -551,28 +545,64 @@ export default function EditingPageContent({
           isMobile={isMobile}
         />
 
-        {/* TODO : CHECK THE LAYOUT OF PAGE */}
-        <section className="editor-canvas-pane">
+        <section
+          className="editor-canvas-pane canvas-outer"
+          style={{
+            background: theme === 'dark' ? '#131929' : '#f1f5f9',
+            flex: 1,
+            minHeight: 0,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            overflowY: 'auto',
+            overflowX: 'auto',
+            padding: '24px 16px 48px 16px',
+            boxSizing: 'border-box',
+            transition: 'background 0.2s ease',
+          }}
+        >
+          {/* A4 Document Paper Sheet */}
           <div
-            className="editor-paper-container"
+            className="editor-paper-container document-page"
             style={{
+              background: '#ffffff',
+              backgroundColor: '#ffffff',
+              color: '#111827',
+              width: '816px',
+              maxWidth: isMobile ? '100%' : undefined,
+              minHeight: '1056px',
+              padding: '96px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.1)',
+              borderRadius: '2px',
+              fontFamily: 'Calibri, sans-serif',
+              fontSize: '12pt',
+              lineHeight: '1.6',
               transform: `scale(${zoomPercent / 100})`,
               transformOrigin: 'top center',
-              transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.2s ease',
-              maxWidth: isMobile ? '100%' : PAGE_LAYOUTS[pageLayout].maxWidth,
+              transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               margin: '0 auto',
+              flexShrink: 0,
+              boxSizing: 'border-box',
             }}
           >
-            <div ref={quillRef} style={{ minHeight: '100%' }} />
+            <div style={{ display: 'flex', position: 'relative', minHeight: '864px' }}>
+              <div
+                ref={quillRef}
+                id="editor"
+                style={{
+                  flex: 1,
+                  minHeight: '864px',
+                  color: '#111827',
+                  outline: 'none',
+                  background: 'transparent',
+                }}
+                data-placeholder="Start writing your document here..."
+              />
+            </div>
           </div>
         </section>
-
-        <SidebarToggle
-          side="right"
-          collapsed={rightSidebarCollapsed}
-          onClick={toggleRightSidebar}
-          isMobile={isMobile}
-        />
 
         <RightSidebar
           collapsed={rightSidebarCollapsed}

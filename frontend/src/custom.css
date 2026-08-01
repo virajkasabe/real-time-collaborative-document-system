@@ -252,14 +252,51 @@ h1, h2, h3, h4, h5, h6 {
   --editor-pane-bg: #0b0f19;
 }
 
+.word-editor-layout {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.editor-header {
+  position: relative !important;
+  z-index: 50 !important;
+  flex-shrink: 0 !important;
+}
+
+.word-ribbon-tabs-bar {
+  position: relative !important;
+  z-index: 40 !important;
+  flex-shrink: 0 !important;
+}
+
+#word-ribbon-toolbar,
+.word-ribbon-toolbar-panel {
+  position: relative !important;
+  z-index: 30 !important;
+  flex-shrink: 0 !important;
+}
+
 /* Flexbox Layout components */
 .editor-workspace {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  overflow: hidden;
-  flex: 1;
-  position: relative;
-  height: 100%;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  height: calc(100vh - 212px) !important;
+  max-height: calc(100vh - 212px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.word-status-bar,
+.status-bar {
+  position: relative !important;
+  z-index: 50 !important;
+  flex-shrink: 0 !important;
 }
 
 /* Collapsible Sidebars */
@@ -597,14 +634,19 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Center Editor Workspace Scroll Pane */
 .editor-canvas-pane {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: auto;
-  background: var(--editor-pane-bg);
-  position: relative;
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  padding: 24px 16px 48px 16px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 10 !important;
 }
 
 /* ==========================================
@@ -996,9 +1038,15 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+/* FIX 1: Replaced the rigid 5-column grid (180px 420px 320px minmax(156px,1fr) 160px)
+   with a flexible flex row. The old fixed-width columns didn't match each
+   group's actual rendered content width, which is exactly what caused the
+   Editing group (Find/Replace) to overflow and visually collide with the
+   Styles group next to it. Each .ribbon-group now sizes to its own content
+   (flex: 0 0 auto) so groups can never overlap regardless of their content
+   width, and nothing is silently clipped (overflow: visible). */
 .ribbon-tab-content {
-  display: grid !important;
-  grid-template-columns: 180px 420px 320px minmax(156px, 1fr) 160px !important;
+  display: flex !important;
   align-items: center !important;
   height: 100% !important;
   width: 100% !important;
@@ -1008,6 +1056,7 @@ h1, h2, h3, h4, h5, h6 {
   box-sizing: border-box !important;
   animation: fadeIn 0.2s ease !important;
   flex-shrink: 0 !important;
+  gap: 0 !important;
 }
 
 .ribbon-tab-content.hidden {
@@ -1023,56 +1072,88 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0 6px !important;
   box-sizing: border-box !important;
   position: relative !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: auto !important;
+  max-width: none !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  min-width: unset !important;
+  overflow: visible !important;
 }
 
 .ribbon-group::after {
-  content: '' !important;
+  display: none !important;
+  content: none !important;
+}
+
+.ribbon-group:empty {
+  display: none !important;
+}
+
+/* FIX 1: Hide all ql- buttons/selects in visible toolbar */
+#word-ribbon-toolbar .ql-formats,
+#word-ribbon-toolbar .ql-toolbar {
+  display: none !important;
+  width: 0 !important;
+}
+
+/* Hide all ql- class buttons in visible ribbon */
+#word-ribbon-toolbar button.ql-bold,
+#word-ribbon-toolbar button.ql-italic,
+#word-ribbon-toolbar button.ql-underline,
+#word-ribbon-toolbar button.ql-strike,
+#word-ribbon-toolbar button.ql-script,
+#word-ribbon-toolbar button.ql-clean,
+#word-ribbon-toolbar button.ql-list,
+#word-ribbon-toolbar button.ql-indent,
+#word-ribbon-toolbar button.ql-align,
+#word-ribbon-toolbar button.ql-blockquote,
+#word-ribbon-toolbar button.ql-code-block,
+#word-ribbon-toolbar select.ql-font,
+#word-ribbon-toolbar select.ql-size,
+#word-ribbon-toolbar select.ql-color,
+#word-ribbon-toolbar select.ql-background {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
   position: absolute !important;
-  right: 0 !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 1px !important;
-  height: 40px !important;
-  background: rgba(15, 23, 42, 0.1) !important;
+  pointer-events: none !important;
 }
 
-.dark .ribbon-group::after {
-  background: rgba(255, 255, 255, 0.12) !important;
+/* BUT keep hidden toolbar visible for Quill */
+#quill-hidden-toolbar,
+#quill-hidden-toolbar * {
+  display: block !important;
+  visibility: hidden !important;  /* exists but invisible */
 }
 
-.editing-group::after {
+/* FIX 2: Remove empty ribbon-group elements */
+.ribbon-group-separator:empty,
+div.ribbon-group-separator + div.ribbon-group-separator,
+.ribbon-group-separator + .ribbon-group-separator {
   display: none !important;
 }
 
-.ribbon-buttons-row {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 4px !important;
-  height: auto !important;
-  min-height: 26px !important;
-}
-
-.ribbon-group-label {
-  font-size: 9px !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.8px !important;
-  color: var(--text) !important;
-  opacity: 0.55 !important;
-  margin-top: auto !important;
-  text-align: center !important;
-  user-select: none !important;
-}
-
+/* FIX 3: Separator thin */
 .ribbon-group-separator {
-  display: none !important;
+  display: block !important;
+  width: 1px !important;
+  background: rgba(0,0,0,0.1) !important;
+  margin: 6px 2px !important;
+  flex-shrink: 0 !important;
+  align-self: stretch !important;
 }
 
-/* Override Quill formatting controls to Ribbon style */
-.word-ribbon-toolbar-panel button {
+.dark .ribbon-group-separator {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+/* Override Formatting controls to Ribbon style */
+.word-ribbon-toolbar-panel button:not(.style-card):not(.ribbon-custom-btn):not(.ribbon-large-btn) {
   background: transparent !important;
   border: 1px solid transparent !important;
   border-radius: 4px !important;
@@ -1296,20 +1377,20 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column !important;
   align-items: center !important;
   padding: 0 4px !important;
-  flex: 1 1 auto !important;
+  flex: 0 0 auto !important;
   min-width: 156px !important;
   max-width: 408px !important;
 }
 
 .styles-carousel {
   display: flex !important;
-  gap: 12px !important;
-  width: 408px !important;
-  max-width: 100% !important;
+  gap: 8px !important;
+  width: auto !important;
+  max-width: none !important;
   padding: 2px 0 !important;
-  scrollbar-width: thin !important;
-  height: 58px !important;
+  height: 40px !important;
   align-items: center !important;
+  overflow-x: auto !important;
 }
 
 .styles-carousel::-webkit-scrollbar {
@@ -1343,6 +1424,24 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--accent) !important;
   background: var(--accent-bg) !important;
   box-shadow: 0 2px 5px rgba(59, 130, 246, 0.12) !important;
+}
+
+/* FIX 3: Only the ACTUALLY active/selected style card should get the
+   solid accent highlight — add the "active" class in RibbonToolbar.jsx
+   to whichever style-card matches the current selection's format
+   (e.g. className={`style-card ${isActive ? 'active' : ''}`}). Without
+   that JSX-side condition, no card will ever show active — this CSS
+   alone can't detect Quill's current format. */
+.style-card.active {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+.style-card.active .style-card-preview,
+.style-card.active .style-card-name {
+  color: #ffffff !important;
+  opacity: 1 !important;
 }
 
 .style-card-preview {
@@ -1507,67 +1606,51 @@ h1, h2, h3, h4, h5, h6 {
 /* ==========================================
    A4 SHEET COMPONENT REFINEMENTS (AUTOMATIC MULTI-PAGE FLOW)
    ========================================== */
+
+/* FIX 2: This container previously had NO height/min-height at all, so
+   it collapsed to fit only its (tiny) text content. Everything you saw
+   as a "dark page" below/around it was actually .editor-canvas-pane's
+   background showing through — the page itself was fine, just far too
+   short to look like an actual document page. Giving it a real
+   min-height fixes that. */
 .editor-paper-container {
   width: 816px !important; /* A4 96 DPI Width */
-  margin: 12px auto !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  min-height: 1056px !important; /* Fixed A4 Height at 96 DPI */
+  margin: 0 auto !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 2px !important;
   border: none !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .ql-editor {
-  padding: 60px clamp(40px, 6vw, 80px) 80px !important; /* Word page margins */
+  padding: 0 !important;
+  margin: 0 !important;
   line-height: 1.65 !important;
   color: var(--text-h) !important;
   outline: none !important;
   box-sizing: border-box !important;
-  min-height: 1056px !important;
-  
-  /* Render repeating physical A4 sheets separated by visual desktop gaps & dividers */
-  background-image: linear-gradient(
-    to bottom,
-    var(--paper-bg) 0px,
-    var(--paper-bg) 1026px,
-    rgba(15, 23, 42, 0.05) 1026px,
-    rgba(15, 23, 42, 0.05) 1027px,
-    var(--editor-pane-bg) 1027px,
-    var(--editor-pane-bg) 1040px,
-    rgba(15, 23, 42, 0.08) 1040px,
-    rgba(15, 23, 42, 0.08) 1041px,
-    var(--editor-pane-bg) 1041px,
-    var(--editor-pane-bg) 1055px,
-    rgba(15, 23, 42, 0.05) 1055px,
-    rgba(15, 23, 42, 0.05) 1056px
-  ) !important;
-  background-size: 100% 1056px !important;
-  background-repeat: repeat-y !important;
-  
+  min-height: 864px !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #111827 !important;
   border-left: 1px solid rgba(0, 0, 0, 0.06) !important;
   border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.07) !important;
 }
 
-/* Dark Mode Multi-Page Overrides */
-.dark .ql-editor {
-  background-image: linear-gradient(
-    to bottom,
-    #1e293b 0px,
-    #1e293b 1026px,
-    rgba(255, 255, 255, 0.04) 1026px,
-    rgba(255, 255, 255, 0.04) 1027px,
-    #0b0f19 1027px,
-    #0b0f19 1040px,
-    rgba(255, 255, 255, 0.08) 1040px,
-    rgba(255, 255, 255, 0.08) 1041px,
-    #0b0f19 1041px,
-    #0b0f19 1055px,
-    rgba(255, 255, 255, 0.04) 1055px,
-    rgba(255, 255, 255, 0.04) 1056px
-  ) !important;
-  
-  border-left-color: rgba(255, 255, 255, 0.05) !important;
-  border-right-color: rgba(255, 255, 255, 0.05) !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 16px 48px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+/* Document page MUST ALWAYS be solid white paper */
+.dark .ql-editor,
+.ql-editor,
+.ql-container {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #1e293b !important;
 }
 
 /* Custom buttons for View/Review ribbons */
@@ -2236,7 +2319,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .word-ribbon-toolbar-panel select {
-  display: none !important;
+  display: inline-block !important;
 }
 
 /* --- High Contrast Auth Pages Fix for Dark Mode --- */
@@ -2271,7 +2354,3 @@ h1, h2, h3, h4, h5, h6 {
 .dark .register-page-container span.text-blue-500 {
   color: #3b82f6 !important;
 }
-
-
-
-

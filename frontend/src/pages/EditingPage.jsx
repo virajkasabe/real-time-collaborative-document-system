@@ -30,6 +30,8 @@ export default function EditingPage() {
   const { doc, docUserRole } = useDocumentLoader(id, socket, navigate, showToast, user);
   const [localDoc, setLocalDoc] = useState(null);
 
+  const isDark = theme === 'dark';
+
   useEffect(() => {
     if (doc) setLocalDoc(doc);
   }, [doc]);
@@ -55,10 +57,27 @@ export default function EditingPage() {
   }, [id]);
 
   return (
-    <>
+    <div
+      className="editing-page"
+      data-page="editor"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: isDark ? '#0d1117' : '#f8fafc',
+        color: isDark ? '#ffffff' : '#0f172a',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        transition: 'background 0.2s ease, color 0.2s ease',
+      }}
+    >
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
       {!localDoc ? (
-        <div className="min-h-screen bg-[#F7FAFF] dark:bg-[#070B14] flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center" style={{ background: isDark ? '#0d1117' : '#f8fafc', color: isDark ? 'white' : '#0f172a' }}>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0D6EFD]" />
         </div>
       ) : (
@@ -73,7 +92,7 @@ export default function EditingPage() {
           showToast={showToast}
         />
       )}
-    </>
+    </div>
   );
 }
 

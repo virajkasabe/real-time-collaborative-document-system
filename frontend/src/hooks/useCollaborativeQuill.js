@@ -51,7 +51,7 @@ export function useCollaborativeQuill({
     const quill = new Quill(quillRef.current, {
       theme: "snow",
       modules: {
-        toolbar: "#word-ribbon-toolbar",
+        toolbar: false,
         history: { delay: 0, maxStack: 0, userOnly: true },
         keyboard: {
           bindings: {

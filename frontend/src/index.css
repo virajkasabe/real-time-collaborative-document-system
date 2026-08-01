@@ -1,7 +1,273 @@
 @import "tailwindcss";
 
+/* Dark mode root styles */
+.dark, .dark body, .dark #root {
+  background-color: #0d1117;
+  color: #ffffff;
+}
+
+/* Light mode root styles */
+html:not(.dark), body:not(.dark), #root:not(.dark) {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
 ::placeholder {
   color: #94a3b8 !important;
   opacity: 1 !important;
 }
 
+/* Hide sidebar on editor */
+body:has([data-page="editor"]) aside,
+body:has([data-page="editor"]) .sidebar,
+body:has([data-page="editor"]) nav.sidebar {
+  display: none !important;
+}
+
+/* Editor page dark mode overrides */
+.dark body:has([data-page="editor"]),
+.dark body:has([data-page="editor"]) #root,
+.dark body:has([data-page="editor"]) main,
+.dark body:has([data-page="editor"]) .layout-wrapper,
+.dark body:has(.editing-page),
+.dark .editing-page {
+  background: #0d1117 !important;
+  color: #ffffff !important;
+}
+
+.dark [data-page="editor"] header,
+.dark [data-page="editor"] .editor-header {
+  background: #161b27 !important;
+}
+
+.dark [data-page="editor"] .ribbon,
+.dark [data-page="editor"] .toolbar,
+.dark [data-page="editor"] #word-ribbon-toolbar {
+  background: #161b27 !important;
+}
+
+/* Canvas area container */
+.dark .editor-canvas-area,
+.dark .editor-canvas-pane,
+.dark .canvas-outer,
+.dark .document-area {
+  background: #131929 !important;
+}
+
+html:not(.dark) .editor-canvas-pane,
+html:not(.dark) .canvas-outer {
+  background: #f1f5f9 !important;
+}
+
+/* Ribbon toolbar dark mode */
+.dark #word-ribbon-toolbar,
+.dark .word-ribbon-toolbar-panel {
+  background: #161b27 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+/* Ribbon toolbar light mode */
+#word-ribbon-toolbar,
+.word-ribbon-toolbar-panel {
+  background: #ffffff;
+  color: #0f172a;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dark #word-ribbon-toolbar button,
+.dark .word-ribbon-toolbar-panel button {
+  color: #ffffff !important;
+}
+
+#word-ribbon-toolbar button,
+.word-ribbon-toolbar-panel button {
+  color: #1e293b;
+}
+
+.dark #word-ribbon-toolbar button:hover,
+.dark .word-ribbon-toolbar-panel button:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+#word-ribbon-toolbar button:hover,
+.word-ribbon-toolbar-panel button:hover {
+  color: #0f172a;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark #word-ribbon-toolbar button svg,
+.dark .word-ribbon-toolbar-panel button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.dark #word-ribbon-toolbar .ribbon-group-label,
+.dark .word-ribbon-toolbar-panel .ribbon-group-label {
+  color: #94a3b8 !important;
+  opacity: 0.9 !important;
+  font-size: 9px !important;
+  letter-spacing: 0.8px !important;
+}
+
+#word-ribbon-toolbar .ribbon-group-label,
+.word-ribbon-toolbar-panel .ribbon-group-label {
+  color: #64748b;
+  font-size: 9px !important;
+  letter-spacing: 0.8px !important;
+}
+
+/* Dropdown select styling for dark mode */
+.dark #word-ribbon-toolbar select,
+.dark .word-ribbon-toolbar-panel select,
+.dark .ribbon-group select {
+  background-color: #0d1117 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') !important;
+}
+
+/* Dropdown select styling for light mode */
+#word-ribbon-toolbar select,
+.word-ribbon-toolbar-panel select,
+.ribbon-group select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px !important;
+  padding: 4px 22px 4px 8px !important;
+  height: 28px !important;
+  line-height: 20px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%230f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+  background-repeat: no-repeat !important;
+  background-position: right 6px center !important;
+  background-size: 12px 12px !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+
+/* Document page MUST ALWAYS be solid white paper in both light and dark modes */
+.document-canvas,
+.document-page,
+.editor-paper-container {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #1e293b !important;
+}
+
+#editor,
+.ql-container,
+.ql-editor {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: #1e293b !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Contenteditable placeholder */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #9CA3AF;
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* Remove default Quill borders */
+.ql-container { border: none !important; }
+.ql-toolbar { display: none !important; }
+
+/* Hide rulers & line numbers */
+.ruler,
+[class*="ruler"] {
+  display: none !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+/* Hide Quill injected buttons — they take space */
+#word-ribbon-toolbar .ql-formats,
+#word-ribbon-toolbar .ql-toolbar {
+  display: none !important;
+  width: 0 !important;
+}
+
+/* Hide all ql- class buttons in visible ribbon */
+#word-ribbon-toolbar button.ql-bold,
+#word-ribbon-toolbar button.ql-italic,
+#word-ribbon-toolbar button.ql-underline,
+#word-ribbon-toolbar button.ql-strike,
+#word-ribbon-toolbar button.ql-script,
+#word-ribbon-toolbar button.ql-clean,
+#word-ribbon-toolbar button.ql-list,
+#word-ribbon-toolbar button.ql-indent,
+#word-ribbon-toolbar button.ql-align,
+#word-ribbon-toolbar button.ql-blockquote,
+#word-ribbon-toolbar button.ql-code-block,
+#word-ribbon-toolbar select.ql-font,
+#word-ribbon-toolbar select.ql-size,
+#word-ribbon-toolbar select.ql-color,
+#word-ribbon-toolbar select.ql-background {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+/* BUT keep hidden toolbar visible for Quill */
+#quill-hidden-toolbar,
+#quill-hidden-toolbar * {
+  display: block !important;
+  visibility: hidden !important;  /* exists but invisible */
+}
+
+/* Remove empty ribbon-group elements */
+.ribbon-group:empty {
+  display: none !important;
+}
+
+.ribbon-group-separator:empty,
+div.ribbon-group-separator + div.ribbon-group-separator,
+.ribbon-group-separator + .ribbon-group-separator {
+  display: none !important;
+}
+
+/* Gap between groups & thin separator */
+.ribbon-group {
+  flex-shrink: 0 !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  min-width: unset !important;
+}
+
+.ribbon-group-separator {
+  width: 1px !important;
+  background: rgba(0,0,0,0.1) !important;
+  margin: 6px 2px !important;
+  flex-shrink: 0 !important;
+  align-self: stretch !important;
+}
+
+.dark .ribbon-group-separator {
+  background: rgba(255,255,255,0.08) !important;
+}

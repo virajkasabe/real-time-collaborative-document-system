@@ -19,9 +19,6 @@ export const RIBBON_TABS = ['home', 'insert', 'design', 'layout', 'review', 'vie
 
 export const STATIC_MENU_ALERTS = {
   file: 'File Options:\n- Back to Dashboard\n- Document is auto-saved locally.',
-  references: 'References Ribbon: Heading indexes are automatically built.',
-  mailings: 'Mailings Ribbon: Collaborative share triggers are active.',
-  help: 'Help Ribbon: Contact Antigravity AI for developer notes.',
 };
 
 export const SIMULATED_TEAM_REPLIES = [
@@ -47,6 +44,12 @@ export const REMOTE_CURSOR_TTL_MS = 1500;
 
 // Title
 export const TITLE_SAVE_DEBOUNCE_MS = 500;
+export const formatDocumentTitle = (title) => {
+  if (!title || typeof title !== 'string' || title.trim() === '' || title.toLowerCase().includes('untitle')) {
+    return 'Untitled Document';
+  }
+  return title.trim();
+};
 
 // UI
 export const TOAST_DURATION_MS = 1500;

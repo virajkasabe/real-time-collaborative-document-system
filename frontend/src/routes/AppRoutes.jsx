@@ -77,9 +77,7 @@ export default function AppRoutes() {
         path="/editor/:id"
         element={
           <ProtectedRoute>
-            <DashboardLayout>
-              <EditingPage />
-            </DashboardLayout>
+            <EditingPage />
           </ProtectedRoute>
         }
       />
