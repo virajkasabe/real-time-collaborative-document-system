@@ -24,6 +24,7 @@ export default function LoginPage() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -42,9 +43,10 @@ export default function LoginPage() {
     const res = await login(email.trim(), password);
 
     if (res?.success === false) {
-      setErrors({ 
-        general: res.message || 'Login failed. Please try again.' 
-      });
+      setErrors({ general: res.message || 'Login failed. Please try again.' });
+      setPassword('');
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
     }
 
     setLoading(false);
@@ -53,8 +55,8 @@ export default function LoginPage() {
       navigate('/dashboard');
     }
 
-      setEmail("")
-      setPassword("")
+    setEmail('');
+    setPassword('');
   };
 
   const handleGoogleLogin = () => {
@@ -199,14 +201,13 @@ export default function LoginPage() {
 
               {/* Show general error from auth context or form */}
               {(authError || errors.general) && (
-                <div className="text-center my-4 text-red-500 font-semibold text-[14px]">
-                  <div className="flex items-center justify-center gap-3">
-                    <span>{authError || errors.general}</span>
-                  </div>
+                <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+                  <span className="text-red-500 text-lg">⚠</span>
+                  <span className="text-red-600 dark:text-red-400 font-semibold text-sm">{authError || errors.general}</span>
                 </div>
               )}
 
-              <form onSubmit={handleLogin} className="space-y-3">
+              <form onSubmit={handleLogin} className={`space-y-3 ${shake ? 'animate-[shake_0.5s_ease]' : ''}`}>
                 
                 {/* Email Input */}
                 <div className="space-y-1 text-left">

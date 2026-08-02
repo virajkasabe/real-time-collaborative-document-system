@@ -302,7 +302,7 @@ export default function Landing() {
             </div>
 
             {/* HERO RIGHT: PREMIUM PRODUCT SHOWCASE CARD (55% width, right-aligned, floating translation) */}
-            <div className="w-full lg:w-[55%] flex justify-center lg:justify-end items-center relative z-10">
+            <div className="hidden sm:flex w-full lg:w-[55%] justify-center lg:justify-end items-center relative z-10">
               <div className="hero-mockup-card-responsive flex flex-col rounded-[24px] bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-white/10 shadow-[0_30px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_30px_80px_rgba(0,0,0,0.5)] transform -translate-y-[10px] overflow-hidden transition-all duration-300 hover:translate-y-[-12px] hover:shadow-[0_35px_90px_rgba(15,23,42,0.15)]">
                 
                 {/* 1. Mock Browser Title Bar */}
