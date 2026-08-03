@@ -1,395 +1,316 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
-import { HiOutlineMail } from 'react-icons/hi';
-import { FiLock, FiEye, FiEyeOff, FiShield,
-         FiCheckCircle, FiCircle, FiCheck,
-         FiArrowLeft } from 'react-icons/fi';
+import athenuraLogo from '../../assets/athenura-logo.png';
+import {
+  FiLock, FiEye, FiEyeOff, FiShield,
+  FiCheckCircle, FiCircle, FiCheck, FiArrowLeft, FiAlertCircle
+} from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { userForgetPassword } from '../../apis/api';
-import { ATHENURA_LOGO } from '../../assets';
+
+const REQUIREMENTS = (pwd) => [
+  { label: 'At least 8 characters',         met: pwd.length >= 8 },
+  { label: 'Uppercase & lowercase letters',  met: /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) },
+  { label: 'At least one number',            met: /[0-9]/.test(pwd) },
+  { label: 'At least one special character', met: /[^A-Za-z0-9]/.test(pwd) },
+];
+
+const getStrength = (pwd) => {
+  let s = 0;
+  if (pwd.length >= 8) s++;
+  if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) s++;
+  if (/[0-9]/.test(pwd)) s++;
+  if (/[^A-Za-z0-9]/.test(pwd)) s++;
+  return s;
+};
+
+const STRENGTH_META = [
+  { label: '',       color: 'bg-slate-200 dark:bg-slate-700' },
+  { label: 'Weak',   color: 'bg-red-400' },
+  { label: 'Fair',   color: 'bg-orange-400' },
+  { label: 'Good',   color: 'bg-yellow-400' },
+  { label: 'Strong', color: 'bg-green-500' },
+];
 
 export default function ResetPasswordPage() {
   const { triggerToast } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
-  const navigate = useNavigate();
-  const { token } = useParams();
+  const param = useParams();
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  // Support fallback state from VerifyEmail flow or direct url tokens
-  const email = location.state?.email || searchParams.get('email') || 'user@example.com';
-  const code = location.state?.code || token || searchParams.get('token') || searchParams.get('code') || '123456';
+  const email = location.state?.email || searchParams.get('email') || '';
 
-  const [password, setPassword] = useState('');
+  const [password, setPassword]       = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPwd, setShowPwd]         = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [errors, setErrors] = useState({});
-  const param = useParams()
+  const [loading, setLoading]         = useState(false);
+  const [success, setSuccess]         = useState(false);
+  const [errors, setErrors]           = useState({});
 
-  // Strength calculation
-  const getStrength = (pwd) => {
-    let s = 0;
-    if (pwd.length >= 8) s++;
-    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) s++;
-    if (/[0-9]/.test(pwd)) s++;
-    if (/[^A-Za-z0-9]/.test(pwd)) s++;
-    return s;
-  };
-
-  const strength = getStrength(password);
-  
-  const label = strength === 0 ? '' :
-                strength === 1 ? 'Weak' :
-                strength === 2 ? 'Fair' :
-                strength === 3 ? 'Good' : 'Strong';
-
-  // Requirements checklist validations
-  const requirements = [
-    { label: 'At least 8 characters long', met: password.length >= 8 },
-    { label: 'Include uppercase and lowercase', met: /[A-Z]/.test(password) && /[a-z]/.test(password) },
-    { label: 'Include at least one number', met: /[0-9]/.test(password) },
-    { label: 'Include at least one special character', met: /[^A-Za-z0-9]/.test(password) },
-  ];
-
+  const strength  = getStrength(password);
+  const reqs      = REQUIREMENTS(password);
   const canSubmit = password && confirmPassword && password === confirmPassword && strength >= 2;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    let errs = {};
-
-    const meetsRequirements = requirements.every(req => req.met);
-    if (!password) {
-      errs.password = 'Password is required';
-    } else if (!meetsRequirements) {
-      errs.password = 'Password does not meet all security requirements';
-    }
-
-    if (password !== confirmPassword) {
-      errs.confirmPassword = 'Passwords do not match';
-    }
-
-    if (Object.keys(errs).length > 0) {
+    const errs = {};
+    if (!password) errs.password = 'Password is required';
+    else if (!reqs.every(r => r.met)) errs.password = 'Password does not meet all requirements';
+    if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match';
+    if (Object.keys(errs).length) {
       setErrors(errs);
-      if (errs.password) triggerToast(errs.password, 'warning');
-      else if (errs.confirmPassword) triggerToast(errs.confirmPassword, 'warning');
+      triggerToast(errs.password || errs.confirmPassword, 'warning');
       return;
     }
-
     setLoading(true);
-    const payload = {
-      newPassword : password,
-      unHashedToken : param
-    }
-    const successResult = await userForgetPassword(payload.unHashedToken, payload);
+    const result = await userForgetPassword(param, { newPassword: password, unHashedToken: param });
     setLoading(false);
-
-    if (successResult) {
+    if (result) {
       setSuccess(true);
       triggerToast('Password updated successfully!', 'success');
     }
   };
 
   return (
-    <div className="h-screen w-full overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#090D16] dark:to-[#04060B] font-sans select-none">
-      
-      {/* MAIN CARD: same as other auth pages */}
-      <div className="w-full max-w-6xl flex flex-col md:flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-[#0F172A]">
-        
-        {/* LEFT PANEL */}
-        <div className="hidden md:flex md:w-[48%] bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#161D2E] dark:to-[#1E2535] flex-col overflow-hidden p-8 relative self-stretch border-r border-slate-200/40 dark:border-slate-800/40">
-          
-          {/* Logo (top-left) */}
-          <div className="flex flex-col text-left relative z-10 shrink-0">
-            <div className="flex items-center gap-3">
-              <img 
-                src={ATHENURA_LOGO}
-                alt="Athenura"
-                className="h-10 w-auto object-contain"
-                style={{ 
-                  maxWidth: '160px',
-                  filter: isDark ? 'brightness(10)' : 'brightness(0.2)',
-                  opacity: '0.95'
-                }}
-              />
-            </div>
-            <div className="w-8 h-[3px] bg-[#2563EB] mt-1.5 rounded-full" />
+    <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-[#EEF2F7] dark:bg-[#070B14] p-4 font-sans select-none">
+      <div className="w-full max-w-5xl flex flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-2xl shadow-blue-900/5 dark:shadow-black/50 overflow-hidden bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50">
+
+        {/* ── LEFT PANEL ── */}
+        <div className="hidden md:flex w-1/2 flex-col justify-between overflow-hidden p-8 bg-gradient-to-br from-[#F4F8FD] to-[#E5EFFE] dark:from-[#131B2E] dark:to-[#0A0D18] relative self-stretch border-r border-slate-200/40 dark:border-slate-800/40">
+
+          {/* Dot grids */}
+          <div className="absolute top-4 right-4 w-24 h-24 opacity-[0.05] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} />
+          <div className="absolute bottom-4 left-4 w-24 h-24 opacity-[0.05] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} />
+
+          {/* Soft cloud blobs */}
+          <div className="absolute top-12 left-1/4 w-32 h-8 bg-white/30 dark:bg-white/5 rounded-full blur-sm pointer-events-none" />
+          <div className="absolute bottom-1/3 right-10 w-24 h-6 bg-white/20 dark:bg-white/5 rounded-full blur-sm pointer-events-none" />
+
+          {/* Logo */}
+          <div className="flex flex-col gap-1 relative z-10 shrink-0">
+            <img src={athenuraLogo} alt="Athenura"
+              className="h-10 w-auto object-contain"
+              style={{ maxWidth: '160px', filter: isDark ? 'brightness(10)' : 'brightness(0.2)', opacity: 0.95 }} />
+            <div className="w-10 h-[3px] bg-blue-500 rounded-full mt-1" />
           </div>
 
-          {/* Headline (two lines) */}
-          <div className="mt-8 shrink-0 relative z-10 text-left">
-            <h1 className="text-4xl font-extrabold text-[#0F172A] dark:text-white tracking-tight leading-none">
-              Set New
-            </h1>
-            <h1 className="text-4xl font-extrabold text-[#2563EB] mt-1 tracking-tight leading-none">
-              Password
-            </h1>
+          {/* Headline */}
+          <div className="text-left mt-2 relative z-10 shrink-0">
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug">
+              Set a New Password
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 font-normal leading-relaxed">
+              Create a strong password to keep your<br />account and documents safe.
+            </p>
           </div>
 
-          {/* Subtext */}
-          <p className="text-sm text-[#475569] dark:text-gray-300 mt-3 leading-relaxed max-w-[280px] text-left relative z-10 shrink-0">
-            Create a strong password to secure your account and keep your documents safe.
-          </p>
-
-          {/* Main Illustration — 3D PADLOCK */}
-          <div className="flex-1 flex items-center justify-center relative overflow-hidden my-2">
-            
-            {/* Light blue blob background */}
-            <div className="absolute w-56 h-56 bg-blue-200/40 rounded-full blur-3xl" />
-
-            {/* Padlock group */}
-            <div className="relative z-10 flex flex-col items-center">
-              
-              {/* Shackle (top U-shape) */}
-              <div className="w-16 h-10 border-[8px] border-[#2563EB] rounded-t-full bg-transparent mx-auto -mb-1" />
-              
-              {/* Lock body */}
-              <div className="w-40 h-32 bg-gradient-to-b from-[#4DA3FF] to-[#2563EB] rounded-2xl shadow-2xl shadow-blue-400/50 flex items-center justify-center relative">
-                
-                {/* Keyhole circle */}
+          {/* Padlock illustration */}
+          <div className="flex-1 flex items-center justify-center relative overflow-hidden my-2 z-10">
+            <div className="absolute w-48 h-48 bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative flex flex-col items-center z-10">
+              {/* Shackle */}
+              <div className="w-14 h-9 border-[7px] border-[#2563EB]/70 dark:border-blue-400/70 rounded-t-full bg-transparent mx-auto -mb-1" />
+              {/* Body */}
+              <div className="w-36 h-28 bg-gradient-to-b from-[#3B8EEF] to-[#2563EB] rounded-2xl shadow-xl shadow-blue-400/30 flex items-center justify-center relative overflow-hidden">
+                <div className="absolute top-2 left-3 w-5 h-14 bg-white/10 rounded-full -rotate-12" />
                 <div className="w-10 h-10 bg-[#1D4ED8]/60 rounded-full flex items-center justify-center">
-                  <div className="w-4 h-6 bg-[#1E40AF] rounded-b-full rounded-t-full" />
+                  <div className="w-4 h-5 bg-[#1E40AF] rounded-b-full rounded-t-full" />
                 </div>
-
-                {/* Shine effect */}
-                <div className="absolute top-3 left-4 w-6 h-12 bg-white/10 rounded-full transform -rotate-12" />
+              </div>
+              {/* Password dots card */}
+              <div className="absolute -bottom-4 -left-10 bg-white dark:bg-[#0F172A] rounded-xl shadow-lg px-4 py-2 flex items-center gap-2 border border-slate-200 dark:border-slate-700">
+                <span className="text-[#2563EB] text-sm font-bold tracking-widest">✱ ✱ ✱ ✱</span>
+              </div>
+              {/* Shield badge */}
+              <div className="absolute -top-2 -right-10 w-11 h-11 bg-gradient-to-br from-[#3B9EFF] to-[#2563EB] rounded-xl shadow-md flex items-center justify-center">
+                <FiShield className="text-white text-lg" />
               </div>
             </div>
-
-            {/* Password dots card - bottom left */}
-            <div className="absolute bottom-8 left-4 bg-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-3 z-20 border border-slate-100">
-              <span className="text-[#2563EB] text-xl font-bold tracking-widest">
-                ✱ ✱ ✱ ✱
-              </span>
-            </div>
-
-            {/* Blue shield checkmark - bottom right */}
-            <div className="absolute bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-[#3B9EFF] to-[#2563EB] rounded-2xl flex items-center justify-center shadow-lg shadow-blue-400/40 z-20">
-              <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-
-            {/* Checkmark shield top right */}
-            <div className="absolute top-8 right-8 w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center z-20 border border-slate-100">
-              <svg className="w-6 h-6 text-[#2563EB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
           </div>
 
-          {/* Security badge (bottom of left panel) */}
-          <div className="flex items-start gap-3 bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-4 mt-4 text-left relative z-10 shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-[#2563EB] flex items-center justify-center flex-shrink-0 shadow-md">
-              <FiShield className="text-white text-lg" />
+          {/* Security tip card */}
+          <div className="flex items-start gap-3 bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-4 mt-4 relative z-10 shrink-0 border border-slate-200/40 dark:border-slate-700/30">
+            <div className="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center flex-shrink-0">
+              <FiShield className="text-[#2563EB] dark:text-blue-400 text-base" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#0F172A] dark:text-white">
-                Your security is our priority.
-              </p>
-              <p className="text-xs text-[#475569] dark:text-gray-400 mt-0.5">
-                Choose a strong password that you don't use elsewhere.
+              <p className="text-xs font-bold text-slate-800 dark:text-white">Your security is our priority</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                Use a password you don't use on any other site.
               </p>
             </div>
           </div>
-
         </div>
 
-        {/* RIGHT PANEL */}
-        <div className="w-full md:w-[52%] bg-white dark:bg-[#1E2535] flex flex-col justify-center overflow-hidden p-8 md:p-10 self-stretch">
-          
+        {/* ── RIGHT PANEL ── */}
+        <div className="w-full md:w-1/2 bg-white dark:bg-[#0E1524] flex flex-col justify-center overflow-hidden p-8 relative self-stretch">
+
+          <div className="absolute top-4 right-4 w-20 h-20 opacity-[0.05] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '8px 8px' }} />
+
           <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center h-full select-text">
+
             {!success ? (
-              <div className="w-full flex flex-col">
-                
-                {/* Top icon (centered) */}
-                <div className="relative w-16 h-16 bg-[#EBF4FF] dark:bg-blue-900/30 rounded-full mx-auto mb-4 flex items-center justify-center shrink-0">
-                  <HiOutlineMail className="text-[#2563EB] text-3xl" />
-                  
-                  {/* Lock badge (bottom-right of circle) */}
-                  <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-700 rounded-full p-1 text-[#2563EB] text-xs shadow-sm border border-gray-100 dark:border-gray-600">
-                    <FiLock />
+              <>
+                {/* Icon */}
+                <div className="relative w-16 h-16 bg-blue-500/10 dark:bg-blue-400/10 rounded-full flex items-center justify-center mx-auto mb-4 shrink-0">
+                  <FiLock className="text-[#2563EB] dark:text-blue-400 text-2xl" />
+                  <div className="absolute -bottom-1 -right-1 bg-white dark:bg-[#0E1524] rounded-full p-1 shadow-sm border border-slate-100 dark:border-slate-700">
+                    <FiShield className="text-[#2563EB] dark:text-blue-400 text-xs" />
                   </div>
                 </div>
 
-                {/* Header */}
-                <div className="text-center">
-                  <h2 className="text-2xl font-extrabold text-[#0F172A] dark:text-white text-center">
+                {/* Heading */}
+                <div className="text-center mb-5">
+                  <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                     Set New Password
                   </h2>
-                  <p className="text-sm text-[#64748B] dark:text-gray-400 text-center mt-1 mb-5">
-                    Enter your new password below.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                    Create a strong password for your account
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-3.5 text-left">
-                  
-                  {/* 1. New Password field */}
+                <form onSubmit={handleSubmit} className="space-y-3 text-left">
+
+                  {/* New password */}
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 mb-1 block">
+                    <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 block">
                       New Password
                     </label>
                     <div className="relative">
-                      <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg z-10" />
+                      <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10" />
                       <input
-                        type={showPassword ? 'text' : 'password'}
+                        type={showPwd ? 'text' : 'password'}
                         placeholder="Enter new password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full h-11 bg-white dark:bg-[#2D3748] border border-gray-200 dark:border-gray-600 rounded-xl pl-12 pr-12 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all font-medium text-sm"
+                        onChange={e => setPassword(e.target.value)}
+                        className={`w-full h-10 text-sm bg-slate-50 dark:bg-slate-800/30 border ${
+                          errors.password
+                            ? 'border-red-500 focus:ring-red-400/20'
+                            : 'border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                        } rounded-lg pl-10 pr-10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all font-medium`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer focus:outline-none hover:text-[#0F172A] dark:hover:text-white transition duration-150 z-10"
-                      >
-                        {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                      <button type="button" onClick={() => setShowPwd(v => !v)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer focus:outline-none hover:text-slate-600 dark:hover:text-white transition duration-150 z-10">
+                        {showPwd ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                       </button>
                     </div>
 
-                    {/* Password Strength Bar */}
+                    {/* Strength bar */}
                     {password.length > 0 && (
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-1 flex-1">
-                            {[1, 2, 3, 4].map(level => (
-                              <div 
-                                key={level} 
-                                className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                                  strength >= level
-                                    ? level === 1 
-                                      ? 'bg-red-400'
-                                      : level === 2 
-                                        ? 'bg-orange-400'
-                                        : level === 3 
-                                          ? 'bg-yellow-400'
-                                          : 'bg-green-400'
-                                    : 'bg-gray-200 dark:bg-gray-600'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className={`text-xs font-semibold min-w-[40px] ${
+                      <div className="mt-1.5">
+                        <div className="flex gap-1 mb-1">
+                          {[1, 2, 3, 4].map(lvl => (
+                            <div key={lvl}
+                              className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                                strength >= lvl ? STRENGTH_META[strength].color : 'bg-slate-200 dark:bg-slate-700'
+                              }`} />
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Strength:{' '}
+                          <span className={`font-semibold ${
                             strength === 1 ? 'text-red-500' :
                             strength === 2 ? 'text-orange-500' :
                             strength === 3 ? 'text-yellow-500' :
-                            strength === 4 ? 'text-green-500' :
-                            'text-gray-400'
-                          }`}>
-                            {strength === 0 ? '' :
-                             strength === 1 ? 'Weak' :
-                             strength === 2 ? 'Fair' :
-                             strength === 3 ? 'Good' : 'Strong'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#64748B] mt-0.5">
-                          Password strength: 
-                          <span className="font-semibold ml-1">
-                            {label}
+                            strength === 4 ? 'text-green-500' : ''}`}>
+                            {STRENGTH_META[strength].label}
                           </span>
                         </p>
                       </div>
                     )}
+                    {errors.password && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                        <FiAlertCircle size={11} /> {errors.password}
+                      </p>
+                    )}
                   </div>
 
-                  {/* 2. Confirm New Password field */}
+                  {/* Confirm password */}
                   <div className="space-y-1">
-                    <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 mb-1 block">
-                      Confirm New Password
+                    <label className="text-sm font-semibold text-[#0F172A] dark:text-gray-200 block">
+                      Confirm Password
                     </label>
                     <div className="relative">
-                      <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg z-10" />
+                      <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10" />
                       <input
                         type={showConfirm ? 'text' : 'password'}
                         placeholder="Confirm new password"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full h-11 bg-white dark:bg-[#2D3748] border border-gray-200 dark:border-gray-600 rounded-xl pl-12 pr-12 text-[#0F172A] dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-400 transition-all font-medium text-sm"
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        className={`w-full h-10 text-sm bg-slate-50 dark:bg-slate-800/30 border ${
+                          errors.confirmPassword
+                            ? 'border-red-500 focus:ring-red-400/20'
+                            : 'border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                        } rounded-lg pl-10 pr-10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all font-medium`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm(!showConfirm)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer focus:outline-none hover:text-[#0F172A] dark:hover:text-white transition duration-150 z-10"
-                      >
+                      <button type="button" onClick={() => setShowConfirm(v => !v)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer focus:outline-none hover:text-slate-600 dark:hover:text-white transition duration-150 z-10">
                         {showConfirm ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                       </button>
                     </div>
                     {errors.confirmPassword && (
-                      <p className="text-red-500 text-xs font-semibold mt-1">{errors.confirmPassword}</p>
+                      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                        <FiAlertCircle size={11} /> {errors.confirmPassword}
+                      </p>
                     )}
                   </div>
 
-                  {/* Requirements checklist (4 items) */}
-                  <div className="space-y-1 mt-2">
-                    {requirements.map((req, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        {req.met ? (
-                          <FiCheckCircle className="text-green-500 flex-shrink-0 text-sm" />
-                        ) : (
-                          <FiCircle className="text-gray-300 dark:text-gray-600 flex-shrink-0 text-sm" />
-                        )}
-                        <span className={`text-xs ${
-                          req.met 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-[#64748B] dark:text-gray-400'
-                        }`}>
+                  {/* Requirements */}
+                  <div className="space-y-1 mt-1">
+                    {reqs.map((req, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        {req.met
+                          ? <FiCheckCircle className="text-green-500 flex-shrink-0 text-sm" />
+                          : <FiCircle className="text-slate-300 dark:text-slate-600 flex-shrink-0 text-sm" />}
+                        <span className={`text-xs ${req.met ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-400'}`}>
                           {req.label}
                         </span>
                       </div>
                     ))}
                   </div>
 
-                  {/* Update Password Button */}
+                  {/* Submit */}
                   <button
                     type="submit"
                     disabled={loading || !canSubmit}
-                    className="w-full h-11 rounded-xl mt-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-base flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
-                  >
-                    <FiLock />
-                    Update Password
+                    className="w-full h-10 rounded-lg mt-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm transition-all shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    {loading
+                      ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Updating…</>
+                      : <><FiLock size={14} /> Update Password</>}
                   </button>
 
-                  {/* Back to Login Link */}
-                  <Link
-                    to="/login"
-                    className="text-[#2563EB] dark:text-blue-400 font-semibold text-sm flex items-center justify-center gap-1 mt-3 hover:underline cursor-pointer"
-                  >
-                    <FiArrowLeft className="text-lg" />
-                    Back to Login
+                  <Link to="/login"
+                    className="text-blue-600 dark:text-blue-400 font-semibold text-sm flex items-center justify-center gap-1 mt-2 hover:underline cursor-pointer">
+                    <FiArrowLeft className="text-lg" /> Back to Login
                   </Link>
-
                 </form>
-              </div>
+              </>
             ) : (
-              /* Success State */
-              <div className="text-center py-4 text-slate-800 dark:text-slate-200">
+              <div className="text-center py-4">
                 <div className="w-16 h-16 bg-green-100 dark:bg-green-900/35 rounded-full flex items-center justify-center mx-auto mb-3">
                   <FiCheck className="text-green-500 text-3xl" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0F172A] dark:text-white">
-                  Password Updated!
-                </h3>
-                <p className="text-sm text-[#64748B] dark:text-gray-400 mt-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Password Updated!</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
                   Your password has been successfully reset.<br />
                   You can now sign in with your new password.
                 </p>
-                <Link 
-                  to="/login" 
-                  className="mt-4 inline-flex items-center gap-2 w-full h-11 rounded-xl bg-[#2563EB] text-white font-bold justify-center hover:bg-blue-700 cursor-pointer transition-colors shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
-                >
+                <Link to="/login"
+                  className="mt-4 inline-flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm cursor-pointer transition-all shadow-md shadow-blue-500/10">
                   Sign In Now
                 </Link>
               </div>
             )}
-
           </div>
         </div>
-
       </div>
     </div>
   );

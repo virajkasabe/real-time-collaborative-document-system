@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import verifyImage from "../../assets/verify-email.png";
-import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import athenuraLogo from '../../assets/athenura-logo.png';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { HiOutlineMail } from 'react-icons/hi';
-import { FiLock, FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiSend } from 'react-icons/fi';
-import { ATHENURA_LOGO } from "../../assets";
+import { FiShield, FiUsers, FiKey, FiClock, FiArrowLeft, FiAlertCircle, FiCheckCircle, FiLock } from 'react-icons/fi';
+
+const FEATURES = [
+  { icon: FiUsers,  title: 'Real-Time Collaboration', subtitle: 'Work together with your team instantly' },
+  { icon: FiShield, title: 'Secure & Private',         subtitle: 'JWT authentication & role-based security' },
+  { icon: FiKey,    title: 'Role-Based Access',         subtitle: 'Admin, Editor, and Viewer permissions' },
+  { icon: FiClock,  title: 'Version History',           subtitle: 'Track changes and restore previous versions' },
+];
 
 export default function EmailVerificationPage() {
   const { triggerToast, verifyEmail, error, verifyEmailRequest } = useAuth();
@@ -13,330 +19,250 @@ export default function EmailVerificationPage() {
   const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.pathname.split("/",)[2].replace("email=","") || '';
-  const token = location.pathname.split("/",)[3].replace("token=","") || '';
+  const params   = useParams();
 
-  console.log("email",email)
-  console.log("token",token)
+  const parts = location.pathname.split('/');
+  const email = params.email || (parts[2] || '').replace('email=', '') || '';
+  const token = params.token || (parts[3] || '').replace('token=', '') || '';
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [loading, setLoading] = useState(false);
+  const [otp, setOtp]                         = useState(['', '', '', '', '', '']);
+  const [loading, setLoading]                 = useState(false);
   const [verificationError, setVerificationError] = useState(null);
+  const [resendCooldown, setResendCooldown]   = useState(0);
   const inputRefs = useRef([]);
 
-  // useEffect(() => {
-  //   if (!email) navigate('/forgot-password');
-  // }, [email, navigate]);
+  useEffect(() => { setVerificationError(null); }, [otp]);
 
-  
-
-  // Clear error when OTP changes
   useEffect(() => {
-    setVerificationError(null);
-  }, [otp]);
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
-  const handleChange = (element, index) => {
-    const val = element.value.replace(/[^0-9a-zA-Z]/g, "");
-    if (!val) {
-      const newOtp = [...otp];
-      newOtp[index] = "";
-      setOtp(newOtp);
-      return;
-    }
-
-    const newOtp = [...otp];
-    newOtp[index] = val.substring(val.length - 1);
-    setOtp(newOtp);
-
-    // Auto focus next input
-    if (index < 5) {
-      inputRefs.current[index + 1].focus();
-    }
+  const handleChange = (el, idx) => {
+    const val = el.value.replace(/[^0-9a-zA-Z]/g, '');
+    if (!val) { const n = [...otp]; n[idx] = ''; setOtp(n); return; }
+    const n = [...otp]; n[idx] = val.slice(-1); setOtp(n);
+    if (idx < 5) inputRefs.current[idx + 1]?.focus();
   };
 
-  const handleKeyDown = (e, index) => {
-    if (e.key === "Backspace") {
-      if (!otp[index] && index > 0) {
-        const newOtp = [...otp];
-        newOtp[index - 1] = "";
-        setOtp(newOtp);
-        inputRefs.current[index - 1].focus();
+  const handleKeyDown = (e, idx) => {
+    if (e.key === 'Backspace') {
+      if (!otp[idx] && idx > 0) {
+        const n = [...otp]; n[idx - 1] = ''; setOtp(n);
+        inputRefs.current[idx - 1]?.focus();
       } else {
-        const newOtp = [...otp];
-        newOtp[index] = "";
-        setOtp(newOtp);
+        const n = [...otp]; n[idx] = ''; setOtp(n);
       }
     }
   };
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/[^0-9a-zA-Z]/g, "").substring(0, 6);
-    if (text.length === 6) {
-      const newOtp = text.split("");
-      setOtp(newOtp);
-      inputRefs.current[5].focus();
-    } else {
-      triggerToast("Please paste a 6-digit verification code", "warning");
-    }
+    const text = e.clipboardData.getData('text').replace(/[^0-9a-zA-Z]/g, '').slice(0, 6);
+    if (text.length === 6) { setOtp(text.split('')); inputRefs.current[5]?.focus(); }
+    else triggerToast('Please paste a 6-character code', 'warning');
   };
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    const code = otp.join("");
-
-    if (code.length < 6) {
-      triggerToast("Please enter the full 6-digit code", "warning");
-      return;
-    }
-
-    setLoading(true);
-    setVerificationError(null);
-
+    const code = otp.join('');
+    if (code.length < 6) { triggerToast('Please enter the full 6-digit code', 'warning'); return; }
+    setLoading(true); setVerificationError(null);
     try {
-      console.log("token", token)
       const result = await verifyEmail(email, code, token);
-      
       if (result.success) {
-        triggerToast("Verification code confirmed!", "success");
+        triggerToast('Email verified successfully!', 'success');
         navigate('/dashboard');
       } else {
-        const errorMsg = result.error || "Invalid verification code. Please try again.";
-        setVerificationError(errorMsg);
-        triggerToast(errorMsg, "error");
-
-        setOtp(["", "", "", "", "", ""]);
-        if (inputRefs.current[0]) {
-          inputRefs.current[0].focus();
-        }
+        const msg = result.error || 'Invalid code. Please try again.';
+        setVerificationError(msg);
+        triggerToast(msg, 'error');
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
       }
     } catch (err) {
-      const errorMsg = err.message || "Verification failed. Please try again.";
-      setVerificationError(errorMsg);
-      triggerToast(errorMsg, "error");
+      const msg = err.message || 'Verification failed. Please try again.';
+      setVerificationError(msg);
+      triggerToast(msg, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = async() => {
-    await verifyEmailRequest(email)
-    triggerToast("A new 6-digit code has been sent to " + email, "success");
-    setOtp(["", "", "", "", "", ""]);
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+    await verifyEmailRequest(email);
+    triggerToast('New code sent to ' + email, 'success');
+    setOtp(['', '', '', '', '', '']);
     setVerificationError(null);
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
+    setResendCooldown(60);
+    inputRefs.current[0]?.focus();
   };
 
-  const features = [
-    { icon: FiUsers, title: "Real-Time Collaboration", subtitle: "Work together with your team instantly" },
-    { icon: FiShield, title: "Secure & Private", subtitle: "JWT auth & role-based access" },
-    { icon: FiKey, title: "Role-Based Access", subtitle: "Control who can view, edit or share" },
-    { icon: FiClock, title: "Version History", subtitle: "Track changes and restore history" }
-  ];
+  const allFilled = otp.every(d => d !== '');
 
   return (
-    <div className="h-screen w-full overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#090D16] dark:to-[#04060B] transition-colors duration-300 font-sans select-none">
-      
+    <div className="h-screen w-full overflow-hidden flex items-center justify-center bg-[#EEF2F7] dark:bg-[#070B14] p-4 font-sans select-none">
+      <div className="w-full max-w-5xl flex flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-2xl shadow-blue-900/5 dark:shadow-black/50 overflow-hidden bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50">
 
-      <div className="w-full max-w-6xl flex flex-col md:flex-row h-[92vh] max-h-[820px] rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-[#0F172A]">
+        {/* ── LEFT PANEL ── */}
+        <div className="hidden md:flex w-1/2 flex-col justify-between overflow-hidden p-8 bg-gradient-to-br from-[#F4F8FD] to-[#E5EFFE] dark:from-[#131B2E] dark:to-[#0A0D18] relative self-stretch border-r border-slate-200/40 dark:border-slate-800/40">
 
+          {/* Dot grids */}
+          <div className="absolute top-4 right-4 w-24 h-24 opacity-[0.05] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} />
+          <div className="absolute bottom-4 left-4 w-24 h-24 opacity-[0.05] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} />
+          <div className="absolute top-12 left-1/4 w-32 h-8 bg-white/30 dark:bg-white/5 rounded-full blur-sm pointer-events-none" />
+          <div className="absolute bottom-1/3 right-10 w-24 h-6 bg-white/20 dark:bg-white/5 rounded-full blur-sm pointer-events-none" />
 
-        <div className="hidden md:flex md:w-[48%] bg-gradient-to-br from-[#DBEAFE] to-[#C7D9F8] dark:from-[#161D2E] dark:to-[#1E2535] flex-col overflow-hidden p-8 transition-colors duration-300 relative self-stretch border-r border-slate-200/40 dark:border-r dark:border-gray-700/50">
-          
-  
-          <div 
-            className="absolute top-4 right-4 w-20 h-20 opacity-20 pointer-events-none" 
-            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} 
-          />
-          <div 
-            className="absolute bottom-4 left-4 w-20 h-20 opacity-20 pointer-events-none" 
-            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '10px 10px' }} 
-          />
-
-
-          <div className="flex flex-col text-left relative z-10 shrink-0 mb-2">
-            <div className="flex items-center gap-3">
-              <img 
-                src={ATHENURA_LOGO}
-                alt="Athenura"
-                className="h-10 w-auto object-contain"
-                style={{ 
-                  maxWidth: '160px',
-                  filter: isDark ? 'brightness(10)' : 'brightness(0.2)',
-                  opacity: '0.95'
-                }}
-              />
-            </div>
-            <div className="w-8 h-[3px] bg-[#2563EB] mt-1.5 rounded-full" />
+          {/* Logo */}
+          <div className="flex flex-col gap-1 relative z-10 shrink-0">
+            <img src={athenuraLogo} alt="Athenura"
+              className="h-10 w-auto object-contain"
+              style={{ maxWidth: '160px', filter: isDark ? 'brightness(10)' : 'brightness(0.2)', opacity: 0.95 }} />
+            <div className="w-10 h-[3px] bg-blue-500 rounded-full mt-1" />
           </div>
 
+          {/* Headline */}
+          <div className="text-left mt-2 relative z-10 shrink-0">
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug">
+              Verify Your Email Address
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 font-normal leading-relaxed">
+              Enter the 6-digit verification code<br />to complete your registration.
+            </p>
+          </div>
 
-          <h1 className="text-2xl font-extrabold text-[#0F172A] dark:text-white mt-4 tracking-tight leading-snug text-left relative z-10 shrink-0">
-            Verify Your Email Address
-          </h1>
-
-
-          <p className="text-sm text-[#475569] dark:text-gray-300 mt-2 leading-relaxed text-left relative z-10 shrink-0">
-            Enter the 6-digit verification code to complete registration.
-          </p>
-
-          <div className="flex-1 flex items-center justify-center relative py-4 max-h-[200px] z-10">
-            
-
-            <div className="absolute left-2 top-8 w-24 h-10 bg-white/60 dark:bg-white/5 rounded-full blur-sm"/>
-            <div className="absolute left-8 top-4 w-16 h-8 bg-white/40 dark:bg-white/5 rounded-full blur-sm"/>
-
-
-            <div className="absolute top-2 right-16 z-20">
-              <FiSend className="text-[#2563EB] text-3xl transform rotate-[30deg]"/>
-              <svg className="absolute top-4 right-0 w-32 h-20 opacity-40" viewBox="0 0 100 60">
-                <path d="M 90 5 Q 60 20 40 40 Q 20 55 10 58" stroke="#2563EB" strokeWidth="1.5" fill="none" strokeDasharray="5 4" strokeLinecap="round"/>
-              </svg>
-            </div>
-
-
-            <div className="relative z-10">
-              <div className="w-48 h-36 relative">
-                
-
-                <div className="w-full h-full bg-gradient-to-b from-[#4DA3FF] to-[#2563EB] rounded-2xl shadow-2xl shadow-blue-400/40 flex items-center justify-center">
-                  
-                  <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center">
-                    <div className="w-14 h-14 bg-gradient-to-br from-[#3B9EFF] to-[#2563EB] rounded-xl flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016 A11.955 11.955 0 0112 2.944 a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9 c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052 -.382-3.016z"/>
-                      </svg>
-                    </div>
+          {/* OTP illustration card */}
+          <div className="relative flex justify-center items-center mt-4 flex-1 z-10 overflow-hidden max-h-[180px]">
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl border border-slate-200/60 dark:border-slate-700/30 shadow-md p-5 w-fit">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center mb-3">
+                Verification Code
+              </p>
+              <div className="flex gap-2">
+                {['A', '7', 'K', '3', 'X', '9'].map((d, i) => (
+                  <div key={i}
+                    className="w-9 h-10 bg-blue-500/10 dark:bg-blue-400/10 rounded-lg border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-center text-[#2563EB] dark:text-blue-400 font-bold text-base">
+                    {d}
                   </div>
-                </div>
-
-
-                <div className="absolute -bottom-2 left-0 w-1/2 h-5 bg-[#1A54B8] rounded-bl-2xl transform skew-y-3"/>
-                <div className="absolute -bottom-2 right-0 w-1/2 h-5 bg-[#2563EB] rounded-br-2xl transform -skew-y-3"/>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <p className="text-green-600 dark:text-green-400 text-[10px] font-semibold">Code verified</p>
               </div>
             </div>
           </div>
 
-
-          <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/50 dark:border-gray-700/30 mt-auto relative z-10 shrink-0 text-left">
-            <div className="grid grid-cols-2 gap-3">
-              {features.map((feat, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white/70 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                    <feat.icon className="text-[#2563EB] dark:text-blue-400 text-xs" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-[#0F172A] dark:text-white leading-tight">
-                      {feat.title}
-                    </h4>
-                    <p className="text-xs text-[#475569] dark:text-gray-400 leading-tight mt-0.5">
-                      {feat.subtitle}
-                    </p>
-                  </div>
+          {/* Feature list */}
+          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-800/80 relative z-10 shrink-0">
+            {FEATURES.map((item, idx) => (
+              <div key={idx} className="flex items-start gap-2 text-left">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center shrink-0">
+                  <item.icon className="text-[#2563EB] dark:text-blue-400 text-sm" />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-tight">{item.title}</h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">{item.subtitle}</p>
+                </div>
+              </div>
+            ))}
           </div>
-
         </div>
 
-        {/* RIGHT PANEL */}
-        <div className="w-full md:w-[52%] bg-white dark:bg-[#1A2235] flex flex-col justify-center overflow-hidden p-8 transition-colors duration-300 self-stretch">
-          
+        {/* ── RIGHT PANEL ── */}
+        <div className="w-full md:w-1/2 bg-white dark:bg-[#0E1524] flex flex-col justify-center overflow-hidden p-8 relative self-stretch">
+
+          <div className="absolute top-4 right-4 w-20 h-20 opacity-[0.05] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#64748B 1.5px, transparent 1.5px)', backgroundSize: '8px 8px' }} />
+
           <div className="w-full max-w-[360px] mx-auto flex flex-col justify-center h-full select-text">
 
-            {/* Mail icon circle */}
-            <div className="relative w-14 h-14 bg-[#EBF4FF] dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 shrink-0">
+            {/* Icon */}
+            <div className="relative w-16 h-16 bg-blue-500/10 dark:bg-blue-400/10 rounded-full flex items-center justify-center mx-auto mb-3 shrink-0">
               <HiOutlineMail className="text-[#2563EB] dark:text-blue-400 text-2xl" />
-              <FiLock className="text-[#2563EB] dark:text-blue-400 text-[10px] absolute -bottom-0.5 -right-0.5 bg-white dark:bg-[#1A2235] rounded-full p-0.5 shadow-sm border border-slate-100 dark:border-slate-700" />
+              <FiLock className="text-[#2563EB] dark:text-blue-400 text-[10px] absolute -bottom-0.5 -right-0.5 bg-white dark:bg-[#0E1524] rounded-full p-0.5 shadow-sm border border-slate-100 dark:border-slate-700" />
             </div>
 
             {/* Heading */}
-            <h2 className="text-2xl font-extrabold text-[#0F172A] dark:text-white text-center mb-1 shrink-0">
-              Email Verification
-            </h2>
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Email Verification
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium leading-relaxed">
+                Enter the 6-digit code sent to<br />
+                <span className="font-semibold text-[#2563EB] dark:text-blue-400">{email || 'your email'}</span>
+              </p>
+            </div>
 
-            {/* Error Display */}
+            {/* Error */}
             {(verificationError || error) && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-400 text-center">
-                  {verificationError || error || error?.message}
+              <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
+                <FiAlertCircle className="text-red-500 flex-shrink-0 mt-0.5 text-sm" />
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {verificationError || error?.message || error}
                 </p>
               </div>
             )}
 
-            {/* Subtext */}
-            <p className="text-sm text-[#64748B] dark:text-gray-400 text-center mt-2 mb-4 leading-relaxed shrink-0">
-              Enter the 6-digit verification code
-              <br />
-              sent to: <span className="text-sm font-semibold text-[#2563EB] dark:text-blue-400">{email}</span>
-            </p>
-
-            {/* OTP BOXES */}
             <form onSubmit={handleVerify} className="shrink-0">
-              <div className="flex justify-center gap-2 mb-6">
-                {otp.map((digit, index) => (
+              {/* OTP boxes */}
+              <div className="flex justify-center gap-2 mb-5" onPaste={handlePaste}>
+                {otp.map((digit, idx) => (
                   <input
-                    key={index}
-                    ref={(el) => (inputRefs.current[index] = el)}
+                    key={idx}
+                    ref={el => (inputRefs.current[idx] = el)}
                     maxLength={1}
                     type="text"
                     inputMode="numeric"
                     value={digit}
-                    onChange={(e) => handleChange(e.target, index)}
-                    onKeyDown={(e) => handleKeyDown(e, index)}
-                    onPaste={handlePaste}
-                    className="w-11 h-11 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-center text-lg font-bold bg-white dark:bg-[#2D3748] text-[#0F172A] dark:text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20 transition-colors"
+                    onChange={e => handleChange(e.target, idx)}
+                    onKeyDown={e => handleKeyDown(e, idx)}
                     disabled={loading}
+                    style={{ width: '46px', height: '52px' }}
+                    className={`rounded-lg border-2 text-center text-lg font-bold transition-all duration-200 outline-none
+                      bg-slate-50 dark:bg-slate-800/30
+                      text-slate-900 dark:text-white
+                      disabled:opacity-50
+                      ${digit
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 text-[#2563EB] dark:text-blue-400'
+                        : 'border-slate-200 dark:border-slate-700/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                      }`}
                   />
                 ))}
               </div>
 
-              {/* Verify Code Button */}
+              {/* Verify button */}
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full h-10 rounded-xl bg-[#2563EB] hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all duration-200 cursor-pointer flex items-center justify-center shadow-md shadow-blue-500/10 hover:shadow-blue-500/20"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Verifying...
-                  </>
-                ) : "Verify Code"}
+                disabled={loading || !allFilled}
+                className="w-full h-10 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-blue-500/10 hover:shadow-blue-500/20">
+                {loading
+                  ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Verifying…</>
+                  : <><FiCheckCircle className="text-base" /> Verify Code</>}
               </button>
             </form>
 
-            {/* Back to Login */}
-            <Link
-              to="/login"
-              className="text-[#2563EB] dark:text-blue-400 font-semibold text-sm mt-3 flex items-center justify-center gap-1 hover:underline cursor-pointer shrink-0"
-            >
-              <FiArrowLeft className="text-lg" />
-              Back to Login
+            {/* Back + Resend */}
+            <Link to="/login"
+              className="text-[#2563EB] dark:text-blue-400 font-semibold text-sm mt-3 flex items-center justify-center gap-1 hover:underline cursor-pointer shrink-0">
+              <FiArrowLeft className="text-lg" /> Back to Login
             </Link>
 
-            {/* Resend Paragraph */}
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium shrink-0">
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium shrink-0">
               Didn't receive the code?{' '}
               <button
                 type="button"
                 onClick={handleResend}
-                disabled={loading}
-                className="text-[#2563EB] dark:text-blue-400 font-bold hover:underline focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Resend Code
+                disabled={loading || resendCooldown > 0}
+                className="text-[#2563EB] dark:text-blue-400 font-bold hover:underline focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
               </button>
             </p>
-
           </div>
         </div>
-
       </div>
     </div>
   );
