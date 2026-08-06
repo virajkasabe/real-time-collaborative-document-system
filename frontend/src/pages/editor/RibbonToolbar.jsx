@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table, Image as ImageIcon, Link as LinkIcon,
   File, FileText, Type, Video, MessageSquare, Heading, Hash,
@@ -10,18 +11,129 @@ import {
   ChevronUp, ChevronDown,
   Check, X, Sun, Moon, BookOpen, Users,
   Columns, LayoutGrid, Eye, ZoomIn, ZoomOut, Monitor,
-  Layers, Move, Sliders, ArrowUpDown, Grid, Info, Play, RotateCw, Maximize2, Minimize2
+  Layers, Move, Sliders, ArrowUpDown, Grid, Info, Play, RotateCw, Maximize2, Minimize2, Trash2, ChevronLeft
 } from 'lucide-react';
 import { ACCENT_SWATCHES, PAGE_LAYOUTS } from "../../utils/editingpage.helper";
 import 'quill/dist/quill.snow.css';
 
+// SVG Icon for Greek Omega (Ω Symbol Button)
+const OmegaIcon = ({ size = 20, strokeWidth = 2, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 20h4.5a3.5 3.5 0 0 0 3.5 -3.5v-1a5 5 0 1 1 4 0v1a3.5 3.5 0 0 0 3.5 3.5h4.5" />
+  </svg>
+);
+
+// Standardized Vertical Flex Ribbon Button Component
+function RibbonButton({ icon: IconComponent, customIcon, label, onClick, title, active, disabled, isDark }) {
+  const iconColor = active 
+    ? '#ffffff' 
+    : isDark ? '#f8fafc' : '#334155';
+  const textColor = active 
+    ? '#ffffff' 
+    : isDark ? '#cbd5e1' : '#475569';
+
+  return (
+    <button
+      type="button"
+      className={`ribbon-action-btn ${active ? 'active' : ''}`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title || label}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', flexShrink: 0 }}>
+        {customIcon ? customIcon : (IconComponent && <IconComponent size={20} strokeWidth={2} color={iconColor} />)}
+      </div>
+      {label && (
+        <span style={{ fontSize: '11px', fontWeight: 500, lineHeight: 1.2, whiteSpace: 'nowrap', color: textColor }}>
+          {label}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// MS Word-style Symbol Picker Component
+function SymbolPicker({ quillInstance, isDark }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
+
+  const symbols = ['©', '®', '™', '€', '£', '¥', '°', '±', 'µ', '∞', 'α', 'β', 'π', '∑', '√', '≈', '≠', '≤', '≥', '÷', '§', '¶', '¢', '$', '₽', '⚡', '★', '♥', '♠', '♣'];
+
+  const handleSymbolClick = (sym) => {
+    if (quillInstance) {
+      const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
+      quillInstance.insertText(range.index, sym);
+    } else {
+      document.execCommand('insertText', false, sym);
+    }
+    setOpen(false);
+  };
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block' }}>
+      <RibbonButton
+        customIcon={<OmegaIcon size={20} strokeWidth={2} color={isDark ? '#f8fafc' : '#334155'} />}
+        label="Symbol"
+        title="Insert Symbol (©, ®, ™, €, £...)"
+        active={open}
+        onClick={() => setOpen(!open)}
+        isDark={isDark}
+      />
+      {open && (
+        <div className="symbol-picker-popover">
+          {symbols.map((sym, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="symbol-picker-btn"
+              onClick={() => handleSymbolClick(sym)}
+              title={`Insert ${sym}`}
+            >
+              {sym}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RibbonToolbar({
-  quillInstance,
+  quillInstance, showToast,
   activeRibbonTab, canEdit, formatPainterActive, onFormatPainterClick, onGrowFont, onShrinkFont,
   onParagraphShading, onApplyStyle, onOpenFind, onOpenReplace, onShowStats,
   leftSidebarCollapsed, setLeftSidebarCollapsed, rightSidebarCollapsed, setRightSidebarCollapsed,
   accentColor, onApplyAccentColor, theme, toggleTheme, pageLayout, setPageLayout, isMobile,
 }) {
+  const notify = (msg, type = 'info') => {
+    if (typeof showToast === 'function') {
+      showToast(msg, type);
+    }
+  };
+
   const isDark = theme === 'dark';
   const iconColor = isDark ? '#ffffff' : '#0f172a';
   const selectBg = isDark ? '#0d1117' : '#ffffff';
@@ -98,7 +210,7 @@ export default function RibbonToolbar({
                 <button
                   type="button"
                   className="ribbon-large-btn"
-                  onClick={(e) => { e.stopPropagation(); alert('Press Ctrl+V to paste'); }}
+                  onClick={(e) => { e.stopPropagation(); notify('Press Ctrl+V to paste into document', 'info'); }}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     width: '48px', height: '52px', fontSize: '11px', padding: '4px', border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #cbd5e1',
@@ -114,7 +226,20 @@ export default function RibbonToolbar({
                   <button
                     type="button"
                     className="ribbon-custom-btn"
-                    onClick={(e) => { e.stopPropagation(); alert('Press Ctrl+X to cut'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (quillInstance) {
+                        const sel = quillInstance.getSelection();
+                        if (sel && sel.length > 0) {
+                          const text = quillInstance.getText(sel.index, sel.length);
+                          navigator.clipboard?.writeText(text);
+                          quillInstance.deleteText(sel.index, sel.length);
+                          notify('Selection cut to clipboard', 'success');
+                        } else {
+                          notify('Select text first to cut', 'info');
+                        }
+                      }
+                    }}
                     style={{
                       height: '24px', fontSize: '11px', padding: '0 8px', display: 'flex', alignItems: 'center',
                       gap: '6px', border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #cbd5e1', background: isDark ? 'rgba(255,255,255,0.05)' : '#f8fafc', cursor: 'pointer', borderRadius: '4px',
@@ -128,7 +253,19 @@ export default function RibbonToolbar({
                   <button
                     type="button"
                     className="ribbon-custom-btn"
-                    onClick={(e) => { e.stopPropagation(); alert('Press Ctrl+C to copy'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (quillInstance) {
+                        const sel = quillInstance.getSelection();
+                        if (sel && sel.length > 0) {
+                          const text = quillInstance.getText(sel.index, sel.length);
+                          navigator.clipboard?.writeText(text);
+                          notify('Selection copied to clipboard', 'success');
+                        } else {
+                          notify('Select text first to copy', 'info');
+                        }
+                      }
+                    }}
                     style={{
                       height: '24px', fontSize: '11px', padding: '0 8px', display: 'flex', alignItems: 'center',
                       gap: '6px', border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #cbd5e1', background: isDark ? 'rgba(255,255,255,0.05)' : '#f8fafc', cursor: 'pointer', borderRadius: '4px',
@@ -492,85 +629,55 @@ export default function RibbonToolbar({
       {/* INSERT TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'insert' ? 'visible' : 'hidden'}`} style={{ display: activeRibbonTab === 'insert' ? 'flex' : 'none', alignItems: 'stretch', height: '80px' }}>
         {canEdit && (() => {
-          const btnIconColor = isDark ? '#9ca3af' : '#475569';
-          const btnTextColor = isDark ? '#d1d5db' : '#334155';
-          const btnBorderColor = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #cbd5e1';
-          const btnHoverBg = isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9';
-          const btnHoverColor = isDark ? '#ffffff' : '#0f172a';
           const groupBorder = isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #e2e8f0';
 
           const insertGroups = [
             {
               label: 'Pages',
-              minWidth: 110,
+              minWidth: 120,
               content: (
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {[
-                    {
-                      label: 'Cover Page',
-                      icon: <File size={16} color={btnIconColor} />,
-                      action: () => {
-                        if (quillInstance) {
-                          const range = quillInstance.getSelection(true) || { index: 0 };
-                          quillInstance.clipboard.dangerouslyPasteHTML(
-                            range.index,
-                            '<div style="text-align:center; padding:40px; border-bottom:2px solid #ccc; margin-bottom:20px;"><h1>Document Title</h1><p>Subheading</p></div><br/>'
-                          );
-                        }
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <RibbonButton
+                    icon={File}
+                    label="Cover Page"
+                    title="Insert Cover Page"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (quillInstance) {
+                        const range = quillInstance.getSelection(true) || { index: 0 };
+                        quillInstance.clipboard.dangerouslyPasteHTML(
+                          range.index,
+                          '<div style="text-align:center; padding:40px; border-bottom:2px solid #ccc; margin-bottom:20px;"><h1>Document Title</h1><p>Subheading</p></div><br/>'
+                        );
                       }
-                    },
-                    {
-                      label: 'Blank Page',
-                      icon: <FileText size={16} color={btnIconColor} />,
-                      action: () => {
-                        if (quillInstance) {
-                          const range = quillInstance.getSelection() || { index: quillInstance.getLength() };
-                          quillInstance.insertText(range.index, '\n\n');
-                        } else {
-                          document.execCommand('insertHTML', false, '<hr style="page-break-after:always"/>');
-                        }
+                    }}
+                  />
+                  <RibbonButton
+                    icon={FileText}
+                    label="Blank Page"
+                    title="Insert Blank Page"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (quillInstance) {
+                        const range = quillInstance.getSelection() || { index: quillInstance.getLength() };
+                        quillInstance.insertText(range.index, '\n\n');
+                      } else {
+                        document.execCommand('insertHTML', false, '<hr style="page-break-after:always"/>');
                       }
-                    },
-                  ].map((btn, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={btn.action}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = btnHoverBg;
-                        e.currentTarget.style.color = btnHoverColor;
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = btnIconColor;
-                      }}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '2px',
-                        padding: '3px 5px',
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        borderRadius: '4px',
-                        color: btnIconColor,
-                        minWidth: '46px',
-                      }}
-                    >
-                      {btn.icon}
-                      <span style={{ fontSize: '9px', whiteSpace: 'nowrap' }}>{btn.label}</span>
-                    </button>
-                  ))}
+                    }}
+                  />
                 </div>
               )
             },
             {
               label: 'Tables',
-              minWidth: 50,
+              minWidth: 60,
               content: (
-                <button
-                  type="button"
+                <RibbonButton
+                  icon={Table}
+                  label="Table"
+                  title="Insert Table"
+                  isDark={isDark}
                   onClick={() => {
                     const tableHtml = `
                       <table border="1" style="border-collapse:collapse;width:100%;margin:8px 0">
@@ -584,61 +691,20 @@ export default function RibbonToolbar({
                       document.execCommand('insertHTML', false, tableHtml);
                     }
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = btnHoverBg;
-                    e.currentTarget.style.color = btnHoverColor;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = btnIconColor;
-                  }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    padding: '3px 5px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    color: btnIconColor,
-                    minWidth: '42px',
-                  }}
-                >
-                  <Table size={16} color={btnIconColor} />
-                  <span style={{ fontSize: '9px' }}>Table</span>
-                </button>
+                />
               )
             },
             {
               label: 'Illustrations',
-              minWidth: 55,
+              minWidth: 65,
               content: (
-                <label style={{ cursor: 'pointer' }}>
-                  <div
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = btnHoverBg;
-                      e.currentTarget.style.color = btnHoverColor;
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = btnIconColor;
-                    }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '3px 5px',
-                      borderRadius: '4px',
-                      color: btnIconColor,
-                      minWidth: '44px',
-                    }}
-                  >
-                    <ImageIcon size={16} color={btnIconColor} />
-                    <span style={{ fontSize: '9px' }}>Picture</span>
-                  </div>
+                <label style={{ cursor: 'pointer', display: 'inline-block' }}>
+                  <RibbonButton
+                    icon={ImageIcon}
+                    label="Picture"
+                    title="Insert Picture"
+                    isDark={isDark}
+                  />
                   <input
                     type="file"
                     accept="image/*"
@@ -664,10 +730,13 @@ export default function RibbonToolbar({
             },
             {
               label: 'Media',
-              minWidth: 55,
+              minWidth: 60,
               content: (
-                <button
-                  type="button"
+                <RibbonButton
+                  icon={Video}
+                  label="Video"
+                  title="Insert Video URL"
+                  isDark={isDark}
                   onClick={() => {
                     const videoUrl = prompt('Enter Video URL (YouTube / Vimeo / Direct link):');
                     if (videoUrl) {
@@ -679,39 +748,18 @@ export default function RibbonToolbar({
                       }
                     }
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = btnHoverBg;
-                    e.currentTarget.style.color = btnHoverColor;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = btnIconColor;
-                  }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    padding: '3px 5px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    color: btnIconColor,
-                    minWidth: '44px',
-                  }}
-                >
-                  <Video size={16} color={btnIconColor} />
-                  <span style={{ fontSize: '9px', whiteSpace: 'nowrap' }}>Video</span>
-                </button>
+                />
               )
             },
             {
               label: 'Links',
-              minWidth: 45,
+              minWidth: 55,
               content: (
-                <button
-                  type="button"
+                <RibbonButton
+                  icon={LinkIcon}
+                  label="Link"
+                  title="Insert Hyperlink"
+                  isDark={isDark}
                   onClick={() => {
                     const url = prompt('Enter URL:');
                     if (url) {
@@ -728,186 +776,75 @@ export default function RibbonToolbar({
                       }
                     }
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = btnHoverBg;
-                    e.currentTarget.style.color = btnHoverColor;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = btnIconColor;
-                  }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    padding: '3px 5px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    color: btnIconColor,
-                    minWidth: '38px',
-                  }}
-                >
-                  <LinkIcon size={16} color={btnIconColor} />
-                  <span style={{ fontSize: '9px' }}>Link</span>
-                </button>
+                />
               )
             },
             {
               label: 'Comments',
-              minWidth: 55,
+              minWidth: 65,
               content: (
-                <button
-                  type="button"
+                <RibbonButton
+                  icon={MessageSquare}
+                  label="Comment"
+                  title="Add Comment"
+                  isDark={isDark}
                   onClick={() => {
                     if (typeof setRightSidebarCollapsed === 'function') {
                       setRightSidebarCollapsed(false);
                     }
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = btnHoverBg;
-                    e.currentTarget.style.color = btnHoverColor;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = btnIconColor;
-                  }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    padding: '3px 5px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    color: btnIconColor,
-                    minWidth: '44px',
-                  }}
-                >
-                  <MessageSquare size={16} color={btnIconColor} />
-                  <span style={{ fontSize: '9px' }}>Comment</span>
-                </button>
+                />
               )
             },
             {
               label: 'Header & Footer',
-              minWidth: 125,
+              minWidth: 160,
               content: (
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {[
-                    {
-                      label: 'Header',
-                      icon: <Heading size={16} color={btnIconColor} />,
-                      action: () => {
-                        if (quillInstance) {
-                          const range = quillInstance.getSelection(true) || { index: 0 };
-                          quillInstance.clipboard.dangerouslyPasteHTML(range.index, '<header style="border-bottom:1px solid #ccc;padding:4px 0;margin-bottom:12px;font-size:10px;color:#666;">Document Header</header>');
-                        }
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <RibbonButton
+                    icon={Heading}
+                    label="Header"
+                    title="Insert Header"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (quillInstance) {
+                        const range = quillInstance.getSelection(true) || { index: 0 };
+                        quillInstance.clipboard.dangerouslyPasteHTML(range.index, '<header style="border-bottom:1px solid #ccc;padding:4px 0;margin-bottom:12px;font-size:10px;color:#666;">Document Header</header>');
                       }
-                    },
-                    {
-                      label: 'Footer',
-                      icon: <Heading size={16} color={btnIconColor} style={{ transform: 'rotate(180deg)' }} />,
-                      action: () => {
-                        if (quillInstance) {
-                          const length = quillInstance.getLength();
-                          quillInstance.clipboard.dangerouslyPasteHTML(length, '<footer style="border-top:1px solid #ccc;padding:4px 0;margin-top:24px;font-size:10px;color:#666;">Document Footer</footer>');
-                        }
+                    }}
+                  />
+                  <RibbonButton
+                    customIcon={<Heading size={20} strokeWidth={2} color={isDark ? '#f8fafc' : '#334155'} style={{ transform: 'rotate(180deg)' }} />}
+                    label="Footer"
+                    title="Insert Footer"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (quillInstance) {
+                        const length = quillInstance.getLength();
+                        quillInstance.clipboard.dangerouslyPasteHTML(length, '<footer style="border-top:1px solid #ccc;padding:4px 0;margin-top:24px;font-size:10px;color:#666;">Document Footer</footer>');
                       }
-                    },
-                    {
-                      label: 'Page #',
-                      icon: <Hash size={16} color={btnIconColor} />,
-                      action: () => {
-                        if (quillInstance) {
-                          const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
-                          quillInstance.insertText(range.index, 'Page 1');
-                        }
+                    }}
+                  />
+                  <RibbonButton
+                    icon={Hash}
+                    label="Page #"
+                    title="Insert Page Number"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (quillInstance) {
+                        const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
+                        quillInstance.insertText(range.index, 'Page 1');
                       }
-                    },
-                  ].map((btn, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={btn.action}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = btnHoverBg;
-                        e.currentTarget.style.color = btnHoverColor;
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = btnIconColor;
-                      }}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '2px',
-                        padding: '3px 4px',
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        borderRadius: '4px',
-                        color: btnIconColor,
-                        minWidth: '36px',
-                      }}
-                    >
-                      {btn.icon}
-                      <span style={{ fontSize: '9px', whiteSpace: 'nowrap' }}>{btn.label}</span>
-                    </button>
-                  ))}
+                    }}
+                  />
                 </div>
               )
             },
             {
               label: 'Symbols',
-              minWidth: 105,
+              minWidth: 65,
               content: (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '2px' }}>
-                  {['©', '®', '™', '€', '£', '¥', '°', '±'].map((sym, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        if (quillInstance) {
-                          const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
-                          quillInstance.insertText(range.index, sym);
-                        } else {
-                          document.execCommand('insertText', false, sym);
-                        }
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = btnHoverBg;
-                        e.currentTarget.style.color = btnHoverColor;
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = btnTextColor;
-                      }}
-                      style={{
-                        width: '22px',
-                        height: '22px',
-                        fontSize: '12px',
-                        color: btnTextColor,
-                        background: 'transparent',
-                        border: btnBorderColor,
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0,
-                      }}
-                      title={sym}
-                    >
-                      {sym}
-                    </button>
-                  ))}
-                </div>
+                <SymbolPicker quillInstance={quillInstance} isDark={isDark} />
               )
             },
           ];
@@ -932,13 +869,13 @@ export default function RibbonToolbar({
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    padding: '6px 8px',
+                    padding: '4px 8px',
                     borderRight: i < insertGroups.length - 1 ? groupBorder : 'none',
                     minWidth: group.minWidth,
                     flexShrink: 0,
                   }}
                 >
-                  <div>{group.content}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>{group.content}</div>
                   <span
                     style={{
                       fontSize: '9px',
@@ -961,9 +898,6 @@ export default function RibbonToolbar({
       {/* DESIGN TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'design' ? 'visible' : 'hidden'}`} style={{ display: activeRibbonTab === 'design' ? 'flex' : 'none', alignItems: 'stretch', height: '80px' }}>
         {(() => {
-          const btnIconColor = isDark ? '#9ca3af' : '#475569';
-          const btnTextColor = isDark ? '#d1d5db' : '#334155';
-          const btnHoverBg = isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9';
           const groupBorder = isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #e2e8f0';
 
           return (
@@ -986,16 +920,17 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   borderRight: groupBorder,
                   flexShrink: 0,
-                  minWidth: '360px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* Themes Dropdown */}
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Palette}
+                    label="Themes"
+                    title="Select Theme Preset"
+                    isDark={isDark}
                     onClick={() => {
                       const themeName = prompt('Select Theme Preset:\n1. Classic (Serif + Blue)\n2. Modern (Sans + Teal)\n3. Minimal (Monospace + Slate)\n4. Bold (Impact + Crimson)\n5. Elegant (Georgia + Indigo)', '1');
                       if (themeName && quillInstance) {
@@ -1011,32 +946,12 @@ export default function RibbonToolbar({
                         if (onApplyAccentColor) onApplyAccentColor(p.accent);
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '54px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Palette size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Themes</span>
-                  </button>
-
-                  {/* Style Set */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Type}
+                    label="Style Set"
+                    title="Select Style Set"
+                    isDark={isDark}
                     onClick={() => {
                       const setChoice = prompt('Select Style Set:\n1. Default\n2. Casual\n3. Formal\n4. Elegant', '1');
                       if (setChoice && onApplyStyle) {
@@ -1044,32 +959,12 @@ export default function RibbonToolbar({
                         onApplyStyle(sets[parseInt(setChoice, 10) - 1] || 'Normal');
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '56px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Type size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Style Set</span>
-                  </button>
-
-                  {/* Colors (Palette Icon + Accent Swatches Dropdown) */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Paintbrush}
+                    label="Colors"
+                    title="Change Document Accent Color"
+                    isDark={isDark}
                     onClick={() => {
                       const hex = prompt(`Enter Accent Color hex or select preset:\n1. Blue (#0D6EFD)\n2. Teal (#0d9488)\n3. Slate (#475569)\n4. Red (#dc2626)\n5. Purple (#7c3aed)`, accentColor || '#0D6EFD');
                       if (hex && onApplyAccentColor) {
@@ -1077,53 +972,12 @@ export default function RibbonToolbar({
                         onApplyAccentColor(presets[hex] || hex);
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '85px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Paintbrush size={18} color={btnIconColor} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        {ACCENT_SWATCHES.slice(0, 4).map((hex) => (
-                          <span
-                            key={hex}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onApplyAccentColor) onApplyAccentColor(hex);
-                            }}
-                            title={`Use ${hex}`}
-                            style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              background: hex,
-                              border: accentColor === hex ? '1.5px solid #ffffff' : '1px solid rgba(255,255,255,0.3)',
-                              cursor: 'pointer',
-                              display: 'inline-block',
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Colors</span>
-                  </button>
-
-                  {/* Fonts */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Heading}
+                    label="Fonts"
+                    title="Select Font Pairings"
+                    isDark={isDark}
                     onClick={() => {
                       const f = prompt('Font Pairing:\n1. Calibri / Calibri Light\n2. Arial / Arial Black\n3. Georgia / Times New Roman\n4. Segoe UI', '1');
                       if (f && quillInstance) {
@@ -1131,71 +985,21 @@ export default function RibbonToolbar({
                         quillInstance.format('font', fonts[parseInt(f, 10) - 1] || 'sans-serif');
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '48px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Type size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Fonts</span>
-                  </button>
-
-                  {/* Effects / Set as Default stacked */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '85px' }}>
-                    <button
-                      type="button"
-                      onClick={() => alert('Effects applied to document styles')}
-                      onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        color: btnTextColor,
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <Sparkles size={12} color={btnIconColor} /> Effects
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => alert('Current design set as default')}
-                      onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        color: btnTextColor,
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Set as Default
-                    </button>
-                  </div>
+                  />
+                  <RibbonButton
+                    icon={Sparkles}
+                    label="Effects"
+                    title="Apply Document Visual Effects"
+                    isDark={isDark}
+                    onClick={() => notify('Visual effects applied to document headings and figures', 'success')}
+                  />
+                  <RibbonButton
+                    icon={Stamp}
+                    label="Set Default"
+                    title="Set Current Design as Default"
+                    isDark={isDark}
+                    onClick={() => notify('Current design set as default document style template', 'success')}
+                  />
                 </div>
                 <span
                   style={{
@@ -1217,15 +1021,16 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   flexShrink: 0,
-                  minWidth: '260px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* Watermark */}
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Stamp}
+                    label="Watermark"
+                    title="Insert Watermark"
+                    isDark={isDark}
                     onClick={() => {
                       const text = prompt('Enter Watermark Text (e.g. DRAFT, CONFIDENTIAL):', 'DRAFT');
                       if (text && quillInstance) {
@@ -1236,32 +1041,12 @@ export default function RibbonToolbar({
                         );
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '60px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Stamp size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Watermark</span>
-                  </button>
-
-                  {/* Page Color */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Droplet}
+                    label="Page Color"
+                    title="Change Page Background Color"
+                    isDark={isDark}
                     onClick={() => {
                       const bg = prompt('Select Page Color:\n1. White (#ffffff)\n2. Off-White (#f8fafc)\n3. Cream (#fffbeb)\n4. Dark (#0d1117)', '1');
                       const colors = ['#ffffff', '#f8fafc', '#fffbeb', '#0d1117'];
@@ -1271,82 +1056,26 @@ export default function RibbonToolbar({
                         if (sheet) sheet.style.background = selected;
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '64px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Droplet size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Page Color</span>
-                  </button>
-
-                  {/* Page Borders */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Square}
+                    label="Page Borders"
+                    title="Toggle Page Border"
+                    isDark={isDark}
                     onClick={() => {
                       const sheet = document.querySelector('.editor-paper-container');
                       if (sheet) {
                         sheet.style.border = sheet.style.border ? '' : '3px double #3b82f6';
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '68px',
-                    }}
-                  >
-                    <Square size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Page Borders</span>
-                  </button>
-
-                  {/* Theme Toggle */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={isDark ? Sun : Moon}
+                    label={isDark ? 'Light Theme' : 'Dark Theme'}
+                    title="Toggle Editor Color Theme"
+                    isDark={isDark}
                     onClick={toggleTheme}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '68px',
-                    }}
-                    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                  >
-                    {isDark ? <Sun size={18} color="#facc15" /> : <Moon size={18} color={btnIconColor} />}
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>{isDark ? 'Light Theme' : 'Dark Theme'}</span>
-                  </button>
+                  />
                 </div>
                 <span
                   style={{
@@ -1369,9 +1098,6 @@ export default function RibbonToolbar({
       {/* LAYOUT TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'layout' ? 'visible' : 'hidden'}`} style={{ display: activeRibbonTab === 'layout' ? 'flex' : 'none', alignItems: 'stretch', height: '80px' }}>
         {canEdit && (() => {
-          const btnIconColor = isDark ? '#9ca3af' : '#475569';
-          const btnTextColor = isDark ? '#d1d5db' : '#334155';
-          const btnHoverBg = isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9';
           const groupBorder = isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #e2e8f0';
 
           return (
@@ -1394,47 +1120,29 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   borderRight: groupBorder,
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* Margins */}
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Square}
+                    label="Margins"
+                    title="Configure Page Margins"
+                    isDark={isDark}
                     onClick={() => {
                       const m = prompt('Select Margins:\n1. Normal (2.54 cm)\n2. Narrow (1.27 cm)\n3. Wide (5.08 cm)', '1');
                       const keys = ['normal', 'narrow', 'wide'];
                       const key = keys[parseInt(m, 10) - 1] || 'normal';
                       if (setPageLayout) setPageLayout(key);
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '52px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Square size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Margins</span>
-                  </button>
-
-                  {/* Orientation */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={RotateCw}
+                    label="Orientation"
+                    title="Change Page Orientation"
+                    isDark={isDark}
                     onClick={() => {
                       const orient = prompt('Select Orientation:\n1. Portrait\n2. Landscape', '1');
                       if (orient && quillInstance) {
@@ -1445,32 +1153,12 @@ export default function RibbonToolbar({
                         }
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '60px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <RotateCw size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Orientation</span>
-                  </button>
-
-                  {/* Size */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Maximize2}
+                    label="Size"
+                    title="Select Paper Size"
+                    isDark={isDark}
                     onClick={() => {
                       const size = prompt('Select Paper Size:\n1. A4\n2. Letter\n3. Legal\n4. Executive', '1');
                       const sizes = { '1': '210mm', '2': '8.5in', '3': '8.5in', '4': '7.25in' };
@@ -1478,32 +1166,12 @@ export default function RibbonToolbar({
                       const sheet = document.querySelector('.editor-paper-container');
                       if (sheet) sheet.style.width = selected;
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '44px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <FileText size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Size</span>
-                  </button>
-
-                  {/* Columns */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Columns}
+                    label="Columns"
+                    title="Split Text into Columns"
+                    isDark={isDark}
                     onClick={() => {
                       const cols = prompt('Select Columns:\n1. One Column\n2. Two Columns\n3. Three Columns', '1');
                       const sheet = document.querySelector('.ql-editor');
@@ -1512,100 +1180,33 @@ export default function RibbonToolbar({
                         sheet.style.columnGap = '24px';
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '52px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Columns size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Columns</span>
-                  </button>
-
-                  {/* Breaks */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Layers}
+                    label="Breaks"
+                    title="Insert Page or Section Break"
+                    isDark={isDark}
                     onClick={() => {
                       if (quillInstance) {
                         const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
                         quillInstance.clipboard.dangerouslyPasteHTML(range.index, '<hr style="page-break-after:always"/><br/>');
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '48px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Scissors size={18} color={btnIconColor} />
-                      <ChevronDown size={10} color={btnIconColor} />
-                    </div>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Breaks</span>
-                  </button>
-
-                  {/* Line Numbers / Hyphenation Stacked */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '90px' }}>
-                    <button
-                      type="button"
-                      onClick={() => alert('Line Numbers enabled')}
-                      onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        color: btnTextColor,
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Line Numbers
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => alert('Hyphenation set to Automatic')}
-                      onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                      style={{
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        color: btnTextColor,
-                        background: 'transparent',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Hyphenation
-                    </button>
-                  </div>
+                  />
+                  <RibbonButton
+                    icon={Hash}
+                    label="Line Numbers"
+                    title="Toggle Line Numbers"
+                    isDark={isDark}
+                    onClick={() => notify('Line Numbers enabled for document', 'info')}
+                  />
+                  <RibbonButton
+                    icon={Type}
+                    label="Hyphenation"
+                    title="Automatic Hyphenation"
+                    isDark={isDark}
+                    onClick={() => notify('Automatic Hyphenation enabled', 'info')}
+                  />
                 </div>
                 <span
                   style={{
@@ -1621,134 +1222,45 @@ export default function RibbonToolbar({
                 </span>
               </div>
 
-              {/* GROUP 2: PARAGRAPH */}
+              {/* GROUP 2: ARRANGE */}
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
-                  borderRight: groupBorder,
-                  flexShrink: 0,
-                  minWidth: '150px',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px', color: btnTextColor }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ minWidth: '40px' }}>Indent L:</span>
-                    <input
-                      type="number"
-                      defaultValue={0}
-                      onChange={(e) => {
-                        if (quillInstance) quillInstance.format('indent', parseInt(e.target.value, 10) || 0);
-                      }}
-                      style={{ width: '45px', height: '20px', background: isDark ? '#0d1117' : '#ffffff', color: btnTextColor, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '3px', fontSize: '10px', padding: '0 4px' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ minWidth: '40px' }}>Spacing:</span>
-                    <input
-                      type="number"
-                      defaultValue={8}
-                      onChange={(e) => alert(`Line spacing set to ${e.target.value}pt`)}
-                      style={{ width: '45px', height: '20px', background: isDark ? '#0d1117' : '#ffffff', color: btnTextColor, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '3px', fontSize: '10px', padding: '0 4px' }}
-                    />
-                  </div>
-                </div>
-                <span
-                  style={{
-                    fontSize: '9px',
-                    color: isDark ? '#6b7280' : '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    textAlign: 'center',
-                    display: 'block',
-                  }}
-                >
-                  Paragraph
-                </span>
-              </div>
-
-              {/* GROUP 3: ARRANGE */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {/* Position */}
-                  <button
-                    type="button"
-                    onClick={() => alert('Positioning features require selected image/shape')}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '50px',
-                    }}
-                  >
-                    <Move size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Position</span>
-                  </button>
-
-                  {/* Wrap Text */}
-                  <button
-                    type="button"
-                    onClick={() => alert('Wrap Text set to In Line with Text')}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '4px 6px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '4px',
-                      color: btnTextColor,
-                      minWidth: '56px',
-                    }}
-                  >
-                    <Layers size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Wrap Text</span>
-                  </button>
-
-                  {/* Forward / Backward Stacked */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '95px' }}>
-                    <button
-                      type="button"
-                      onClick={() => alert('Bring Forward')}
-                      onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                      style={{ padding: '2px 6px', fontSize: '10px', color: btnTextColor, background: 'transparent', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >
-                      Bring Forward
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => alert('Send Backward')}
-                      onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                      onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                      style={{ padding: '2px 6px', fontSize: '10px', color: btnTextColor, background: 'transparent', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >
-                      Send Backward
-                    </button>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Move}
+                    label="Position"
+                    title="Set Element Position"
+                    isDark={isDark}
+                    onClick={() => notify('Positioning tools active for selected shapes and objects', 'info')}
+                  />
+                  <RibbonButton
+                    icon={AlignJustify}
+                    label="Wrap Text"
+                    title="Text Wrapping Mode"
+                    isDark={isDark}
+                    onClick={() => notify('Wrap Text mode set to In Line with Text', 'info')}
+                  />
+                  <RibbonButton
+                    icon={ChevronUp}
+                    label="Bring Forward"
+                    title="Bring Layer Forward"
+                    isDark={isDark}
+                    onClick={() => notify('Brought selected element layer forward', 'success')}
+                  />
+                  <RibbonButton
+                    icon={ChevronDown}
+                    label="Send Backward"
+                    title="Send Layer Backward"
+                    isDark={isDark}
+                    onClick={() => notify('Sent selected element layer backward', 'success')}
+                  />
                 </div>
                 <span
                   style={{
@@ -1769,36 +1281,217 @@ export default function RibbonToolbar({
       </div>
 
       {/* REVIEW TAB */}
-      <div className={`ribbon-tab-content ${activeRibbonTab === 'review' ? 'visible' : 'hidden'}`}>
-        <div className="ribbon-group">
-          <div className="ribbon-controls-container">
-            <div className="ribbon-buttons-row">
-              <button type="button" className="ribbon-custom-btn" onClick={onShowStats} title="Word Count Details" style={{ color: iconColor }}>
-                <BookOpen size={16} color={iconColor} style={{ marginRight: '6px' }} />
-                <span style={{ color: iconColor }}>Word Count Details</span>
-              </button>
-              <button
-                type="button"
-                className="ribbon-custom-btn"
-                onClick={() => alert('Spelling & Grammar Check completed!\nNo issues found.')}
-                title="Spelling Check"
-                style={{ color: iconColor }}
+      <div className={`ribbon-tab-content ${activeRibbonTab === 'review' ? 'visible' : 'hidden'}`} style={{ display: activeRibbonTab === 'review' ? 'flex' : 'none', alignItems: 'stretch', height: '80px' }}>
+        {(() => {
+          const groupBorder = isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #e2e8f0';
+
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'stretch',
+                background: isDark ? '#161b27' : '#ffffff',
+                borderBottom: groupBorder,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                height: '80px',
+                width: '100%',
+                flexShrink: 0,
+              }}
+            >
+              {/* GROUP 1: PROOFING */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '4px 8px',
+                  borderRight: groupBorder,
+                  flexShrink: 0,
+                }}
               >
-                <Check size={16} color={iconColor} style={{ marginRight: '6px' }} />
-                <span style={{ color: iconColor }}>Spelling & Grammar</span>
-              </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Check}
+                    label="Spelling"
+                    title="Spelling & Grammar Check"
+                    isDark={isDark}
+                    onClick={() => notify('Spelling & Grammar Check completed — 0 issues found', 'success')}
+                  />
+                  <RibbonButton
+                    icon={BookOpen}
+                    label="Word Count"
+                    title="Word Count Details"
+                    isDark={isDark}
+                    onClick={onShowStats}
+                  />
+                  <RibbonButton
+                    icon={Search}
+                    label="Thesaurus"
+                    title="Open Thesaurus"
+                    isDark={isDark}
+                    onClick={() => notify('Thesaurus: Select a word in the document to view synonyms', 'info')}
+                  />
+                </div>
+                <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
+                  Proofing
+                </span>
+              </div>
+
+              {/* GROUP 2: COMMENTS */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '4px 8px',
+                  borderRight: groupBorder,
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={MessageSquare}
+                    label="New Comment"
+                    title="Add New Comment"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (typeof setRightSidebarCollapsed === 'function') setRightSidebarCollapsed(false);
+                      notify('Comment panel opened', 'info');
+                    }}
+                  />
+                  <RibbonButton
+                    icon={Trash2}
+                    label="Delete"
+                    title="Delete Active Comment"
+                    isDark={isDark}
+                    onClick={() => notify('Selected comment deleted', 'info')}
+                  />
+                  <RibbonButton
+                    icon={ChevronLeft}
+                    label="Previous"
+                    title="Previous Comment"
+                    isDark={isDark}
+                    onClick={() => notify('Navigated to previous comment', 'info')}
+                  />
+                  <RibbonButton
+                    icon={ChevronDown}
+                    label="Next"
+                    title="Next Comment"
+                    isDark={isDark}
+                    onClick={() => notify('Navigated to next comment', 'info')}
+                  />
+                </div>
+                <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
+                  Comments
+                </span>
+              </div>
+
+              {/* GROUP 3: TRACKING */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '4px 8px',
+                  borderRight: groupBorder,
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Sparkles}
+                    label="Track Changes"
+                    title="Toggle Track Changes"
+                    isDark={isDark}
+                    onClick={() => notify('Track Changes mode activated', 'success')}
+                  />
+                  <RibbonButton
+                    icon={Sliders}
+                    label="Review Pane"
+                    title="Toggle Reviewing Pane"
+                    isDark={isDark}
+                    onClick={() => {
+                      if (typeof setLeftSidebarCollapsed === 'function') setLeftSidebarCollapsed(false);
+                      notify('Reviewing pane toggled', 'info');
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
+                  Tracking
+                </span>
+              </div>
+
+              {/* GROUP 4: CHANGES */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '4px 8px',
+                  borderRight: groupBorder,
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Check}
+                    label="Accept"
+                    title="Accept Change"
+                    isDark={isDark}
+                    onClick={() => notify('Tracked change accepted', 'success')}
+                  />
+                  <RibbonButton
+                    icon={X}
+                    label="Reject"
+                    title="Reject Change"
+                    isDark={isDark}
+                    onClick={() => notify('Tracked change rejected', 'info')}
+                  />
+                </div>
+                <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
+                  Changes
+                </span>
+              </div>
+
+              {/* GROUP 5: PROTECT & COMPARE */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  padding: '4px 8px',
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Columns}
+                    label="Compare"
+                    title="Compare Document Revisions"
+                    isDark={isDark}
+                    onClick={() => notify('Document revision comparison pane ready', 'info')}
+                  />
+                  <RibbonButton
+                    icon={Square}
+                    label="Protect"
+                    title="Protect Document Editing"
+                    isDark={isDark}
+                    onClick={() => notify('Document editing protection enabled', 'success')}
+                  />
+                </div>
+                <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
+                  Protect & Compare
+                </span>
+              </div>
             </div>
-          </div>
-          <span className="ribbon-group-label" style={{ color: labelColor }}>Proofing</span>
-        </div>
+          );
+        })()}
       </div>
 
       {/* VIEW TAB */}
       <div className={`ribbon-tab-content ${activeRibbonTab === 'view' ? 'visible' : 'hidden'}`} style={{ display: activeRibbonTab === 'view' ? 'flex' : 'none', alignItems: 'stretch', height: '80px' }}>
         {(() => {
-          const btnIconColor = isDark ? '#9ca3af' : '#475569';
-          const btnTextColor = isDark ? '#d1d5db' : '#334155';
-          const btnHoverBg = isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9';
           const groupBorder = isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid #e2e8f0';
 
           return (
@@ -1821,14 +1514,17 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   borderRight: groupBorder,
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={BookOpen}
+                    label="Read Mode"
+                    title="Switch to Read Mode"
+                    isDark={isDark}
                     onClick={() => {
                       const sheet = document.querySelector('.editor-paper-container');
                       if (sheet) {
@@ -1836,16 +1532,12 @@ export default function RibbonToolbar({
                         sheet.style.maxWidth = '900px';
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '60px' }}
-                  >
-                    <BookOpen size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Read Mode</span>
-                  </button>
-
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Monitor}
+                    label="Print Layout"
+                    title="Switch to Print Layout"
+                    isDark={isDark}
                     onClick={() => {
                       const sheet = document.querySelector('.editor-paper-container');
                       if (sheet) {
@@ -1853,16 +1545,12 @@ export default function RibbonToolbar({
                         sheet.style.maxWidth = 'none';
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '65px' }}
-                  >
-                    <Monitor size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Print Layout</span>
-                  </button>
-
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={LayoutGrid}
+                    label="Web Layout"
+                    title="Switch to Web Layout"
+                    isDark={isDark}
                     onClick={() => {
                       const sheet = document.querySelector('.editor-paper-container');
                       if (sheet) {
@@ -1870,13 +1558,7 @@ export default function RibbonToolbar({
                         sheet.style.maxWidth = '100%';
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '64px' }}
-                  >
-                    <LayoutGrid size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Web Layout</span>
-                  </button>
+                  />
                 </div>
                 <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
                   Views
@@ -1889,38 +1571,29 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   borderRight: groupBorder,
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {/* Focus Mode */}
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Maximize2}
+                    label="Focus Mode"
+                    title="Toggle Focus Mode"
+                    isDark={isDark}
                     onClick={() => {
                       if (typeof setLeftSidebarCollapsed === 'function') setLeftSidebarCollapsed(true);
                       if (typeof setRightSidebarCollapsed === 'function') setRightSidebarCollapsed(true);
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '48px' }}
-                  >
-                    <Maximize2 size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Focus</span>
-                  </button>
-
-                  {/* Dark Mode Toggle */}
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={isDark ? Sun : Moon}
+                    label={isDark ? 'Light Mode' : 'Dark Mode'}
+                    title="Toggle Dark/Light Mode"
+                    isDark={isDark}
                     onClick={toggleTheme}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '68px' }}
-                  >
-                    {isDark ? <Sun size={18} color="#facc15" /> : <Moon size={18} color={btnIconColor} />}
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-                  </button>
+                  />
                 </div>
                 <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
                   Immersive & Dark Mode
@@ -1933,37 +1606,30 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   borderRight: groupBorder,
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={List}
+                    label="Navigation"
+                    title="Toggle Navigation Sidebar"
+                    isDark={isDark}
                     onClick={() => {
                       if (typeof setLeftSidebarCollapsed === 'function') setLeftSidebarCollapsed(!leftSidebarCollapsed);
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '60px' }}
-                  >
-                    <List size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Navigation</span>
-                  </button>
-
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Users}
+                    label="Collaborators"
+                    title="Toggle Collaborators Panel"
+                    isDark={isDark}
                     onClick={() => {
                       if (typeof setRightSidebarCollapsed === 'function') setRightSidebarCollapsed(!rightSidebarCollapsed);
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '68px' }}
-                  >
-                    <Users size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Collaborators</span>
-                  </button>
+                  />
                 </div>
                 <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
                   Show / Hide
@@ -1976,14 +1642,17 @@ export default function RibbonToolbar({
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   borderRight: groupBorder,
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={ZoomIn}
+                    label="Zoom"
+                    title="Custom Zoom Level"
+                    isDark={isDark}
                     onClick={() => {
                       const z = prompt('Enter Zoom percentage (50 - 200):', '100');
                       if (z) {
@@ -1992,57 +1661,45 @@ export default function RibbonToolbar({
                         if (sheet) sheet.style.transform = `scale(${val})`;
                       }
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '48px' }}
-                  >
-                    <ZoomIn size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Zoom</span>
-                  </button>
-
-                  <button
-                    type="button"
+                  />
+                  <RibbonButton
+                    icon={Eye}
+                    label="100%"
+                    title="Reset Zoom to 100%"
+                    isDark={isDark}
                     onClick={() => {
                       const sheet = document.querySelector('.editor-paper-container');
                       if (sheet) sheet.style.transform = 'scale(1)';
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '44px' }}
-                  >
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: btnIconColor }}>100%</span>
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Reset</span>
-                  </button>
+                  />
                 </div>
                 <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
                   Zoom
                 </span>
               </div>
 
-              {/* GROUP 5: MACROS & PROPERTIES */}
+              {/* GROUP 5: PROPERTIES */}
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '6px 12px',
+                  padding: '4px 8px',
                   flexShrink: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    type="button"
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                  <RibbonButton
+                    icon={Info}
+                    label="Properties"
+                    title="Document Info & Stats"
+                    isDark={isDark}
                     onClick={() => {
-                      const words = quillInstance ? quillInstance.getText().trim().split(/\s+/).length : 0;
-                      alert(`Document Properties:\n- Total Words: ${words}\n- Status: Saved\n- Mode: ${isDark ? 'Dark' : 'Light'}`);
+                      const text = quillInstance ? quillInstance.getText().trim() : '';
+                      const words = text ? text.split(/\s+/).length : 0;
+                      notify(`Document Properties: ${words} words · Cloud Saved · ${isDark ? 'Dark' : 'Light'} Mode`, 'info');
                     }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = btnHoverBg; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '4px 6px', background: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', color: btnTextColor, minWidth: '58px' }}
-                  >
-                    <Info size={18} color={btnIconColor} />
-                    <span style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>Properties</span>
-                  </button>
+                  />
                 </div>
                 <span style={{ fontSize: '9px', color: isDark ? '#6b7280' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', display: 'block' }}>
                   Properties

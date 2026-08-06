@@ -210,7 +210,8 @@ export function useCollaborativeQuill({
 
     const handleCursorUpdate = (cursorData) => {
       if (!cursorData) return;
-      if (cursorData.docId !== params.id) return {};
+      const targetDocId = docId || doc?._id || params?.id;
+      if (cursorData.docId && targetDocId && cursorData.docId.toString() !== targetDocId.toString()) return;
       renderRemoteCursorFlag(quill, cursorData);
       remoteCursorsRef.current = {
         ...remoteCursorsRef.current,
