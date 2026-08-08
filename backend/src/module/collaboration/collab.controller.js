@@ -140,8 +140,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
        const documentName = document.title 
        const inviterName =  req.user.fullName
-       const  acceptLink =  null
-       const declineLink = null
        const recipientEmail = email 
        const inviterEmail = req.user.email
        const recipientName = null
@@ -151,8 +149,6 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       await registerAndJoinCollab(
         documentName  ,
         inviterName ,
-        acceptLink,
-        declineLink ,
         recipientEmail  ,
         inviterEmail ,
         recipientName ,

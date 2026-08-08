@@ -3,6 +3,10 @@ import { apiInstance, senderEmail } from './brevoClient.js';
 // Define the icon URL once at the top
 const WEBSITE_ICON = 'https://res.cloudinary.com/qnf2f4fq/image/upload/v1785166465/favicon_z4byb1.png';
 
+const stepOne = "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182371/1_xh7xs6.png"
+const stepTwo = "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182371/2_hwzvpc.png"
+const stepThree = "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182370/3_w5oyxc.png"
+const stepFour = "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182371/4_lewr0f.png"
 // Shared styles for both email templates
 const STYLES = {
   fonts: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');`,
@@ -57,8 +61,6 @@ const generateEmailWrapper = (content) => `
 export const registerAndJoinCollab = async (
   documentName,
   inviterName,
-  acceptLink,
-  declineLink,
   recipientEmail,
   inviterEmail,
   recipientName = null,
@@ -133,9 +135,6 @@ export const registerAndJoinCollab = async (
               <a href="${registrationLink}" style="${STYLES.buttonSuccess}">
                 ✅ Register & Accept
               </a>
-              <a href="${declineLink}" style="${STYLES.buttonDanger}">
-                ✕ Decline
-              </a>
             </div>
             <p style="margin: 12px 0 0 0; font-size: 13px; color: #94a3b8;">
               ⚡ Click "Register & Accept" to create your account and join immediately
@@ -146,8 +145,6 @@ export const registerAndJoinCollab = async (
           <div style="${STYLES.linkBox}">
             <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #475569;">🔗 Quick Links</p>
             <p style="${STYLES.linkText}"><strong>Register:</strong> ${registrationLink}</p>
-            ${acceptLink ? `<p style="${STYLES.linkText}"><strong>Accept (after registration):</strong> ${acceptLink}</p>` : ''}
-            <p style="${STYLES.linkText}"><strong>Decline:</strong> ${declineLink}</p>
           </div>
 
           ${recipientName ? `
@@ -209,7 +206,6 @@ export const joinCollab = async (
   documentName,
   inviterName,
   acceptLink,
-  declineLink,
   userEmail = null,
   inviterEmail = null,
   loginLink
@@ -292,9 +288,6 @@ export const joinCollab = async (
               <a href="${loginLink}" style="${STYLES.buttonSuccess}">
                 ✅ Login & Join
               </a>
-              <a href="${declineLink}" style="${STYLES.buttonDanger}">
-                ✕ Decline
-              </a>
             </div>
           </div>
 
@@ -302,8 +295,6 @@ export const joinCollab = async (
           <div style="${STYLES.linkBox}">
             <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #475569;">🔗 Quick Links</p>
             <p style="${STYLES.linkText}"><strong>Login:</strong> ${loginLink}</p>
-            <p style="${STYLES.linkText}"><strong>Join (after login):</strong> ${acceptLink}</p>
-            <p style="${STYLES.linkText}"><strong>Decline:</strong> ${declineLink}</p>
           </div>
 
           <!-- Info Badge -->
