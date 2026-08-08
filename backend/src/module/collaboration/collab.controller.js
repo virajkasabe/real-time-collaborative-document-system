@@ -142,7 +142,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
        const inviterName =  req.user.fullName
        const recipientEmail = email 
        const inviterEmail = req.user.email
-       const recipientName = null
+       const recipientName = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "")}....`
        const registrationLink = `${ENV.CORS_ORIGIN}/register`
       
       
