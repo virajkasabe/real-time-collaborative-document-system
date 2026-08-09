@@ -9,7 +9,6 @@ import User from "../auth/auth.model.js";
 import { getDocumentRole, verifyDocumentAdmin, verifyDocumentMember } from "../../middleware/document.middleware.js";
 
 
-
 export const createDocument = asyncHandler(async (req, res) => {
   const { title } = req.body;
 
@@ -342,7 +341,6 @@ export const updateDocTitle = asyncHandler(async(req,res)=>{
 
   return res.status(200).json(new ApiResponse(200, {}, "Update document title successfully"))
 })
-
 
 export const docMoveToTrash = asyncHandler(async(req,res)=>{
   

@@ -6,8 +6,4 @@ const router = Router()
 
 router.route("/send-collab/:docId").post(verifyJWT, sendCollaboration)
 
-// router.route("/accept/:email/:join").post(verifyJWT, acceptCollaboration)
-
-// router.route("/decline/:email/:join").get(declineJoinCollaboration)
-
 export default router;
