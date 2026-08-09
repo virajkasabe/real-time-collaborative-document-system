@@ -140,19 +140,15 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
        const documentName = document.title 
        const inviterName =  req.user.fullName
-       const  acceptLink =  null
-       const declineLink = null
        const recipientEmail = email 
        const inviterEmail = req.user.email
-       const recipientName = null
+       const recipientName = `${email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "")}....`
        const registrationLink = `${ENV.CORS_ORIGIN}/register`
       
       
       await registerAndJoinCollab(
         documentName  ,
         inviterName ,
-        acceptLink,
-        declineLink ,
         recipientEmail  ,
         inviterEmail ,
         recipientName ,
@@ -214,6 +210,23 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
 
     if (!isOnline) {
       await logoutUser(pendingNotification, collabData, email);
+
+      const documentName = document.title 
+       const inviterName =  req.user.fullName
+       const userEmail = email 
+       const inviterEmail = req.user.email
+       const recipientName = ``
+       const loginLink = `${ENV.CORS_ORIGIN}/login`
+
+      await joinCollab(
+        documentName,
+        inviterName,
+        userEmail,
+        inviterEmail,
+        loginLink
+      )
+
+       
       return res
         .status(200)
         .json(

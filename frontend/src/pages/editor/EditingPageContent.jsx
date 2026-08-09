@@ -15,9 +15,10 @@ import LeftSidebar from '../editor/LeftSidebar'
 import RightSidebar from '../editor/RightSidebar'
 import StatusBar from '../editor/StatusBar'
 // import CommentPopup from '../editor/CommentPopup'
-import ShareModal from '../editor/ShareModal'
+import ShareModal from '../editor/ShareModal';
+import CollaboratorsModal from './CollaboratorsModal';
 import { inviteCollab } from '../../apis/api.js';
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom';
 import FindReplacePane from './FindReplacePane';
 
 
@@ -41,6 +42,7 @@ export default function EditingPageContent({
 
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
+  const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
   const [leftTab, setLeftTab] = useState('outline');
   const [rightTab, setRightTab] = useState('chat');
   const [activeRibbonTab, setActiveRibbonTab] = useState('home');
@@ -472,7 +474,7 @@ export default function EditingPageContent({
         canShare={canShare}
         isEditor={isEditor}
         onShareClick={handleOpenShare}
-        onToggleCollaborators={toggleRightSidebar}
+        onToggleCollaborators={() => setShowCollaboratorsModal(true)}
         activeUsers={activeUsers}
         currentUser={user}
         isMobile={isMobile}
@@ -486,6 +488,8 @@ export default function EditingPageContent({
       />
 
       <RibbonToolbar
+        quillInstance={quillInstance}
+        showToast={showToast}
         activeRibbonTab={activeRibbonTab}
         canEdit={canEdit}
         formatPainterActive={formatPainterActive}
@@ -640,6 +644,27 @@ export default function EditingPageContent({
           docId={doc._id}
           copied={copied}
           onCopyLink={handleCopyLink}
+        />
+      )}
+
+      {showCollaboratorsModal && (
+        <CollaboratorsModal
+          isOpen={showCollaboratorsModal}
+          onClose={() => setShowCollaboratorsModal(false)}
+          currentUser={user}
+          activeUsers={activeUsers}
+          doc={doc}
+          theme={theme}
+          showToast={showToast}
+          onInvite={async (email, role) => {
+            setShareEmail(email);
+            setShareRole(role);
+            try {
+              await handleSendCollabLink();
+            } catch (e) {
+              // Handled by API error
+            }
+          }}
         />
       )}
     </div>

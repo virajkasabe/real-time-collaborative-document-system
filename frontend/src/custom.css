@@ -1153,47 +1153,122 @@ div.ribbon-group-separator + div.ribbon-group-separator,
 }
 
 /* Override Formatting controls to Ribbon style */
-.word-ribbon-toolbar-panel button:not(.style-card):not(.ribbon-custom-btn):not(.ribbon-large-btn) {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: 4px !important;
-  width: 24px !important;
-  height: 24px !important;
-  display: inline-flex !important;
+.word-ribbon-toolbar-panel button:not(.style-card):not(.ribbon-custom-btn):not(.ribbon-large-btn):not(.ribbon-action-btn) {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-h);
+  padding: 0;
+  float: none;
+  box-sizing: border-box;
+}
+
+/* Ribbon Standard Action Button (Vertical Flex Container) */
+.ribbon-action-btn {
+  display: flex !important;
+  flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
+  gap: 4px !important;
+  padding: 6px 10px !important;
+  background: transparent;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
   cursor: pointer !important;
-  transition: all 0.15s !important;
-  color: var(--text-h) !important;
-  padding: 0 !important;
-  float: none !important;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+  min-width: 48px !important;
   box-sizing: border-box !important;
+  height: 56px !important;
+  color: inherit;
+  position: relative !important;
 }
 
-.word-ribbon-toolbar-panel button:hover {
-  background: var(--accent-bg) !important;
-  border-color: var(--accent-border) !important;
-  color: var(--accent) !important;
+.ribbon-action-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-.word-ribbon-toolbar-panel button.ql-active {
-  background: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: #ffffff !important;
+.dark .ribbon-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-.word-ribbon-toolbar-panel button.ql-active svg,
-.word-ribbon-toolbar-panel button.ql-active .ql-stroke {
-  stroke: #ffffff !important;
+.ribbon-action-btn.active {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
 }
 
-.word-ribbon-toolbar-panel button.ql-active .ql-fill {
-  fill: #ffffff !important;
+.word-ribbon-toolbar-panel button:not(.ribbon-action-btn) svg {
+  width: 14px;
+  height: 14px;
 }
 
-.word-ribbon-toolbar-panel button svg {
-  width: 14px !important;
-  height: 14px !important;
+.ribbon-action-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Symbol Picker Dropdown Popover */
+.symbol-picker-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  z-index: 1000;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  width: 240px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.dark .symbol-picker-popover {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.symbol-picker-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #1e293b;
+  transition: all 0.12s ease;
+}
+
+.dark .symbol-picker-btn {
+  color: #f8fafc;
+}
+
+.symbol-picker-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.dark .symbol-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .word-ribbon-toolbar-panel .ql-stroke {
@@ -1630,17 +1705,15 @@ div.ribbon-group-separator + div.ribbon-group-separator,
   padding: 0 !important;
   margin: 0 !important;
   line-height: 1.65 !important;
-  color: var(--text-h) !important;
   outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
   box-sizing: border-box !important;
   min-height: 864px !important;
-  background-color: #ffffff !important;
-  background: #ffffff !important;
+  background-color: transparent !important;
+  background: transparent !important;
   background-image: none !important;
   color: #111827 !important;
-  border-left: 1px solid rgba(0, 0, 0, 0.06) !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 10px 25px -5px rgba(0, 0, 0, 0.07), 0 8px 10px -6px rgba(0, 0, 0, 0.07) !important;
 }
 
 /* Document page MUST ALWAYS be solid white paper */

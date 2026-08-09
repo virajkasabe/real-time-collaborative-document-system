@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { DOCUMENT_EVENT } from "../utils/constants";
 
-
 export function useActiveCollaborators(socket, currentUser, showToast) {
   const [activeUsers, setActiveUsers] = useState([]);
 
   useEffect(() => {
     if (!socket) return undefined;
+
+    const handleActiveUsers = (data) => {
+      if (Array.isArray(data?.users)) {
+        setActiveUsers(data.users.filter((u) => u._id !== currentUser?._id));
+      }
+    };
 
     const handleJoin = (data) => {
       if (!data?.user?._id || data.user._id === currentUser?._id) return;
@@ -25,9 +30,11 @@ export function useActiveCollaborators(socket, currentUser, showToast) {
       });
     };
 
+    socket.on(DOCUMENT_EVENT.ACTIVE_USERS, handleActiveUsers);
     socket.on(DOCUMENT_EVENT.NEW_USER_JOIN, handleJoin);
     socket.on(DOCUMENT_EVENT.USER_LEFT, handleLeft);
     return () => {
+      socket.off(DOCUMENT_EVENT.ACTIVE_USERS, handleActiveUsers);
       socket.off(DOCUMENT_EVENT.NEW_USER_JOIN, handleJoin);
       socket.off(DOCUMENT_EVENT.USER_LEFT, handleLeft);
     };
