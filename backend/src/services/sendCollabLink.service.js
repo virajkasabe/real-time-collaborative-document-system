@@ -1,12 +1,9 @@
-
 // emailService.js
 
 import { apiInstance, senderEmail } from "./brevoClient.js";
 
-
 const WEBSITE_ICON =
   "https://res.cloudinary.com/qnf2f4fq/image/upload/v1785166465/favicon_z4byb1.png";
-
 
 const stepOne =
   "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182371/1_xh7xs6.png";
@@ -17,440 +14,29 @@ const stepThree =
 const stepFour =
   "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182371/4_lewr0f.png";
 
-import { apiInstance, senderEmail } from "./brevoClient.js";
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-// Shared styles for better consistency
-const baseStyles = {
-  container: `
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-    line-height: 1.6;
-    color: #1a1a2e;
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 20px;
-    background: #f0f2f5;
-  `,
-  card: `
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 32px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  `,
-  header: `
-    text-align: center;
-    margin-bottom: 30px;
-  `,
-  stepItem: `
-    margin-bottom: 24px;
-    background: #ffffff;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #e8ecf1;
-    transition: box-shadow 0.2s;
-  `,
-  stepLabel: (color = "#4a6cf7") => `
-    background: ${color};
-    color: white;
-    padding: 6px 16px;
-    display: inline-block;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.5px;
-    border-radius: 0 0 6px 6px;
-  `,
-  button: (bg = "#4a6cf7") => `
-    display: inline-block;
-    background: ${bg};
-    color: white;
-    padding: 14px 40px;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 17px;
-    box-shadow: 0 4px 14px rgba(74, 108, 247, 0.3);
-    transition: transform 0.1s, box-shadow 0.2s;
-  `,
-  image: `
-    width: 100%;
-    max-width: 600px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-    border-radius: 8px;
-  `,
+/**
+ * Escape user-supplied values before interpolating into HTML.
+ * Prevents HTML/markup injection via document names, names, emails, etc.
+ */
+const escapeHtml = (value) => {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 };
 
-// Helper to generate full email wrapper
-const createEmailWrapper = (content, title = "") => `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title || "Collaboration Invitation"}</title>
-      <style>
-        @media only screen and (max-width: 600px) {
-          .container { padding: 12px !important; }
-          .card { padding: 20px !important; }
-          .step-image { width: 100% !important; height: auto !important; }
-          .button { width: 100% !important; display: block !important; text-align: center !important; padding: 14px 20px !important; }
-          .flex-row { flex-direction: column !important; }
-          .gap-10 { gap: 8px !important; }
-        }
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        body {
-          ${baseStyles.container}
-        }
-        .card {
-          ${baseStyles.card}
-        }
-        .step-item {
-          ${baseStyles.stepItem}
-        }
-        .step-item:hover {
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-        }
-        .step-image {
-          ${baseStyles.image}
-        }
-        .button {
-          ${baseStyles.button()}
-        }
-        .button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(74, 108, 247, 0.4);
-        }
-        .button-green {
-          background: #10b981;
-          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-        }
-        .button-green:hover {
-          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-        .flex-row {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-        .gap-10 {
-          gap: 10px;
-        }
-        .method-box {
-          background: #f8fafc;
-          padding: 14px 18px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-          flex: 1;
-          min-width: 180px;
-        }
-        .method-box:hover {
-          border-color: #4a6cf7;
-          background: #f1f4ff;
-        }
-        .badge {
-          display: inline-block;
-          padding: 2px 12px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          white-space: nowrap;
-        }
-        .badge-blue { background: #dbeafe; color: #1e40af; }
-        .badge-green { background: #d1fae5; color: #065f46; }
-        .badge-orange { background: #fef3c7; color: #92400e; }
-        .badge-red { background: #fce4ec; color: #b71c1c; }
-        .divider {
-          border: none;
-          border-top: 1px dashed #d1d5db;
-          margin: 12px 0;
-        }
-        .note-box {
-          background: #f0f7ff;
-          padding: 12px 16px;
-          border-radius: 6px;
-          border-left: 4px solid #4a6cf7;
-          font-size: 13px;
-          color: #1e293b;
-        }
-        .feature-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          margin-top: 12px;
-        }
-        .feature-item {
-          background: #f8fafc;
-          padding: 14px;
-          border-radius: 8px;
-          text-align: center;
-          border: 1px solid #e8ecf1;
-        }
-        @media only screen and (max-width: 600px) {
-          .feature-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-        .footer {
-          font-size: 13px;
-          color: #64748b;
-        }
-        .footer a {
-          color: #4a6cf7;
-          text-decoration: none;
-        }
-        .footer hr {
-          border: none;
-          border-top: 1px solid #e2e8f0;
-          margin: 16px 0;
-        }
-        .text-center { text-align: center; }
-        .text-muted { color: #64748b; }
-        .font-bold { font-weight: 700; }
-        .mt-8 { margin-top: 8px; }
-        .mt-16 { margin-top: 16px; }
-        .mb-8 { margin-bottom: 8px; }
-        .mb-16 { margin-bottom: 16px; }
-        .inline-block { display: inline-block; }
-        .w-full { width: 100%; }
-        .break-all { word-break: break-all; }
-      </style>
-    </head>
-    <body>
-      ${content}
-    </body>
-  </html>
-`;
+const escapeAttr = (value) => escapeHtml(value);
 
-// Common header component
-const createHeader = () => `
-  <div class="card" style="text-align: center;">
-    <img src="${WEBSITE_ICON}" alt="Website Icon" style="width: 72px; height: 72px; border-radius: 50%; margin-bottom: 12px; border: 3px solid #e8ecf1;">
-    <h1 style="color: #1a1a2e; margin: 8px 0 4px; font-size: 28px; font-weight: 700;">Welcome to Collaboration</h1>
-    <p style="color: #64748b; font-size: 16px;">Join your team and start working together</p>
-  </div>
-`;
-
-// Footer component
-const createFooter = (inviterEmail = null) => `
-  <div class="card footer">
-    <p><strong>⏰ Note:</strong> This invitation will expire in 7 days.</p>
-    <p>If you have any questions, please contact ${inviterEmail ? `<a href="mailto:${inviterEmail}">${inviterEmail}</a>` : "the inviter"}</p>
-    <hr>
-    <p style="margin-bottom: 0; font-size: 12px; color: #94a3b8;">This is an automated message, please do not reply to this email.</p>
-  </div>
-`;
-
-// Registration steps component
-const createRegistrationSteps = () => `
-  <div class="card">
-    <h2 style="color: #1a1a2e; text-align: center; margin-top: 0; margin-bottom: 24px; font-size: 22px;">📝 How to Register</h2>
-    
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-blue">STEP 1</span>
-      </div>
-      <div style="padding: 16px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 600; font-size: 15px;">Choose your registration method</p>
-        <div class="flex-row gap-10" style="margin-top: 12px;">
-          <div class="method-box">
-            <strong>📧 Email Registration</strong>
-            <ul style="margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: #334155;">
-              <li>Full Name</li>
-              <li>Email <span style="color: #94a3b8; font-size: 12px;">(use email where you got collab)</span></li>
-              <li>Password</li>
-              <li>Confirm Password</li>
-            </ul>
-          </div>
-          <div class="method-box">
-            <strong>🔵 Google Registration</strong>
-            <ul style="margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: #334155;">
-              <li>Sign up with Google</li>
-              <li>No password needed</li>
-              <li>One-click registration</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-green">STEP 2</span>
-      </div>
-      <div style="padding: 16px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 600; font-size: 15px;">Verify your email</p>
-        <div style="margin-top: 12px; background: white; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
-          <div style="display: flex; align-items: flex-start; gap: 12px;">
-            <span class="badge badge-blue" style="white-space: nowrap;">Step A</span>
-            <div>
-              <strong>Click the verification link</strong>
-              <p style="margin: 4px 0 0; font-size: 14px; color: #475569;">Open your email inbox and click the verification link</p>
-            </div>
-          </div>
-          <hr class="divider">
-          <div style="display: flex; align-items: flex-start; gap: 12px;">
-            <span class="badge badge-orange" style="white-space: nowrap;">Step B</span>
-            <div>
-              <strong>Enter the OTP</strong>
-              <p style="margin: 4px 0 0; font-size: 14px; color: #475569;">Copy the OTP from the verification link and paste it to complete verification</p>
-              <div class="note-box" style="margin-top: 8px;">
-                <strong>Note:</strong> The verification link contains your OTP — both are required to complete registration
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-red">STEP 3</span>
-      </div>
-      <div style="padding: 16px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 600; font-size: 15px;">Login to your account</p>
-        <div style="margin-top: 12px; background: white; padding: 14px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
-          <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #334155;">
-            <li><strong>Email</strong> — Enter your registered email</li>
-            <li><strong>Password</strong> — Enter your password</li>
-            <li style="margin-top: 6px; color: #64748b; font-style: italic;">Or continue with Google if you registered that way</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-`;
-
-// Collaboration steps component
-const createCollaborationSteps = (documentName) => `
-  <div class="card">
-    <h2 style="color: #1a1a2e; text-align: center; margin-top: 0; margin-bottom: 24px; font-size: 22px;">📋 How to Get Started</h2>
-    
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-blue">STEP 1</span>
-      </div>
-      <img src="${stepOne}" alt="Step 1: Click the notification bell" class="step-image">
-      <div style="padding: 12px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 500;">Click the notification bell icon</p>
-      </div>
-    </div>
-    
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-green">STEP 2</span>
-      </div>
-      <img src="${stepTwo}" alt="Step 2: View notifications" class="step-image">
-      <div style="padding: 12px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 500;">Click all notification</p>
-      </div>
-    </div>
-    
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-orange">STEP 3</span>
-      </div>
-      <img src="${stepThree}" alt="Step 3: Accept or decline" class="step-image">
-      <div style="padding: 12px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 500;">Click ✔️ for Accept or ❌ for Declined</p>
-      </div>
-    </div>
-    
-    <div class="step-item">
-      <div style="background: #f8fafc; padding: 4px 16px;">
-        <span class="badge badge-red">STEP 4</span>
-      </div>
-      <img src="${stepFour}" alt="Step 4: Start collaborating" class="step-image">
-      <div style="padding: 12px 20px; background: #f8fafc;">
-        <p style="margin: 0; font-weight: 500;">Check on home on "<strong>${documentName}</strong>" with your team</p>
-      </div>
-    </div>
-  </div>
-`;
-
-export const registerAndJoinCollab = async (
-  documentName,
-  inviterName,
-  recipientEmail,
-  inviterEmail,
-  recipientName = "User",
-  registrationLink
-) => {
-  try {
-    const htmlContent = createEmailWrapper(`
-      ${createHeader()}
-      
-      <!-- Invitation Content -->
-      <div class="card">
-        <p style="font-size: 18px; margin-top: 0;">Hello <strong>${recipientName}</strong>,</p>
-        <p><strong>${inviterName}</strong> (<a href="mailto:${inviterEmail}" style="color: #4a6cf7; text-decoration: none;">${inviterEmail}</a>) has invited you to collaborate on <strong style="color: #1a1a2e;">"${documentName}"</strong>.</p>
-        <p>To get started, please complete your registration by clicking the button below:</p>
-        
-        <div style="text-align: center; margin: 32px 0;">
-          <a
-            href="${registrationLink}"
-            style="
-              display: inline-block;
-              background-color: #ffffff;
-              color: #333333;
-              padding: 12px 24px;
-              border-radius: 6px;
-              text-decoration: none;
-              font-weight: 600;
-              border: 1px solid #dddddd;
-            "
-          >
-            Complete Registration
-          </a>
-        </div>
-        
-        <p style="color: #64748b; font-size: 14px; text-align: center;">Or copy and paste this link into your browser:</p>
-        <p style="background: #f8fafc; padding: 12px 16px; border-radius: 6px; word-break: break-all; font-size: 13px; border: 1px solid #e2e8f0; color: #334155;">${registrationLink}</p>
-      </div>
-
-      ${createRegistrationSteps()}
-      ${createCollaborationSteps(documentName)}
-      ${createFooter(inviterEmail)}
-    `, "Collaboration Invitation");
-
-    const emailData = {
-      sender: {
-        name: `${inviterName} (via Collaboration Platform)`,
-        email: senderEmail,
-      },
-      to: [{ email: recipientEmail, name: recipientName }],
-      subject: `Invitation to collaborate on "${documentName}" from ${inviterName}`,
-      htmlContent,
-      textContent: `
-        Hello ${recipientName},
-        
-        ${inviterName} (${inviterEmail}) has invited you to collaborate on "${documentName}".
-        
-        To get started, please complete your registration by visiting: ${registrationLink}
-        
-        Steps to get started:
-        1. Click the registration link above
-        2. Create your account with your email and password
-        3. Verify your email address
-        4. Start collaborating on "${documentName}"
-        
-        Note: This invitation will expire in 7 days. If you have any questions, please contact ${inviterEmail}.
-        
-        This is an automated message, please do not reply to this email.
-      `,
-      tags: ["registration", "collaboration-invite"],
-    };
-
-    const response = await apiInstance.transactionalEmails.sendTransacEmail(emailData);
-    console.log(`Registration invitation sent successfully to ${recipientEmail}`);
-    return response;
-  } catch (error) {
-    console.error("Error sending registration invitation:", error);
-    throw new Error(`Failed to send registration invitation: ${error.message}`);
+// ---------------------------------------------------------------------------
+// Shared style tokens
+// ---------------------------------------------------------------------------
 
 const S = {
   fonts: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');`,
@@ -476,7 +62,12 @@ const S = {
   footer: `background:#f8fafc;padding:22px 32px;text-align:center;border-top:1px solid #e8edf4;`,
   footerText: `margin:0;font-size:12px;color:#94a3b8;line-height:1.8;`,
   expiry: `margin-top:20px;padding:14px 16px;background:#f1f5f9;border-radius:10px;text-align:center;font-size:13px;color:#64748b;`,
+  divider: `border:none;border-top:1px solid #e8edf4;margin:8px 0;`,
 };
+
+// ---------------------------------------------------------------------------
+// Wrappers
+// ---------------------------------------------------------------------------
 
 const emailWrapper = (content) => `
 <!DOCTYPE html>
@@ -484,20 +75,39 @@ const emailWrapper = (content) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <style>${S.fonts}</style>
+  <title>Collaboration Invitation</title>
+  <style>
+    ${S.fonts}
+    @media only screen and (max-width:600px) {
+      .container { border-radius:0 !important; }
+      .body-cell { padding:24px 18px !important; }
+      .header-cell { padding:32px 18px 26px !important; }
+    }
+  </style>
 </head>
 <body style="${S.body}">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="${S.wrapper}">
     <tr><td align="center">
       <table width="100%" style="max-width:600px;" cellpadding="0" cellspacing="0" border="0">
-        <tr><td style="${S.container}">${content}</td></tr>
+        <tr><td class="container" style="${S.container}">${content}</td></tr>
       </table>
     </td></tr>
   </table>
 </body>
 </html>`;
 
-export const registerAndJoinCollab = async (
+const emailFooter = () => `
+  <tr><td style="${S.footer}">
+    <p style="${S.footerText}">© ${new Date().getFullYear()} Collaboration Platform · Automated notification</p>
+    <p style="${S.footerText}" >This is an automated message, please do not reply.</p>
+  </td></tr>`;
+
+// ---------------------------------------------------------------------------
+// registerAndJoinCollab — sends a registration + collaboration invite
+// to a user who does NOT yet have an account.
+// ---------------------------------------------------------------------------
+
+export const registerAndJoinCollab = async ({
   documentName,
   inviterName,
   acceptLink,
@@ -505,16 +115,25 @@ export const registerAndJoinCollab = async (
   recipientEmail,
   inviterEmail,
   recipientName = null,
-  registrationLink
-) => {
+  registrationLink,
+}) => {
   try {
     if (!recipientEmail) throw new Error("Recipient email is required");
     if (!registrationLink) throw new Error("Registration link is required");
+    if (!declineLink) throw new Error("Decline link is required");
+
+    const safeDoc = escapeHtml(documentName || "Untitled Document");
+    const safeInviter = escapeHtml(inviterName || "Someone");
+    const safeInviterEmail = escapeHtml(inviterEmail || "");
+    const safeRecipientName = escapeHtml(recipientName || "");
+    const safeRegistrationLink = escapeAttr(registrationLink);
+    const safeAcceptLink = acceptLink ? escapeAttr(acceptLink) : "";
+    const safeDeclineLink = escapeAttr(declineLink);
 
     const content = `
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <!-- Header -->
-        <tr><td style="${S.headerPurple}">
+        <tr><td class="header-cell" style="${S.headerPurple}">
           <div style="${S.iconRing}">
             <img src="${WEBSITE_ICON}" alt="Icon" style="width:38px;height:38px;vertical-align:middle;" />
           </div>
@@ -523,15 +142,15 @@ export const registerAndJoinCollab = async (
         </td></tr>
 
         <!-- Body -->
-        <tr><td style="${S.body2}">
+        <tr><td class="body-cell" style="${S.body2}">
 
           <!-- Document card -->
           <div style="${S.card}">
             <p style="margin:0 0 4px;font-size:13px;color:#64748b;">You've been invited to collaborate on</p>
-            <h2 style="margin:6px 0 4px;font-size:22px;font-weight:700;color:#1a2332;">${documentName || "Untitled Document"}</h2>
+            <h2 style="margin:6px 0 4px;font-size:22px;font-weight:700;color:#1a2332;">${safeDoc}</h2>
             <p style="margin:6px 0 0;font-size:14px;color:#475569;">
-              Invited by <strong style="color:#667eea;">${inviterName || "Someone"}</strong>
-              ${inviterEmail ? `<span style="color:#94a3b8;"> · ${inviterEmail}</span>` : ""}
+              Invited by <strong style="color:#667eea;">${safeInviter}</strong>
+              ${safeInviterEmail ? `<span style="color:#94a3b8;"> · ${safeInviterEmail}</span>` : ""}
             </p>
           </div>
 
@@ -542,7 +161,7 @@ export const registerAndJoinCollab = async (
               You need to register first to access this collaboration. It only takes a minute!
             </p>
             <div style="text-align:center;">
-              <a href="${registrationLink}" style="${S.btnPrimary}">Create Account →</a>
+              <a href="${safeRegistrationLink}" style="${S.btnPrimary}">Create Account →</a>
             </div>
           </div>
 
@@ -555,25 +174,25 @@ export const registerAndJoinCollab = async (
 
           <!-- Action buttons -->
           <div style="text-align:center;margin:28px 0 20px;">
-            <a href="${registrationLink}" style="${S.btnSuccess}">✅ Register &amp; Accept</a>
+            <a href="${safeRegistrationLink}" style="${S.btnSuccess}">✅ Register &amp; Accept</a>
             &nbsp;&nbsp;
-            <a href="${declineLink}" style="${S.btnDanger}">✕ Decline</a>
+            <a href="${safeDeclineLink}" style="${S.btnDanger}">✕ Decline</a>
             <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">Click "Register &amp; Accept" to create your account and join immediately</p>
           </div>
 
           <!-- Links -->
           <div style="${S.linkBox}">
             <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#475569;">🔗 Quick Links</p>
-            <p style="${S.linkText}"><strong>Register:</strong> ${registrationLink}</p>
-            ${acceptLink ? `<p style="${S.linkText}"><strong>Accept (after registration):</strong> ${acceptLink}</p>` : ""}
-            <p style="${S.linkText}"><strong>Decline:</strong> ${declineLink}</p>
+            <p style="${S.linkText}"><strong>Register:</strong> ${safeRegistrationLink}</p>
+            ${safeAcceptLink ? `<p style="${S.linkText}"><strong>Accept (after registration):</strong> ${safeAcceptLink}</p>` : ""}
+            <p style="${S.linkText}"><strong>Decline:</strong> ${safeDeclineLink}</p>
           </div>
 
           ${
-            recipientName
+            safeRecipientName
               ? `
           <div style="margin-top:14px;padding:10px 14px;background:#eef2ff;border-radius:8px;">
-            <p style="margin:0;font-size:13px;color:#4338ca;">👤 <strong>Invited as:</strong> ${recipientName}</p>
+            <p style="margin:0;font-size:13px;color:#4338ca;">👤 <strong>Invited as:</strong> ${safeRecipientName}</p>
           </div>`
               : ""
           }
@@ -581,10 +200,7 @@ export const registerAndJoinCollab = async (
           <div style="${S.expiry}">⏰ This invitation will expire in <strong>7 days</strong></div>
         </td></tr>
 
-        <!-- Footer -->
-        <tr><td style="${S.footer}">
-          <p style="${S.footerText}">© ${new Date().getFullYear()} Collaboration Platform · Automated notification</p>
-        </td></tr>
+        ${emailFooter()}
       </table>`;
 
     const emailHtml = emailWrapper(content);
@@ -599,127 +215,53 @@ export const registerAndJoinCollab = async (
       subject: `✨ Join "${documentName || "Document"}" — Registration Required | Invited by ${inviterName || "Someone"}`,
       htmlContent: emailHtml,
       sender: {
-        name: inviterName || "Collaboration System",
-        email: inviterEmail || senderEmail,
-      },
-    });
-
-    console.log("✅ Registration invitation sent to:", recipientEmail);
-    return { success: true, message: "Invitation sent", response };
-  } catch (error) {
-    console.error("❌ Error sending invitation:", error);
-    throw new Error(`Failed to send invitation: ${error.message}`);
-
-  }
-};
-
-export const joinCollab = async (
-  documentName,
-  inviterName,
-  userEmail = null,
-  inviterEmail = null,
-  loginLink
-) => {
-  try {
-
-    if (!userEmail) {
-      throw new Error("User email is required");
-    }
-
-    const htmlContent = createEmailWrapper(`
-      ${createHeader()}
-      
-      <!-- Invitation Content -->
-      <div class="card">
-        <p style="font-size: 18px; margin-top: 0;">Hello,</p>
-        <p><strong>${inviterName}</strong> ${inviterEmail ? `(<a href="mailto:${inviterEmail}" style="color: #4a6cf7; text-decoration: none;">${inviterEmail}</a>)` : ""} has invited you to collaborate on <strong style="color: #1a1a2e;">"${documentName}"</strong>.</p>
-        <p>Click the button below to join and start collaborating:</p>
-        
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${loginLink}" class="button button-green">Join Collaboration</a>
-        </div>
-        
-        <p style="color: #64748b; font-size: 14px; text-align: center;">Or copy and paste this link into your browser:</p>
-        <p style="background: #f8fafc; padding: 12px 16px; border-radius: 6px; word-break: break-all; font-size: 13px; border: 1px solid #e2e8f0; color: #334155;">${loginLink}</p>
-      </div>
-      
-      ${createCollaborationSteps(documentName)}
-      
-      <!-- Features -->
-      <div class="card">
-        <h3 style="color: #1a1a2e; margin-top: 0; text-align: center; font-size: 18px;">✨ What you can do</h3>
-        <div class="feature-grid">
-          <div class="feature-item">
-            <span style="font-size: 24px;">📝</span>
-            <p style="margin: 4px 0 0; font-weight: 500;">View and edit "${documentName}"</p>
-          </div>
-          <div class="feature-item">
-            <span style="font-size: 24px;">👥</span>
-            <p style="margin: 4px 0 0; font-weight: 500;">Real-time collaboration</p>
-          </div>
-          <div class="feature-item" style="grid-column: 1 / -1;">
-            <span style="font-size: 24px;">💬</span>
-            <p style="margin: 4px 0 0; font-weight: 500;">Share feedback and suggestions</p>
-          </div>
-        </div>
-      </div>
-      
-      ${createFooter(inviterEmail)}
-    `, "Collaboration Invitation");
-
-    const emailData = {
-      sender: {
-        name: `${inviterName} (via Collaboration Platform)`,
+        // Always send from the authenticated sender; inviter appears in the display name only.
+        name: `${inviterName || "Collaboration"} (via Collaboration Platform)`,
         email: senderEmail,
       },
-      to: [{ email: userEmail, name: "User" }],
-      subject: `Invitation to collaborate on "${documentName}" from ${inviterName}`,
-      htmlContent,
-      textContent: `
-        Hello,
-        
-        ${inviterName} ${inviterEmail ? `(${inviterEmail})` : ""} has invited you to collaborate on "${documentName}".
-        
-        Join now by visiting: ${loginLink}
-        
-        Steps to join:
-        1. Click the join link above
-        2. Log in to your account
-        3. Access "${documentName}"
-        4. Start collaborating with your team
-        
-        What you can do:
-        - View and edit "${documentName}"
-        - Collaborate in real-time with team members
-        - Share feedback and suggestions
-        
-        Note: This invitation will expire in 7 days. If you have any questions, please contact ${inviterEmail || "the inviter"}.
-        
-        This is an automated message, please do not reply to this email.
-      `,
-      tags: ["collaboration", "existing-user-invite"],
-    };
+      replyTo: inviterEmail ? { email: inviterEmail, name: inviterName || "" } : undefined,
+      tags: ["registration", "collaboration-invite"],
+    });
 
-    const response = await apiInstance.transactionalEmails.sendTransacEmail(emailData);
-    console.log(`Collaboration invitation sent successfully to ${userEmail}`);
-    return response;
+    console.log(`✅ Registration invitation sent to ${recipientEmail}`);
+    return { success: true, message: "Invitation sent", response };
   } catch (error) {
-    console.error("Error sending collaboration invitation:", error);
-    throw new Error(`Failed to send collaboration invitation: ${error.message}`);
+    console.error("❌ Error sending registration invitation:", error);
+    throw new Error(`Failed to send registration invitation: ${error.message}`);
   }
 };
 
-export default {
-  registerAndJoinCollab,
-  joinCollab,
-};
+// ---------------------------------------------------------------------------
+// joinCollab — sends a "login required" invite to a user who ALREADY has
+// an account and just needs to log in and accept.
+// ---------------------------------------------------------------------------
 
+export const joinCollab = async ({
+  documentName,
+  inviterName,
+  acceptLink,
+  declineLink,
+  userEmail,
+  inviterEmail = null,
+  loginLink,
+}) => {
+  try {
+    if (!userEmail) throw new Error("User email is required");
     if (!loginLink) throw new Error("Login link is required");
+    if (!declineLink) throw new Error("Decline link is required");
+
+    const safeDoc = escapeHtml(documentName || "Untitled Document");
+    const safeInviter = escapeHtml(inviterName || "Someone");
+    const safeInviterEmail = escapeHtml(inviterEmail || "");
+    const safeUserEmail = escapeHtml(userEmail);
+    const safeLoginLink = escapeAttr(loginLink);
+    const safeAcceptLink = acceptLink ? escapeAttr(acceptLink) : "";
+    const safeDeclineLink = escapeAttr(declineLink);
 
     const content = `
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <!-- Header -->
-        <tr><td style="${S.headerGreen}">
+        <tr><td class="header-cell" style="${S.headerGreen}">
           <div style="${S.iconRing}">
             <img src="${WEBSITE_ICON}" alt="Icon" style="width:38px;height:38px;vertical-align:middle;" />
           </div>
@@ -728,14 +270,14 @@ export default {
         </td></tr>
 
         <!-- Body -->
-        <tr><td style="${S.body2}">
+        <tr><td class="body-cell" style="${S.body2}">
 
           <!-- User card -->
           <div style="${S.card}">
             <div style="text-align:center;margin-bottom:10px;">
               <div style="display:inline-block;width:56px;height:56px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;line-height:56px;font-size:24px;">👤</div>
             </div>
-            <p style="margin:0;text-align:center;font-size:15px;font-weight:600;color:#065f46;">${userEmail || "User"}</p>
+            <p style="margin:0;text-align:center;font-size:15px;font-weight:600;color:#065f46;">${safeUserEmail}</p>
             <p style="margin:4px 0 0;text-align:center;font-size:13px;color:#047857;">Login required to access collaboration</p>
           </div>
 
@@ -744,11 +286,11 @@ export default {
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="padding:8px 0;border-bottom:1px solid #e8edf4;font-size:14px;color:#64748b;">📄 Document</td>
-                <td style="padding:8px 0;border-bottom:1px solid #e8edf4;font-size:14px;font-weight:600;color:#1a2332;text-align:right;">${documentName || "Untitled Document"}</td>
+                <td style="padding:8px 0;border-bottom:1px solid #e8edf4;font-size:14px;font-weight:600;color:#1a2332;text-align:right;">${safeDoc}</td>
               </tr>
               <tr>
                 <td style="padding:8px 0;font-size:14px;color:#64748b;">👋 Invited by</td>
-                <td style="padding:8px 0;font-size:14px;font-weight:500;color:#667eea;text-align:right;">${inviterName || "Unknown"}${inviterEmail ? ` <span style="color:#94a3b8;font-size:12px;">(${inviterEmail})</span>` : ""}</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:500;color:#667eea;text-align:right;">${safeInviter}${safeInviterEmail ? ` <span style="color:#94a3b8;font-size:12px;">(${safeInviterEmail})</span>` : ""}</td>
               </tr>
             </table>
           </div>
@@ -760,7 +302,7 @@ export default {
               Please login to your existing account to join this collaboration.
             </p>
             <div style="text-align:center;">
-              <a href="${loginLink}" style="${S.btnSuccess}">🔑 Login Now</a>
+              <a href="${safeLoginLink}" style="${S.btnSuccess}">🔑 Login Now</a>
             </div>
           </div>
 
@@ -773,28 +315,27 @@ export default {
 
           <!-- Action buttons -->
           <div style="text-align:center;margin:28px 0 20px;">
-            <a href="${loginLink}" style="${S.btnSuccess}">✅ Login &amp; Join</a>
+            <a href="${safeLoginLink}" style="${S.btnSuccess}">✅ Login &amp; Join</a>
             &nbsp;&nbsp;
-            <a href="${declineLink}" style="${S.btnDanger}">✕ Decline</a>
+            <a href="${safeDeclineLink}" style="${S.btnDanger}">✕ Decline</a>
           </div>
 
           <!-- Links -->
           <div style="${S.linkBox}">
             <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#475569;">🔗 Quick Links</p>
-            <p style="${S.linkText}"><strong>Login:</strong> ${loginLink}</p>
-            <p style="${S.linkText}"><strong>Join (after login):</strong> ${acceptLink}</p>
-            <p style="${S.linkText}"><strong>Decline:</strong> ${declineLink}</p>
+            <p style="${S.linkText}"><strong>Login:</strong> ${safeLoginLink}</p>
+            ${safeAcceptLink ? `<p style="${S.linkText}"><strong>Join (after login):</strong> ${safeAcceptLink}</p>` : ""}
+            <p style="${S.linkText}"><strong>Decline:</strong> ${safeDeclineLink}</p>
           </div>
 
           <div style="margin-top:14px;padding:10px 14px;background:#eef2ff;border-radius:8px;text-align:center;">
             <p style="margin:0;font-size:13px;color:#4338ca;">✨ Login required to access collaboration features</p>
           </div>
+
+          <div style="${S.expiry}">⏰ This invitation will expire in <strong>7 days</strong></div>
         </td></tr>
 
-        <!-- Footer -->
-        <tr><td style="${S.footer}">
-          <p style="${S.footerText}">© ${new Date().getFullYear()} Collaboration Platform · Automated notification</p>
-        </td></tr>
+        ${emailFooter()}
       </table>`;
 
     const emailHtml = emailWrapper(content);
@@ -802,25 +343,30 @@ export default {
     const response = await apiInstance.transactionalEmails.sendTransacEmail({
       to: [
         {
-          email: userEmail || senderEmail,
-          name: userEmail ? userEmail.split("@")[0] : "Admin",
+          email: userEmail,
+          name: userEmail.split("@")[0],
         },
       ],
       subject: `🔐 Login Required: Join "${documentName || "Document"}" — Invited by ${inviterName || "Someone"}`,
       htmlContent: emailHtml,
-      sender: { name: "Collaboration System", email: senderEmail },
+      sender: {
+        name: `${inviterName || "Collaboration"} (via Collaboration Platform)`,
+        email: senderEmail,
+      },
+      replyTo: inviterEmail ? { email: inviterEmail, name: inviterName || "" } : undefined,
+      tags: ["collaboration", "existing-user-invite"],
     });
 
-    console.log("✅ Login notification sent to:", userEmail || senderEmail);
+    console.log(`✅ Login notification sent to ${userEmail}`);
     return {
       success: true,
       message: "Login required to join",
       loginRequired: true,
       loginLink,
+      response,
     };
   } catch (error) {
     console.error("❌ Error sending join notification:", error);
     throw new Error(`Failed to process join request: ${error.message}`);
   }
 };
-
