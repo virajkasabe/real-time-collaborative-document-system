@@ -1,4 +1,8 @@
+ feature/collab-fixes
+// emailService.js
+
 // backend/src/services/sendCollabLink.service.js
+>
 
 import { apiInstance, senderEmail } from "./brevoClient.js";
 
@@ -13,6 +17,32 @@ const stepThree =
   "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182370/3_w5oyxc.png";
 const stepFour =
   "https://res.cloudinary.com/qnf2f4fq/image/upload/v1786182371/4_lewr0f.png";
+
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Escape user-supplied values before interpolating into HTML.
+ * Prevents HTML/markup injection via document names, names, emails, etc.
+ */
+const escapeHtml = (value) => {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+};
+
+const escapeAttr = (value) => escapeHtml(value);
+
+// ---------------------------------------------------------------------------
+// Shared style tokens
+// ---------------------------------------------------------------------------
+
 
 const S = {
   fonts: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');`,
@@ -38,7 +68,12 @@ const S = {
   footer: `background:#f8fafc;padding:22px 32px;text-align:center;border-top:1px solid #e8edf4;`,
   footerText: `margin:0;font-size:12px;color:#94a3b8;line-height:1.8;`,
   expiry: `margin-top:20px;padding:14px 16px;background:#f1f5f9;border-radius:10px;text-align:center;font-size:13px;color:#64748b;`,
+  divider: `border:none;border-top:1px solid #e8edf4;margin:8px 0;`,
 };
+
+// ---------------------------------------------------------------------------
+// Wrappers
+// ---------------------------------------------------------------------------
 
 const emailWrapper = (content) => `
 <!DOCTYPE html>
@@ -46,36 +81,74 @@ const emailWrapper = (content) => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <style>${S.fonts}</style>
+  <title>Collaboration Invitation</title>
+  <style>
+    ${S.fonts}
+    @media only screen and (max-width:600px) {
+      .container { border-radius:0 !important; }
+      .body-cell { padding:24px 18px !important; }
+      .header-cell { padding:32px 18px 26px !important; }
+    }
+  </style>
 </head>
 <body style="${S.body}">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="${S.wrapper}">
     <tr><td align="center">
       <table width="100%" style="max-width:600px;" cellpadding="0" cellspacing="0" border="0">
-        <tr><td style="${S.container}">${content}</td></tr>
+        <tr><td class="container" style="${S.container}">${content}</td></tr>
       </table>
     </td></tr>
   </table>
 </body>
 </html>`;
 
-export const registerAndJoinCollab = async (
+const emailFooter = () => `
+  <tr><td style="${S.footer}">
+    <p style="${S.footerText}">© ${new Date().getFullYear()} Collaboration Platform · Automated notification</p>
+    <p style="${S.footerText}" >This is an automated message, please do not reply.</p>
+  </td></tr>`;
+
+// ---------------------------------------------------------------------------
+// registerAndJoinCollab — sends a registration + collaboration invite
+// to a user who does NOT yet have an account.
+// ---------------------------------------------------------------------------
+
+export const registerAndJoinCollab = async ({
   documentName,
   inviterName,
   recipientEmail,
   inviterEmail,
   registrationLink,
   recipientName = null,
+
+  registrationLink,
+}) => {
+
   acceptLink = null,
   declineLink = null
 ) => {
+
   try {
     if (!recipientEmail) throw new Error("Recipient email is required");
     if (!registrationLink) throw new Error("Registration link is required");
+    if (!declineLink) throw new Error("Decline link is required");
+
+    const safeDoc = escapeHtml(documentName || "Untitled Document");
+    const safeInviter = escapeHtml(inviterName || "Someone");
+    const safeInviterEmail = escapeHtml(inviterEmail || "");
+    const safeRecipientName = escapeHtml(recipientName || "");
+    const safeRegistrationLink = escapeAttr(registrationLink);
+    const safeAcceptLink = acceptLink ? escapeAttr(acceptLink) : "";
+    const safeDeclineLink = escapeAttr(declineLink);
 
     const content = `
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+        <!-- Header -->
+        <tr><td class="header-cell" style="${S.headerPurple}">
+
         <tr><td style="${S.headerPurple}">
+
           <div style="${S.iconRing}">
             <img src="${WEBSITE_ICON}" alt="Icon" style="width:38px;height:38px;vertical-align:middle;" />
           </div>
@@ -83,16 +156,23 @@ export const registerAndJoinCollab = async (
           <p style="${S.headerSub}">Complete registration to join the collaboration</p>
         </td></tr>
 
+
+        <!-- Body -->
+        <tr><td class="body-cell" style="${S.body2}">
+
         <tr><td style="${S.body2}">
 
           <div style="${S.card}">
             <p style="margin:0 0 4px;font-size:13px;color:#64748b;">You've been invited to collaborate on</p>
-            <h2 style="margin:6px 0 4px;font-size:22px;font-weight:700;color:#1a2332;">
+
+            <h2 style="margin:6px 0 4px;font-size:22px;font-weight:700;color:#1a2332;">${safeDoc}</h2>
+<h2 style="margin:6px 0 4px;font-size:22px;font-weight:700;color:#1a2332;">
               ${documentName || "Untitled Document"}
             </h2>
+
             <p style="margin:6px 0 0;font-size:14px;color:#475569;">
-              Invited by <strong style="color:#667eea;">${inviterName || "Someone"}</strong>
-              ${inviterEmail ? `<span style="color:#94a3b8;"> · ${inviterEmail}</span>` : ""}
+              Invited by <strong style="color:#667eea;">${safeInviter}</strong>
+              ${safeInviterEmail ? `<span style="color:#94a3b8;"> · ${safeInviterEmail}</span>` : ""}
             </p>
           </div>
 
@@ -104,7 +184,7 @@ export const registerAndJoinCollab = async (
               You need to register first to access this collaboration. It only takes a minute!
             </p>
             <div style="text-align:center;">
-              <a href="${registrationLink}" style="${S.btnPrimary}">Create Account →</a>
+              <a href="${safeRegistrationLink}" style="${S.btnPrimary}">Create Account →</a>
             </div>
           </div>
 
@@ -119,21 +199,34 @@ export const registerAndJoinCollab = async (
           </div>
 
           <div style="text-align:center;margin:28px 0 20px;">
-            <a href="${registrationLink}" style="${S.btnSuccess}">✅ Register &amp; Accept</a>
+            <a href="${safeRegistrationLink}" style="${S.btnSuccess}">✅ Register &amp; Accept</a>
             &nbsp;&nbsp;
+
+            <a href="${safeDeclineLink}" style="${S.btnDanger}">✕ Decline</a>
+            <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">Click "Register &amp; Accept" to create your account and join immediately</p>
+
             <a href="${declineLink}" style="${S.btnDanger}">✕ Decline</a>
             <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">
               Click "Register &amp; Accept" to create your account and join immediately
             </p>
+
           </div>
 
           <div style="${S.linkBox}">
             <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#475569;">🔗 Quick Links</p>
-            <p style="${S.linkText}"><strong>Register:</strong> ${registrationLink}</p>
-            ${acceptLink ? `<p style="${S.linkText}"><strong>Accept (after registration):</strong> ${acceptLink}</p>` : ""}
-            <p style="${S.linkText}"><strong>Decline:</strong> ${declineLink}</p>
+            <p style="${S.linkText}"><strong>Register:</strong> ${safeRegistrationLink}</p>
+            ${safeAcceptLink ? `<p style="${S.linkText}"><strong>Accept (after registration):</strong> ${safeAcceptLink}</p>` : ""}
+            <p style="${S.linkText}"><strong>Decline:</strong> ${safeDeclineLink}</p>
           </div>
 
+          ${
+            safeRecipientName
+              ? `
+          <div style="margin-top:14px;padding:10px 14px;background:#eef2ff;border-radius:8px;">
+            <p style="margin:0;font-size:13px;color:#4338ca;">👤 <strong>Invited as:</strong> ${safeRecipientName}</p>
+          </div>`
+              : ""
+          }
           ${recipientName ? `
           <div style="margin-top:14px;padding:10px 14px;background:#eef2ff;border-radius:8px;">
             <p style="margin:0;font-size:13px;color:#4338ca;">
@@ -147,6 +240,7 @@ export const registerAndJoinCollab = async (
 
         </td></tr>
 
+        ${emailFooter()}
         <tr><td style="${S.footer}">
           <p style="${S.footerText}">
             © ${new Date().getFullYear()} Collaboration Platform · Automated notification
@@ -166,35 +260,59 @@ export const registerAndJoinCollab = async (
       subject: `✨ Join "${documentName || "Document"}" — Registration Required | Invited by ${inviterName || "Someone"}`,
       htmlContent: emailHtml,
       sender: {
-        name: inviterName || "Collaboration System",
-        email: inviterEmail || senderEmail,
+        // Always send from the authenticated sender; inviter appears in the display name only.
+        name: `${inviterName || "Collaboration"} (via Collaboration Platform)`,
+        email: senderEmail,
       },
+      replyTo: inviterEmail ? { email: inviterEmail, name: inviterName || "" } : undefined,
+      tags: ["registration", "collaboration-invite"],
     });
 
-    console.log("✅ Registration invitation sent to:", recipientEmail);
+    console.log(`✅ Registration invitation sent to ${recipientEmail}`);
     return { success: true, message: "Invitation sent", response };
 
   } catch (error) {
+    console.error("❌ Error sending registration invitation:", error);
+    throw new Error(`Failed to send registration invitation: ${error.message}`);
     console.error("❌ Error sending invitation:", error);
     throw new Error(`Failed to send invitation: ${error.message}`);
   }
 };
 
-export const joinCollab = async (
+// ---------------------------------------------------------------------------
+// joinCollab — sends a "login required" invite to a user who ALREADY has
+// an account and just needs to log in and accept.
+// ---------------------------------------------------------------------------
+
+export const joinCollab = async ({
   documentName,
   inviterName,
-  userEmail = null,
+  acceptLink,
+  declineLink,
+  userEmail,
   inviterEmail = null,
   loginLink,
+}) => {
   acceptLink = null,
   declineLink = null
 ) => {
   try {
     if (!userEmail) throw new Error("User email is required");
     if (!loginLink) throw new Error("Login link is required");
+    if (!declineLink) throw new Error("Decline link is required");
+
+    const safeDoc = escapeHtml(documentName || "Untitled Document");
+    const safeInviter = escapeHtml(inviterName || "Someone");
+    const safeInviterEmail = escapeHtml(inviterEmail || "");
+    const safeUserEmail = escapeHtml(userEmail);
+    const safeLoginLink = escapeAttr(loginLink);
+    const safeAcceptLink = acceptLink ? escapeAttr(acceptLink) : "";
+    const safeDeclineLink = escapeAttr(declineLink);
 
     const content = `
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <!-- Header -->
+        <tr><td class="header-cell" style="${S.headerGreen}">
         <tr><td style="${S.headerGreen}">
           <div style="${S.iconRing}">
             <img src="${WEBSITE_ICON}" alt="Icon" style="width:38px;height:38px;vertical-align:middle;" />
@@ -203,6 +321,8 @@ export const joinCollab = async (
           <p style="${S.headerSub}">Please login to join the collaboration</p>
         </td></tr>
 
+        <!-- Body -->
+        <tr><td class="body-cell" style="${S.body2}">
         <tr><td style="${S.body2}">
 
           <div style="${S.card}">
@@ -211,6 +331,8 @@ export const joinCollab = async (
                 👤
               </div>
             </div>
+            <p style="margin:0;text-align:center;font-size:15px;font-weight:600;color:#065f46;">${safeUserEmail}</p>
+            <p style="margin:4px 0 0;text-align:center;font-size:13px;color:#047857;">Login required to access collaboration</p>
             <p style="margin:0;text-align:center;font-size:15px;font-weight:600;color:#065f46;">
               ${userEmail}
             </p>
@@ -222,6 +344,12 @@ export const joinCollab = async (
           <div style="${S.card}">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
+                <td style="padding:8px 0;border-bottom:1px solid #e8edf4;font-size:14px;color:#64748b;">📄 Document</td>
+                <td style="padding:8px 0;border-bottom:1px solid #e8edf4;font-size:14px;font-weight:600;color:#1a2332;text-align:right;">${safeDoc}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;font-size:14px;color:#64748b;">👋 Invited by</td>
+                <td style="padding:8px 0;font-size:14px;font-weight:500;color:#667eea;text-align:right;">${safeInviter}${safeInviterEmail ? ` <span style="color:#94a3b8;font-size:12px;">(${safeInviterEmail})</span>` : ""}</td>
                 <td style="padding:8px 0;border-bottom:1px solid #e8edf4;font-size:14px;color:#64748b;">
                   📄 Document
                 </td>
@@ -247,7 +375,7 @@ export const joinCollab = async (
               Please login to your existing account to join this collaboration.
             </p>
             <div style="text-align:center;">
-              <a href="${loginLink}" style="${S.btnSuccess}">🔑 Login Now</a>
+              <a href="${safeLoginLink}" style="${S.btnSuccess}">🔑 Login Now</a>
             </div>
           </div>
 
@@ -262,13 +390,16 @@ export const joinCollab = async (
           </div>
 
           <div style="text-align:center;margin:28px 0 20px;">
-            <a href="${loginLink}" style="${S.btnSuccess}">✅ Login &amp; Join</a>
+            <a href="${safeLoginLink}" style="${S.btnSuccess}">✅ Login &amp; Join</a>
             &nbsp;&nbsp;
-            <a href="${declineLink}" style="${S.btnDanger}">✕ Decline</a>
+            <a href="${safeDeclineLink}" style="${S.btnDanger}">✕ Decline</a>
           </div>
 
           <div style="${S.linkBox}">
             <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#475569;">🔗 Quick Links</p>
+            <p style="${S.linkText}"><strong>Login:</strong> ${safeLoginLink}</p>
+            ${safeAcceptLink ? `<p style="${S.linkText}"><strong>Join (after login):</strong> ${safeAcceptLink}</p>` : ""}
+            <p style="${S.linkText}"><strong>Decline:</strong> ${safeDeclineLink}</p>
             <p style="${S.linkText}"><strong>Login:</strong> ${loginLink}</p>
             ${acceptLink ? `<p style="${S.linkText}"><strong>Join (after login):</strong> ${acceptLink}</p>` : ""}
             <p style="${S.linkText}"><strong>Decline:</strong> ${declineLink}</p>
@@ -284,6 +415,8 @@ export const joinCollab = async (
             ⏰ This invitation will expire in <strong>7 days</strong>
           </div>
 
+          <div style="${S.expiry}">⏰ This invitation will expire in <strong>7 days</strong></div>
+
         </td></tr>
 
         <tr><td style="${S.footer}">
@@ -291,6 +424,8 @@ export const joinCollab = async (
             © ${new Date().getFullYear()} Collaboration Platform · Automated notification
           </p>
         </td></tr>
+
+        ${emailFooter()}
       </table>`;
 
     const emailHtml = emailWrapper(content);
@@ -305,6 +440,14 @@ export const joinCollab = async (
       subject: `🔐 Login Required: Join "${documentName || "Document"}" — Invited by ${inviterName || "Someone"}`,
       htmlContent: emailHtml,
       sender: {
+        name: `${inviterName || "Collaboration"} (via Collaboration Platform)`,
+        email: senderEmail,
+      },
+      replyTo: inviterEmail ? { email: inviterEmail, name: inviterName || "" } : undefined,
+      tags: ["collaboration", "existing-user-invite"],
+    });
+
+    console.log(`✅ Login notification sent to ${userEmail}`);
         name: "Collaboration System",
         email: senderEmail,
       },
