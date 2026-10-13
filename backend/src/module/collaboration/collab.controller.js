@@ -147,12 +147,12 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
       
       
       await registerAndJoinCollab(
-        documentName  ,
-        inviterName ,
-        recipientEmail  ,
-        inviterEmail ,
-        recipientName ,
-        registrationLink 
+        documentName,
+        inviterName,
+        recipientEmail,
+        inviterEmail,
+        registrationLink,
+        recipientName
       );
       
       return res
@@ -224,7 +224,7 @@ export const sendCollaboration = asyncHandler(async (req, res) => {
         userEmail,
         inviterEmail,
         loginLink
-      )
+      );
 
        
       return res
